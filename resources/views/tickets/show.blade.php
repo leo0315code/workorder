@@ -246,12 +246,16 @@
                             @endif
                         </div>
                     @endif
-                    @if ($ticket->assignee)
-                        <div class="flex justify-between gap-3">
-                            <dt class="text-gray-400 shrink-0">负责人</dt>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-400 shrink-0">负责人</dt>
+                        @if ($ticket->assignee)
                             <dd class="text-gray-700 dark:text-gray-200">{{ $ticket->assignee->name }}</dd>
-                        </div>
-                    @endif
+                        @else
+                            <dd class="text-right">
+                                <span class="inline-flex rounded-md bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-500/30">待认领 · 客服上线后接单</span>
+                            </dd>
+                        @endif
+                    </div>
                 </dl>
             </div>
 

@@ -11,6 +11,12 @@
         </div>
     @endif
 
+    @if (! $isAgent && empty($onlineAgentIds))
+        <div class="mb-5 rounded-lg border border-sky-200 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-500/10 px-4 py-3 text-sm text-sky-800 dark:text-sky-300">
+            <strong>当前客服不在线</strong>，工单提交后将进入「待认领」，客服上线后会自动接单处理，请耐心等待。
+        </div>
+    @endif
+
     <div class="max-w-3xl">
         <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data"
               x-data="{ files: [] }">
