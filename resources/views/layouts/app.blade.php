@@ -129,7 +129,7 @@
                                 </button>
 
                                 <div x-show="open" x-cloak x-transition @click.outside="open = false"
-                                     class="absolute right-0 mt-2 w-80 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl overflow-hidden z-50">
+                                     class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2.5rem)] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl overflow-hidden z-50">
                                     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                                         <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">通知</span>
                                         <button @click="markAllRead()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">全部已读</button>
