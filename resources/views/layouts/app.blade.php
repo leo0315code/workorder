@@ -139,8 +139,10 @@
                                             <div class="py-10 text-center text-sm text-gray-400">暂无通知</div>
                                         </template>
                                         <template x-for="n in items" :key="n.id">
-                                            <a :href="n.link || '{{ route('notifications.index') }}'" @click="open = false; if (!n.is_read) markRead(n.id)"
-                                               class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                            <a :href="n.link || '{{ route('notifications.index') }}'" target="_self"
+                                               @mousedown.prevent="openNotification(n)"
+                                               @click.prevent="openNotification(n)"
+                                               class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer">
                                                 <div class="flex items-start gap-2">
                                                     <span class="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" :class="n.is_read ? 'bg-gray-200 dark:bg-gray-700' : 'bg-indigo-500'"></span>
                                                     <div class="min-w-0">
@@ -259,6 +261,16 @@
                         fetch('{{ url('notifications') }}/' + id + '/read', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } });
                         this.unread = Math.max(0, this.unread - 1);
                         this.items = this.items.map((n) => (n.id === id ? { ...n, is_read: true } : n));
+                    },
+                    openNotification(n) {
+                        // 先关下拉，再异步标已读，再导航（避免点击穿透/外点击关闭吞掉事件）
+                        const href = n.link || '{{ route('notifications.index') }}';
+                        this.open = false;
+                        if (! n.is_read) {
+                            this.markRead(n.id);
+                        }
+                        // 用 rAF 保证下拉收起后再跳转，避免视觉抖动
+                        requestAnimationFrame(() => { window.location.href = href; });
                     },
                 };
             }

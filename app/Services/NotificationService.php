@@ -23,7 +23,7 @@ class NotificationService
             'user_id' => $userId,
             'title' => $title,
             'body' => $body,
-            'link' => $link,
+            'link' => self::normalizeLink($link),
         ]);
 
         // 实时推送：目标用户若在线立即收到
@@ -33,15 +33,40 @@ class NotificationService
                 'id' => $notification->id,
                 'title' => $title,
                 'body' => $body,
-                'link' => $link,
+                'link' => self::normalizeLink($link),
                 'created_at' => $notification->created_at?->format('Y-m-d H:i:s'),
             ],
         ]);
 
         // 邮件提醒（系统设置开启时）
-        self::sendEmailIfEnabled($userId, $title, $body, $link);
+        self::sendEmailIfEnabled($userId, $title, $body, self::normalizeLink($link));
 
         return $notification;
+    }
+
+    /**
+     * 将绝对 URL 转成应用内相对路径，兼容任意域（http/127.0.0.1 或 https/虚拟域名）
+     * - http://127.0.0.1:8000/tickets/1 -> /tickets/1
+     * - https://new-order.test/ws        -> /ws
+     * - null 或 非 http URL 原样保留
+     */
+    public static function normalizeLink(?string $link): ?string
+    {
+        if ($link === null || $link === '') {
+            return $link;
+        }
+        if (! preg_match('#^https?://#i', $link)) {
+            return $link;
+        }
+        $parts = parse_url($link);
+        if (! isset($parts['host'])) {
+            return $link;
+        }
+        $path = $parts['path'] ?? '/';
+        $query = isset($parts['query']) ? '?'.$parts['query'] : '';
+        $fragment = isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
+
+        return $path.$query.$fragment;
     }
 
     /**
@@ -49,6 +74,8 @@ class NotificationService
      */
     public static function notifyUsers(array $userIds, string $title, ?string $body = null, ?string $link = null): void
     {
+        // 群发只需规范化一次
+        $link = self::normalizeLink($link);
         foreach (array_unique(array_filter($userIds)) as $userId) {
             try {
                 self::notifyUser((int) $userId, $title, $body, $link);
