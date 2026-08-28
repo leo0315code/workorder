@@ -118,48 +118,51 @@
                             @yield('page_title', \App\Services\SettingService::siteName())
                         </h1>
 
-                        <div class="ml-auto flex items-center gap-2">
-                            {{-- 站内通知铃铛 --}}
-                            <div x-data="notificationBell()" @ticket:event.window="onEvent($event.detail)" class="relative">
-                                <button @click="toggle()" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" title="通知">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg>
-                                    <span x-show="unread > 0" x-cloak
-                                          class="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-[10px] font-semibold text-white"
-                                          x-text="unread > 99 ? '99+' : unread"></span>
-                                </button>
+                        <div class="ml-auto flex items-center gap-2 relative shrink-0"
+                             x-data="notificationBell()"
+                             @ticket:event.window="onEvent($event.detail)">
+                            {{-- 站内通知铃铛（外层是 relative flex，下拉挂在同一容器内 absolute 不被 shrink 压缩）--}}
+                            <button @click="toggle()"
+                                    class="relative shrink-0 p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                                    title="通知">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg>
+                                <span x-show="unread > 0" x-cloak
+                                      class="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-[10px] font-semibold text-white"
+                                      x-text="unread > 99 ? '99+' : unread"></span>
+                            </button>
 
-                                <div x-show="open" x-cloak x-transition @click.outside="open = false"
-                                     class="absolute right-0 mt-2 w-[22rem] max-w-[calc(100vw-1rem)] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl z-50">
-                                    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">通知</span>
-                                        <button @click="markAllRead()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">全部已读</button>
-                                    </div>
-                                    <div class="max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
-                                        <template x-if="items.length === 0">
-                                            <div class="py-10 text-center text-sm text-gray-400">暂无通知</div>
-                                        </template>
-                                        <template x-for="n in items" :key="n.id">
-                                            {{-- 静态 href 兜底：相对路径，跟当前域名走，Alpine 加载后被 :href 覆盖 --}}
-                                            <a href="/notifications"
-                                               :href="n.link || '/notifications'" target="_self" data-bell-item
-                                               class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer">
-                                                <div class="flex items-start gap-2.5">
-                                                    <span class="mt-1.5 w-2 h-2 rounded-full shrink-0" :class="n.is_read ? 'bg-gray-200 dark:bg-gray-700' : 'bg-indigo-500'"></span>
-                                                    <div class="min-w-0 flex-1">
-                                                        <p class="text-sm text-gray-800 dark:text-gray-200 break-words" x-text="n.title"></p>
-                                                        <p class="text-xs text-gray-400 mt-1 break-words line-clamp-2" x-text="n.body || ''"></p>
-                                                        <p class="text-[10px] text-gray-300 dark:text-gray-600 mt-1" x-text="formatTime(n.created_at)"></p>
-                                                    </div>
-                                                </div>
-                                            </a>
-                                        </template>
-                                    </div>
-                                    <a href="/notifications"
-                                       class="block text-center py-2.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/60">
-                                        查看全部通知
-                                    </a>
+                            {{-- 通知下拉：与铃铛同属外层 flex 容器，absolute 不再被压缩到 40px --}}
+                            <div x-show="open" x-cloak x-transition @click.outside="open = false"
+                                 class="absolute right-0 top-full mt-2 w-[22rem] max-w-[calc(100vw-1rem)] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl z-50">
+                                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                                    <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">通知</span>
+                                    <button @click="markAllRead()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">全部已读</button>
                                 </div>
+                                <div class="max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+                                    <template x-if="items.length === 0">
+                                        <div class="py-10 text-center text-sm text-gray-400">暂无通知</div>
+                                    </template>
+                                    <template x-for="n in items" :key="n.id">
+                                        <a href="/notifications"
+                                           :href="n.link || '/notifications'" target="_self" data-bell-item
+                                           class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer">
+                                            <div class="flex items-start gap-2.5">
+                                                <span class="mt-1.5 w-2 h-2 rounded-full shrink-0" :class="n.is_read ? 'bg-gray-200 dark:bg-gray-700' : 'bg-indigo-500'"></span>
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="text-sm text-gray-800 dark:text-gray-200 break-words" x-text="n.title"></p>
+                                                    <p class="text-xs text-gray-400 mt-1 break-words line-clamp-2" x-text="n.body || ''"></p>
+                                                    <p class="text-[10px] text-gray-300 dark:text-gray-600 mt-1" x-text="formatTime(n.created_at)"></p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </template>
+                                </div>
+                                <a href="/notifications"
+                                   class="block text-center py-2.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                    查看全部通知
+                                </a>
                             </div>
+                        </div>
 
                             {{-- 暗色切换 --}}
                             <button x-data="{ dark: document.documentElement.classList.contains('dark') }"
