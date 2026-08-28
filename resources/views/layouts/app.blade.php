@@ -50,7 +50,8 @@
                         $nav[] = ['label' => '数据报表', 'route' => 'admin.reports', 'icon' => 'chart', 'active' => request()->routeIs('admin.reports')];
                     }
                     if ($user->isAdmin()) {
-                        $nav[] = ['label' => '用户管理', 'route' => 'admin.users.index', 'icon' => 'user', 'active' => request()->routeIs('admin.users.*')];
+                        $nav[] = ['label' => '用户管理', 'route' => 'admin.users.index', 'icon' => 'user', 'active' => request()->routeIs('admin.users.*') && ! request()->boolean('perm')];
+                        $nav[] = ['label' => '权限管理', 'route' => 'admin.users.index', 'icon' => 'shield', 'active' => request()->routeIs('admin.users.*') && request()->boolean('perm'), 'params' => ['perm' => 1]];
                         $nav[] = ['label' => '系统设置', 'route' => 'admin.settings', 'icon' => 'gear', 'active' => request()->routeIs('admin.settings')];
                     }
                 } else {
@@ -76,7 +77,7 @@
 
                     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                         @foreach ($nav as $item)
-                            <a href="{{ route($item['route']) }}"
+                            <a href="{{ route($item['route'], $item['params'] ?? []) }}"
                                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition
                                       {{ $item['active'] ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100' }}">
                                 <x-nav-icon :name="$item['icon']" class="w-5 h-5 shrink-0" />

@@ -4,6 +4,11 @@
 
 @section('content')
     <div x-data="permEditor()">
+    @if (request()->boolean('perm'))
+        <div class="mb-4 rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-3 text-sm text-indigo-700 dark:text-indigo-300">
+            在下方每个客服/管理员的「<strong>模块权限</strong>」按钮中勾选其可见菜单与操作权限；未配置的客服默认拥有全部模块权限。
+        </div>
+    @endif
     <form method="GET" action="{{ route('admin.users.index') }}" class="mb-4 flex flex-wrap items-center gap-3">
         <input type="text" name="q" value="{{ request('q') }}" placeholder="搜索姓名 / 邮箱"
                class="w-72 rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
