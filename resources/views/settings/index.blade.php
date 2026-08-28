@@ -161,10 +161,13 @@
                         <span class="text-gray-400">微信登录：{{ \App\Services\WechatService::enabled() ? '真实模式' : '演示模式' }}</span>
                     </div>
                 </div>
+            </div>
 
-                <div class="flex justify-end pt-2">
-                    <button type="submit" class="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-500">保存设置</button>
-                </div>
+            {{-- 浮动保存按钮（表单很长时始终可见） --}}
+            <div class="sticky bottom-4 mt-6 flex justify-end">
+                <button type="submit" class="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white shadow-lg ring-1 ring-indigo-700/20 hover:bg-indigo-500">
+                    保存设置
+                </button>
             </div>
         </form>
     </div>
