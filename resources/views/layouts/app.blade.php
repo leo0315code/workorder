@@ -50,8 +50,8 @@
                         $nav[] = ['label' => '数据报表', 'route' => 'admin.reports', 'icon' => 'chart', 'active' => request()->routeIs('admin.reports')];
                     }
                     if ($user->isAdmin()) {
-                        $nav[] = ['label' => '用户管理', 'route' => 'admin.users.index', 'icon' => 'user', 'active' => request()->routeIs('admin.users.*') && ! request()->boolean('perm')];
-                        $nav[] = ['label' => '权限管理', 'route' => 'admin.users.index', 'icon' => 'shield', 'active' => request()->routeIs('admin.users.*') && request()->boolean('perm'), 'params' => ['perm' => 1]];
+                        $nav[] = ['label' => '用户管理', 'route' => 'admin.users.index', 'icon' => 'user', 'active' => request()->routeIs('admin.users.*')];
+                        $nav[] = ['label' => '角色管理', 'route' => 'admin.agent-roles.index', 'icon' => 'shield', 'active' => request()->routeIs('admin.agent-roles.*')];
                         $nav[] = ['label' => '系统设置', 'route' => 'admin.settings', 'icon' => 'gear', 'active' => request()->routeIs('admin.settings')];
                     }
                 } else {

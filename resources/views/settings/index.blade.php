@@ -4,13 +4,13 @@
 
 @section('content')
     <div class="max-w-2xl">
-        {{-- 权限管理快捷入口 --}}
-        <a href="{{ route('admin.users.index') }}"
+        {{-- 角色管理快捷入口 --}}
+        <a href="{{ route('admin.agent-roles.index') }}"
            class="mb-4 flex items-center justify-between rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-5 py-3.5 text-sm hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition">
             <span class="flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>
-                <strong>客服模块权限管理</strong>
-                <span class="text-xs text-indigo-400">给每个客服授权菜单模块（客户档案/产品/分类/快捷回复/模板/报表/导出/批量）</span>
+                <strong>客服角色管理</strong>
+                <span class="text-xs text-indigo-400">维护客服角色模板（主管/接单员/只读等），并分配给具体客服</span>
             </span>
             <span class="text-indigo-600 dark:text-indigo-300 font-medium">前往管理 →</span>
         </a>

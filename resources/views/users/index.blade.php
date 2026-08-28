@@ -3,24 +3,6 @@
 @section('page_title', '用户管理')
 
 @section('content')
-    <div x-data="permEditor()">
-    @if (request()->boolean('perm'))
-        <div class="mb-4 rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-3 text-sm text-indigo-700 dark:text-indigo-300">
-            在下方每个客服/管理员的「<strong>模块权限</strong>」按钮中勾选其可见菜单与操作权限；未配置的客服默认拥有全部模块权限。
-        </div>
-    @endif
-    <form method="GET" action="{{ route('admin.users.index') }}" class="mb-4 flex flex-wrap items-center gap-3">
-        <input type="text" name="q" value="{{ request('q') }}" placeholder="搜索姓名 / 邮箱"
-               class="w-72 rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
-        <select name="role" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
-            <option value="">全部角色</option>
-            @foreach (\App\Models\User::ROLES as $k => $label)
-                <option value="{{ $k }}" @selected(request('role') === $k)>{{ $label }}</option>
-            @endforeach
-        </select>
-        <button type="submit" class="rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2 text-sm font-medium text-white dark:text-gray-900">筛选</button>
-    </form>
-
     <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -31,7 +13,8 @@
                         <th class="py-3 px-4">电话</th>
                         <th class="py-3 px-4">提交工单</th>
                         <th class="py-3 px-4">处理工单</th>
-                        <th class="py-3 px-4">角色</th>
+                        <th class="py-3 px-4">系统角色</th>
+                        <th class="py-3 px-4">客服角色</th>
                         <th class="py-3 px-4">在线状态</th>
                         <th class="py-3 px-4">注册时间</th>
                     </tr>
@@ -69,6 +52,24 @@
                                     </form>
                                 @endif
                             </td>
+                            <td class="py-3 px-4">
+                                @if ($u->role === 'customer')
+                                    <span class="text-xs text-gray-400">-</span>
+                                @elseif ($u->id === auth()->id())
+                                    <span class="text-xs text-gray-400">不可改自己</span>
+                                @else
+                                    <form method="POST" action="{{ route('admin.users.update-agent-role', $u) }}">
+                                        @csrf @method('PATCH')
+                                        <select name="agent_role_id" onchange="this.form.submit()"
+                                                class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                                            <option value="">默认（全模块）</option>
+                                            @foreach ($agentRoles as $r)
+                                                <option value="{{ $r->id }}" @selected($u->agent_role_id === $r->id)>{{ $r->label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </form>
+                                @endif
+                            </td>
                             @if ($u->isAgent())
                                 <td class="py-3 px-4">
                                     @if ($u->isManuallyOffline())
@@ -91,8 +92,6 @@
                                                 {{ $u->isManuallyOffline() ? '恢复在线' : '设为离线' }}
                                             </button>
                                         </form>
-                                        <button @click="openPerm({{ $u->id }}, '{{ $u->name }}', {{ json_encode($u->permissions) }})"
-                                                class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-1 block">模块权限</button>
                                     @endif
                                 </td>
                             @else
@@ -101,7 +100,7 @@
                             <td class="py-3 px-4 text-gray-400 whitespace-nowrap">{{ $u->created_at?->format('Y-m-d') }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="py-12 text-center text-gray-400">暂无用户</td></tr>
+                        <tr><td colspan="9" class="py-12 text-center text-gray-400">暂无用户</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -109,65 +108,5 @@
         <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-800">{{ $users->links() }}</div>
     </div>
 
-    {{-- 模块权限弹层 --}}
-    <div x-show="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" x-cloak>
-        <div class="w-full max-w-lg rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">模块权限 · <span x-text="name"></span></h3>
-                <button @click="open = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
-            </div>
-
-            <div class="mb-4 flex flex-wrap gap-2">
-                <button type="button" @click="applyTemplate('full')"
-                        class="rounded-lg bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-300 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-500/30 hover:bg-indigo-100">普通客服（全部）</button>
-                <button type="button" @click="applyTemplate('supervisor')"
-                        class="rounded-lg bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-300 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-500/30 hover:bg-indigo-100">主管（全部 + 管理）</button>
-                <button type="button" @click="applyTemplate('readonly')"
-                        class="rounded-lg bg-gray-100 dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 ring-1 ring-inset ring-gray-200 dark:ring-gray-700 hover:bg-gray-200">只读客服（看档案/产品/报表）</button>
-            </div>
-
-            <form method="POST" :action="'{{ url(config('app.admin_url').'/users') }}/' + id + '/permissions'" class="space-y-4">
-                @csrf @method('PATCH')
-                <div class="grid grid-cols-2 gap-2">
-                    <template x-for="mod in all" :key="mod">
-                        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2">
-                            <input type="checkbox" name="modules[]" :value="mod" x-model="modules" class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
-                            <span x-text="labels[mod]"></span>
-                        </label>
-                    </template>
-                </div>
-                <p class="text-xs text-gray-400">工单列表与处理是所有客服的基础能力；勾选决定「菜单显示 + 后端访问」。</p>
-                <div class="flex justify-end gap-2">
-                    <button type="button" @click="open = false" class="rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm text-gray-600 dark:text-gray-300">取消</button>
-                    <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-500">保存权限</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        function permEditor() {
-            return {
-                open: false,
-                id: null,
-                name: '',
-                modules: [],
-                all: @json(array_keys(\App\Models\User::AGENT_MODULES)),
-                labels: @json(\App\Models\User::AGENT_MODULES),
-                openPerm(id, name, modules) {
-                    this.id = id;
-                    this.name = name;
-                    this.modules = (modules && modules.length) ? [...modules] : [...this.all];
-                    this.open = true;
-                },
-                applyTemplate(t) {
-                    if (t === 'readonly') {
-                        this.modules = ['customers', 'products', 'categories', 'reports'];
-                    } else {
-                        this.modules = [...this.all];
-                    }
-                },
-            };
-        }
-    </script>
+    <p class="mt-3 text-xs text-gray-400">系统角色决定顶级权限（客户/客服/管理员）；客服角色细化每个客服可见的模块。在 <a href="{{ route('admin.agent-roles.index') }}" class="text-indigo-600 hover:underline">角色管理</a> 中维护客服角色模板。</p>
 @endsection

@@ -81,11 +81,17 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->permissions === null) {
-            return in_array($module, $this->defaultPermissions(), true);
+        // 优先：分配的角色（模块集合）
+        if ($this->agentRole && $this->agentRole->is_active) {
+            return in_array($module, $this->agentRole->modules ?? [], true);
         }
 
-        return in_array($module, $this->permissions, true);
+        // 兼容：旧的 per-user 权限字段
+        if (is_array($this->permissions)) {
+            return in_array($module, $this->permissions, true);
+        }
+
+        return in_array($module, $this->defaultPermissions(), true);
     }
 
     public function isAdmin(): bool
@@ -124,6 +130,11 @@ class User extends Authenticatable
     public function replies(): HasMany
     {
         return $this->hasMany(TicketReply::class);
+    }
+
+    public function agentRole(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(AgentRole::class, 'agent_role_id');
     }
 
     public function customer()

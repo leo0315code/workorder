@@ -32,8 +32,9 @@ class UserController extends Controller
 
         // 在线 uid 集合（用于展示实时状态）
         $onlineUids = AutoAssignService::onlineUids() ?: [];
+        $agentRoles = \App\Models\AgentRole::where('is_active', true)->orderBy('sort')->orderBy('id')->get();
 
-        return view('users.index', compact('users', 'onlineUids'));
+        return view('users.index', compact('users', 'onlineUids', 'agentRoles'));
     }
 
     public function updateRole(Request $request, User $user): RedirectResponse
@@ -73,6 +74,24 @@ class UserController extends Controller
         $user->update(['permissions' => $request->input('modules', [])]);
 
         return back()->with('success', '用户 '.$user->name.' 的模块权限已更新');
+    }
+
+    /**
+     * 给客服分配角色（细粒度模块授权）
+     */
+    public function updateAgentRole(Request $request, User $user): RedirectResponse
+    {
+        if ($user->id === $request->user()->id) {
+            return back()->with('error', '不能修改自己的角色');
+        }
+        if ($user->role === 'customer') {
+            return back()->with('error', '客户账号无客服角色');
+        }
+        $data = $request->validate([
+            'agent_role_id' => ['nullable', 'exists:agent_roles,id'],
+        ]);
+        $user->update(['agent_role_id' => $data['agent_role_id'] ?: null]);
+        return back()->with('success', '用户 '.$user->name.' 的客服角色已更新');
     }
 
     /**

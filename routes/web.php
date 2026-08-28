@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AgentRoleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
@@ -91,6 +92,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix(config('app.admin_
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
     Route::patch('users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('users.update-permissions');
+    Route::patch('users/{user}/agent-role', [UserController::class, 'updateAgentRole'])->name('users.update-agent-role');
+    Route::resource('agent-roles', AgentRoleController::class)->except(['show', 'edit']);
     Route::post('users/{user}/offline', [UserController::class, 'toggleOffline'])->name('users.toggle-offline');
     Route::get('settings', [SettingController::class, 'index'])->name('settings');
     Route::post('settings', [SettingController::class, 'save'])->name('settings.save');
