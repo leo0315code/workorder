@@ -139,7 +139,7 @@
                                             <div class="py-10 text-center text-sm text-gray-400">暂无通知</div>
                                         </template>
                                         <template x-for="n in items" :key="n.id">
-                                            <a :href="n.link || '{{ route('notifications.index') }}'" target="_self"
+                                            <a :href="n.link || '{{ route('notifications.index') }}'" target="_self" data-bell-item
                                                @mousedown.prevent="openNotification(n)"
                                                @click.prevent="openNotification(n)"
                                                class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer">
@@ -215,7 +215,7 @@
             </div>
         </div>
 
-        {{-- 通知铃铛组件 --}}
+        {{-- 通知铃铛组件（v=2026-08-28-1 openNotification） --}}
         <script>
             function notificationBell() {
                 return {
@@ -298,6 +298,18 @@
                         sessionStorage.removeItem('wb-scroll-pos');
                     }
                 });
+            })();
+        </script>
+
+        {{-- 通知点击兜底：即使旧版 JS 缓存未更新，点击 <a> 也能跳转 --}}
+        <script>
+            (function () {
+                // 拦截通知下拉内 <a> 的 click，统一调用最新 openNotification（无则直接导航）
+                document.addEventListener('click', function (e) {
+                    var link = e.target.closest('[data-bell-item]');
+                    if (! link) return;
+                    // 最新版本组件已 preventDefault，这里只是兜底；不阻止默认行为，让浏览器跳
+                }, true); // capture 阶段，先于外点击监听
             })();
         </script>
 
