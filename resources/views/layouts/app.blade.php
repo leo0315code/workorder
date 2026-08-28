@@ -75,18 +75,18 @@
                         </button>
                     </div>
 
-                    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                    <nav class="flex-1 min-h-0 px-2 py-3 overflow-y-auto">
                         @foreach ($nav as $item)
                             <a href="{{ route($item['route'], $item['params'] ?? []) }}"
-                               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition
+                               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition
                                       {{ $item['active'] ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100' }}">
                                 <x-nav-icon :name="$item['icon']" class="w-5 h-5 shrink-0" />
-                                {{ $item['label'] }}
+                                <span class="truncate">{{ $item['label'] }}</span>
                             </a>
                         @endforeach
                     </nav>
 
-                    <div class="p-4 border-t border-gray-200 dark:border-gray-800">
+                    <div class="p-3 border-t border-gray-200 dark:border-gray-800 shrink-0">
                         <div class="flex items-center gap-3">
                             <div class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-300 font-semibold text-sm shrink-0">
                                 {{ strtoupper(mb_substr($user?->name ?? '?', 0, 1)) }}
