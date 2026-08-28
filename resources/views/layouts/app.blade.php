@@ -129,12 +129,12 @@
                                 </button>
 
                                 <div x-show="open" x-cloak x-transition @click.outside="open = false"
-                                     class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2.5rem)] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl overflow-hidden z-50">
+                                     class="absolute right-0 mt-2 w-[22rem] max-w-[calc(100vw-1rem)] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl z-50">
                                     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                                         <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">通知</span>
                                         <button @click="markAllRead()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">全部已读</button>
                                     </div>
-                                    <div class="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+                                    <div class="max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
                                         <template x-if="items.length === 0">
                                             <div class="py-10 text-center text-sm text-gray-400">暂无通知</div>
                                         </template>
@@ -142,19 +142,19 @@
                                             {{-- 静态 href 兜底：相对路径，跟当前域名走，Alpine 加载后被 :href 覆盖 --}}
                                             <a href="/notifications"
                                                :href="n.link || '/notifications'" target="_self" data-bell-item
-                                               class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer"
-                                               @mousedown="if(!n.is_read) markRead(n.id)">
-                                                <div class="flex items-start gap-2">
-                                                    <span class="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" :class="n.is_read ? 'bg-gray-200 dark:bg-gray-700' : 'bg-indigo-500'"></span>
+                                               class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer">
+                                                <div class="flex items-start gap-2.5">
+                                                    <span class="mt-1.5 w-2 h-2 rounded-full shrink-0" :class="n.is_read ? 'bg-gray-200 dark:bg-gray-700' : 'bg-indigo-500'"></span>
                                                     <div class="min-w-0 flex-1">
-                                                        <p class="text-sm text-gray-800 dark:text-gray-200" x-text="n.title"></p>
-                                                        <p class="text-xs text-gray-400 mt-0.5 break-all" x-text="n.body || ''"></p>
+                                                        <p class="text-sm text-gray-800 dark:text-gray-200 break-words" x-text="n.title"></p>
+                                                        <p class="text-xs text-gray-400 mt-1 break-words line-clamp-2" x-text="n.body || ''"></p>
+                                                        <p class="text-[10px] text-gray-300 dark:text-gray-600 mt-1" x-text="formatTime(n.created_at)"></p>
                                                     </div>
                                                 </div>
                                             </a>
                                         </template>
                                     </div>
-                                    <a href="{{ route('notifications.index') }}"
+                                    <a href="/notifications"
                                        class="block text-center py-2.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/60">
                                         查看全部通知
                                     </a>
@@ -216,13 +216,26 @@
             </div>
         </div>
 
-        {{-- 通知铃铛组件（v=2026-08-28-1 openNotification） --}}
+        {{-- 通知铃铛组件（v=2026-08-28-2 formatTime + break-words） --}}
         <script>
             function notificationBell() {
                 return {
                     open: false,
                     unread: 0,
                     items: [],
+                    formatTime(s) {
+                        if (! s) return '';
+                        const d = new Date(s.replace(/-/g, '/'));
+                        if (isNaN(d)) return '';
+                        const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+                        if (diff < 60) return '刚刚';
+                        if (diff < 3600) return Math.floor(diff/60) + ' 分钟前';
+                        if (diff < 86400) return Math.floor(diff/3600) + ' 小时前';
+                        if (diff < 86400 * 7) return Math.floor(diff/86400) + ' 天前';
+                        const m = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        return m + '-' + day;
+                    },
                     init() {
                         this.refresh();
                     },
