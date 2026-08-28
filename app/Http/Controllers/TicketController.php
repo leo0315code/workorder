@@ -44,6 +44,13 @@ class TicketController extends Controller
     public function index(Request $request): View
     {
         $tickets = $this->filterQuery($request)->orderByDesc('updated_at')->paginate(15)->withQueryString();
+        $activeFilterCount = count(array_filter([
+            $request->input('q'), $request->input('status'), $request->input('priority'),
+            $request->input('category'), $request->input('assignee'),
+            $request->boolean('mine') ? 1 : null,
+            $request->boolean('unassigned') ? 1 : null,
+            $request->boolean('overdue') ? 1 : null,
+        ]));
 
         $categories = Category::where('is_active', true)->orderBy('name')->get();
         $products = Product::where('is_active', true)->orderBy('name')->get();
@@ -63,7 +70,7 @@ class TicketController extends Controller
         ];
         $onlineAgentIds = AutoAssignService::onlineUids() ?: [];
 
-        return view('tickets.index', compact('tickets', 'categories', 'products', 'agents', 'statuses', 'priorities', 'wsConfig', 'onlineAgentIds'));
+        return view('tickets.index', compact('tickets', 'categories', 'products', 'agents', 'statuses', 'priorities', 'wsConfig', 'onlineAgentIds', 'activeFilterCount'));
     }
 
     /**

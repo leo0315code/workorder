@@ -6,9 +6,24 @@
     @php $isAgent = auth()->user()->isAgent(); @endphp
 
     <div x-data="ticketList({{ json_encode($wsConfig) }})">
-        {{-- 筛选 --}}
-        <form method="GET" action="{{ route('tickets.index') }}" class="mb-5">
-            <div class="flex flex-wrap items-center gap-3">
+        {{-- 筛选（移动端折叠：默认收起，已选筛选项时自动展开） --}}
+        <form method="GET" action="{{ route('tickets.index') }}" x-data="{ open: {{ $activeFilterCount > 0 ? 'true' : 'false' }}, count: {{ (int) $activeFilterCount }} }" class="mb-5">
+            {{-- 移动端折叠触发 --}}
+            <div class="md:hidden mb-3 flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 shadow-sm">
+                <button type="button" @click="open = !open"
+                        class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 7.994 3Z" /></svg>
+                    筛选
+                    <span x-show="count > 0" class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-indigo-600 text-white text-[11px] font-semibold" x-text="count"></span>
+                </button>
+                @if ($activeFilterCount > 0)
+                    <a href="{{ route('tickets.index') }}" class="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">重置</a>
+                @endif
+            </div>
+
+            {{-- 筛选区：移动端折叠，桌面始终显示 --}}
+            <div :class="open ? 'block' : 'hidden md:block'">
+            <div class="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm md:border-0 md:bg-transparent md:p-0 md:shadow-none">
                 <div class="relative">
                     <input type="text" name="q" value="{{ request('q') }}" placeholder="搜索编号 / 主题 / 描述"
                            class="w-64 rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -65,6 +80,7 @@
 
                 <button type="submit" class="rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2 text-sm font-medium text-white dark:text-gray-900 hover:bg-gray-700">筛选</button>
                 <a href="{{ route('tickets.index') }}" class="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">重置</a>
+            </div>
             </div>
         </form>
 

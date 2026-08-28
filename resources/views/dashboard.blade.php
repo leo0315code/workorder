@@ -92,8 +92,21 @@
 
     {{-- 最近工单 --}}
     <x-panel title="最近工单" icon="list" class="mt-6">
+        <div class="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 mb-4 text-sm w-fit">
+            <a href="{{ route('dashboard', ['scope' => 'all']) }}"
+               class="rounded-md px-3 py-1 transition {{ ($scope ?? 'all') === 'all' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">全部</a>
+            <a href="{{ route('dashboard', ['scope' => 'open']) }}"
+               class="rounded-md px-3 py-1 transition {{ ($scope ?? 'all') === 'open' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">待处理</a>
+            <a href="{{ route('dashboard', ['scope' => 'resolved']) }}"
+               class="rounded-md px-3 py-1 transition {{ ($scope ?? 'all') === 'resolved' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">已解决</a>
+        </div>
         @if ($recent->isEmpty())
-            <p class="text-sm text-gray-400 py-6 text-center">暂无工单</p>
+            <p class="text-sm text-gray-400 py-6 text-center">
+                @if (($scope ?? 'all') === 'open') 当前没有待处理工单 🎉
+                @elseif (($scope ?? 'all') === 'resolved') 暂无已解决工单
+                @else 暂无工单
+                @endif
+            </p>
         @else
             {{-- 移动端卡片 --}}
             <div class="md:hidden space-y-3">

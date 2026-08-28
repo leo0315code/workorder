@@ -36,10 +36,15 @@ class DashboardController extends Controller
         $byCategory = Ticket::with('category')->get()->groupBy(fn ($t) => $t->category?->name ?? '未分类')
             ->map(fn ($g) => $g->count());
 
-        $recent = Ticket::with(['user', 'category', 'assignee'])
-            ->orderByDesc('updated_at')
-            ->limit(8)
-            ->get();
+        // 「最近工单」按 scope 过滤：all/open/resolved
+        $scope = request('scope', 'all');
+        $recentQuery = Ticket::with(['user', 'category', 'assignee'])->orderByDesc('updated_at');
+        if ($scope === 'open') {
+            $recentQuery->whereIn('status', [Ticket::STATUS_OPEN, Ticket::STATUS_PENDING, Ticket::STATUS_IN_PROGRESS]);
+        } elseif ($scope === 'resolved') {
+            $recentQuery->whereIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]);
+        }
+        $recent = $recentQuery->limit(8)->get();
 
         $myOpen = Ticket::where('assignee_id', Auth::id())
             ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
@@ -50,7 +55,7 @@ class DashboardController extends Controller
 
         return view('dashboard', compact(
             'total', 'open', 'resolvedToday', 'overdue',
-            'byStatus', 'byPriority', 'byCategory', 'recent', 'myOpen', 'unassigned'
+            'byStatus', 'byPriority', 'byCategory', 'recent', 'myOpen', 'unassigned', 'scope'
         ));
     }
 
