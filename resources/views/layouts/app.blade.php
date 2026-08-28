@@ -133,7 +133,7 @@
 
                             {{-- 通知下拉：与铃铛同属外层 flex 容器，absolute 不再被压缩到 40px --}}
                             <div x-show="open" x-cloak x-transition @click.outside="open = false"
-                                 class="absolute right-0 top-full mt-2 w-[22rem] max-w-[calc(100vw-1rem)] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl z-50">
+                                 style="width:352px!important;min-width:352px;max-width:calc(100vw - 1rem);box-sizing:border-box;" class="absolute right-0 top-full mt-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl z-50">
                                 <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                                     <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">通知</span>
                                     <button @click="markAllRead()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">全部已读</button>
