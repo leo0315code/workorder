@@ -5,6 +5,12 @@
 @section('content')
     @php $isAgent = auth()->user()->isAgent(); @endphp
 
+    @if (! $isAgent && ! \App\Services\SettingService::isWorkTime())
+        <div class="mb-5 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+            当前为<strong>非工作时间</strong>（工作时间：{{ \App\Services\SettingService::workHoursText() }}），暂不能提交工单，请在工作时间提交。
+        </div>
+    @endif
+
     <div class="max-w-3xl">
         <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data"
               x-data="{ files: [] }">
@@ -65,9 +71,14 @@
                             <select name="assignee_id" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
                                 <option value="">暂不指派</option>
                                 @foreach ($agents as $a)
-                                    <option value="{{ $a->id }}" @selected((string) old('assignee_id') === (string) $a->id)>{{ $a->name }}（{{ \App\Models\User::ROLES[$a->role] }}）</option>
+                                    <option value="{{ $a->id }}" @selected((string) old('assignee_id') === (string) $a->id)>
+                                        {{ $a->name }}（{{ \App\Models\User::ROLES[$a->role] }}）{{ in_array($a->id, $onlineAgentIds, true) ? '· 在线' : '' }}
+                                    </option>
                                 @endforeach
                             </select>
+                            @if (empty($onlineAgentIds))
+                                <p class="mt-1 text-xs text-gray-400">当前没有客服在线，自动分配将暂停（工单进入待认领）</p>
+                            @endif
                         </div>
                     </div>
                 @endif

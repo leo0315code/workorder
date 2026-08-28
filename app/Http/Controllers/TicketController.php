@@ -60,8 +60,9 @@ class TicketController extends Controller
             'pollUrl' => route('tickets.changes'),
             'lastUpdated' => $tickets->first()?->updated_at?->toIso8601String() ?? now()->toIso8601String(),
         ];
+        $onlineAgentIds = AutoAssignService::onlineUids() ?: [];
 
-        return view('tickets.index', compact('tickets', 'categories', 'products', 'agents', 'statuses', 'priorities', 'wsConfig'));
+        return view('tickets.index', compact('tickets', 'categories', 'products', 'agents', 'statuses', 'priorities', 'wsConfig', 'onlineAgentIds'));
     }
 
     /**
@@ -140,8 +141,9 @@ class TicketController extends Controller
         // 客户带出自己的客户档案（若有）
         $customers = $user->isAgent() ? Customer::orderBy('company')->get() : collect();
         $agents = $user->isAgent() ? User::whereIn('role', ['agent', 'admin'])->orderBy('name')->get() : collect();
+        $onlineAgentIds = AutoAssignService::onlineUids() ?: [];
 
-        return view('tickets.create', compact('categories', 'products', 'priorities', 'customers', 'agents'));
+        return view('tickets.create', compact('categories', 'products', 'priorities', 'customers', 'agents', 'onlineAgentIds'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -160,6 +162,13 @@ class TicketController extends Controller
 
         $user = Auth::user();
         $isAgent = $user->isAgent();
+
+        // 非工作时间：客户不可自助提交（客服不受限）
+        if (! $isAgent && ! SettingService::isWorkTime()) {
+            return back()->withInput()->withErrors([
+                'subject' => '当前为非工作时间（工作时间：'.SettingService::workHoursText().'），暂不能提交工单，请在工作时间提交。',
+            ]);
+        }
 
         // 负责人：客服可手动指定；未指定且开启自动分配时按负载均衡指派
         $assigneeId = $isAgent && $request->filled('assignee_id')
@@ -235,6 +244,7 @@ class TicketController extends Controller
         $agents = $isAgent
             ? User::whereIn('role', ['agent', 'admin'])->orderBy('name')->get()
             : collect();
+        $onlineAgentIds = AutoAssignService::onlineUids() ?: [];
 
         // WebSocket 鉴权参数
         $wsUid = Auth::id();
@@ -252,7 +262,7 @@ class TicketController extends Controller
             'isAgent' => $isAgent,
         ];
 
-        return view('tickets.show', compact('ticket', 'agents', 'roomConfig', 'quickReplies'));
+        return view('tickets.show', compact('ticket', 'agents', 'roomConfig', 'quickReplies', 'onlineAgentIds'));
     }
 
     public function reply(Request $request, Ticket $ticket): RedirectResponse

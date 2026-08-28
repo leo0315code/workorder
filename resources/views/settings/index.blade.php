@@ -25,7 +25,7 @@
                         <input type="checkbox" name="auto_assign" value="1" @checked($settings['auto_assign'] === '1')
                                class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
                         新工单自动分配
-                        <span class="text-xs text-gray-400">（按未完成工单数最少的客服指派；关闭后新工单进入待认领）</span>
+                        <span class="text-xs text-gray-400">（仅分配给在线客服，按未完成工单数最少优先；关闭后新工单进入待认领）</span>
                     </label>
 
                     <p class="mt-5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">SLA 时限（小时）</p>
@@ -42,6 +42,44 @@
                                        class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
                             </div>
                         @endforeach
+                    </div>
+                </div>
+
+                {{-- 工作时间 --}}
+                <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">工作时间</h3>
+
+                    <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                        <input type="checkbox" name="work_hours_enabled" value="1" @checked($settings['work_hours_enabled'] === '1')
+                               class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                        启用工作时间限制
+                        <span class="text-xs text-gray-400">（非工作时间客户不能提交工单，客服不受限）</span>
+                    </label>
+
+                    <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">开始时间</label>
+                            <input type="time" name="work_start" value="{{ $settings['work_start'] }}"
+                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">结束时间</label>
+                            <input type="time" name="work_end" value="{{ $settings['work_end'] }}"
+                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">工作日</label>
+                            <div class="flex flex-wrap gap-3 pt-1.5 text-sm text-gray-700 dark:text-gray-300">
+                                @foreach ([1 => '一', 2 => '二', 3 => '三', 4 => '四', 5 => '五', 6 => '六', 7 => '日'] as $d => $label)
+                                    <label class="inline-flex items-center gap-1">
+                                        <input type="checkbox" name="work_days[]" value="{{ $d }}"
+                                               @checked(in_array((string) $d, explode(',', (string) $settings['work_days']), true))
+                                               class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                                        周{{ $label }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
                 </div>
 

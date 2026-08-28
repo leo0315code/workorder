@@ -250,5 +250,21 @@
                 };
             }
         </script>
+
+        {{-- 全局实时连接：保持在线状态（供自动分配判断）+ 铃铛/列表实时 --}}
+        @auth
+            <script>
+                (function () {
+                    try {
+                        window.__ticketRT = new TicketRealtime({
+                            wsUrl: '{{ env('VITE_WS_URL', 'ws://127.0.0.1:6001') }}',
+                            uid: {{ (int) auth()->id() }},
+                            token: '{{ \App\Services\WebSocketService::signature((int) auth()->id(), ['ticket.all']) }}',
+                            rooms: ['ticket.all'],
+                        });
+                    } catch (e) { /* 实时不可用则仅轮询兜底 */ }
+                })();
+            </script>
+        @endauth
     </body>
 </html>

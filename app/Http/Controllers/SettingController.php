@@ -20,6 +20,10 @@ class SettingController extends Controller
             'sla_normal' => SettingService::get('sla_normal', 48),
             'sla_high' => SettingService::get('sla_high', 24),
             'sla_urgent' => SettingService::get('sla_urgent', 8),
+            'work_hours_enabled' => SettingService::get('work_hours_enabled', '1'),
+            'work_start' => SettingService::get('work_start', '09:00'),
+            'work_end' => SettingService::get('work_end', '18:00'),
+            'work_days' => SettingService::get('work_days', '1,2,3,4,5'),
         ];
 
         return view('settings.index', compact('settings'));
@@ -34,6 +38,11 @@ class SettingController extends Controller
             'sla_normal' => ['required', 'integer', 'min:1', 'max:720'],
             'sla_high' => ['required', 'integer', 'min:1', 'max:720'],
             'sla_urgent' => ['required', 'integer', 'min:1', 'max:720'],
+            'work_hours_enabled' => ['nullable', 'boolean'],
+            'work_start' => ['required', 'date_format:H:i'],
+            'work_end' => ['required', 'date_format:H:i'],
+            'work_days' => ['required', 'array', 'min:1'],
+            'work_days.*' => ['in:1,2,3,4,5,6,7'],
         ]);
 
         SettingService::setMany([
@@ -43,6 +52,10 @@ class SettingController extends Controller
             'sla_normal' => $data['sla_normal'],
             'sla_high' => $data['sla_high'],
             'sla_urgent' => $data['sla_urgent'],
+            'work_hours_enabled' => $request->boolean('work_hours_enabled') ? '1' : '0',
+            'work_start' => $data['work_start'],
+            'work_end' => $data['work_end'],
+            'work_days' => implode(',', $data['work_days']),
         ]);
 
         return redirect()->route('admin.settings')->with('success', '系统设置已保存');

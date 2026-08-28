@@ -48,6 +48,10 @@ class DatabaseSeeder extends Seeder
             'sla_normal' => '48',
             'sla_high' => '24',
             'sla_urgent' => '8',
+            'work_hours_enabled' => '1',
+            'work_start' => '09:00',
+            'work_end' => '18:00',
+            'work_days' => '1,2,3,4,5',
         ];
         foreach ($settings as $key => $value) {
             \App\Models\Setting::updateOrCreate(['setting_key' => $key], ['value' => $value]);

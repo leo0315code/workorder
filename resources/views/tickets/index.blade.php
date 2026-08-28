@@ -82,7 +82,7 @@
                     <select name="assignee_id" x-show="batchAction === 'assign'" class="rounded-lg border-indigo-300 dark:border-indigo-500/40 dark:bg-gray-900 text-sm">
                         <option value="">选择客服…</option>
                         @foreach ($agents as $a)
-                            <option value="{{ $a->id }}">{{ $a->name }}</option>
+                            <option value="{{ $a->id }}">{{ $a->name }}{{ in_array($a->id, $onlineAgentIds, true) ? ' · 在线' : '' }}</option>
                         @endforeach
                     </select>
                     <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white" onclick="return confirm('确认执行批量操作？');">执行</button>

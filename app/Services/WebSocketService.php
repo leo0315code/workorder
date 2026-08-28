@@ -64,7 +64,7 @@ class WebSocketService
         return json_encode(array_merge(['ts' => time()], $payload), JSON_UNESCAPED_UNICODE);
     }
 
-    private static function boot(): void
+    public static function boot(): void
     {
         // 注意：GatewayClient 默认 registerAddress 为 127.0.0.1:1236（非空），必须无条件覆盖
         Gateway::$registerAddress = (string) config('websocket.gateway_client_register');

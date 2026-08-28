@@ -286,7 +286,7 @@
                             <select name="assignee_id" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
                                 <option value="">未指派</option>
                                 @foreach ($agents as $a)
-                                    <option value="{{ $a->id }}" @selected($ticket->assignee_id === $a->id)>{{ $a->name }}</option>
+                                    <option value="{{ $a->id }}" @selected($ticket->assignee_id === $a->id)>{{ $a->name }}{{ in_array($a->id, $onlineAgentIds, true) ? ' · 在线' : '' }}</option>
                                 @endforeach
                             </select>
                         </div>
