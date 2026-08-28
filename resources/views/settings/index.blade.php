@@ -83,6 +83,61 @@
                     </div>
                 </div>
 
+                {{-- 短信通道 --}}
+                <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">短信通道</h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">发送驱动</label>
+                            <select name="sms_driver" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                                <option value="demo" @selected($settings['sms_driver'] === 'demo')>demo（本地联调，验证码直显）</option>
+                                <option value="aliyun" @selected($settings['sms_driver'] === 'aliyun')>阿里云短信</option>
+                                <option value="tencent" @selected($settings['sms_driver'] === 'tencent')>腾讯云短信</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                                <input type="checkbox" name="sms_allow_demo_code" value="1" @checked($settings['sms_allow_demo_code'] === '1')
+                                       class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                                允许万能验证码 123456
+                                <span class="text-xs text-gray-400">（仅测试用，上线务必关闭）</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="text-xs font-medium text-gray-400 mb-2">阿里云（AccessKey / 签名 / 模板）</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="text" name="sms_aliyun_access_key_id" value="{{ $settings['sms_aliyun_access_key_id'] }}" placeholder="AccessKey ID（留空不修改）"
+                                   class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                            <input type="password" name="sms_aliyun_access_key_secret" value="{{ $settings['sms_aliyun_access_key_secret'] }}" placeholder="AccessKey Secret（留空不修改）"
+                                   class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                            <input type="text" name="sms_aliyun_sign_name" value="{{ $settings['sms_aliyun_sign_name'] }}" placeholder="短信签名"
+                                   class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                            <input type="text" name="sms_aliyun_template_code" value="{{ $settings['sms_aliyun_template_code'] }}" placeholder="模板编码（如 SMS_123456）"
+                                   class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="text-xs font-medium text-gray-400 mb-2">腾讯云（SecretId/SecretKey/SDKAppID/签名/模板）</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="text" name="sms_tencent_secret_id" value="{{ $settings['sms_tencent_secret_id'] }}" placeholder="SecretId（留空不修改）"
+                                   class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                            <input type="password" name="sms_tencent_secret_key" value="{{ $settings['sms_tencent_secret_key'] }}" placeholder="SecretKey（留空不修改）"
+                                   class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                            <input type="text" name="sms_tencent_sdk_app_id" value="{{ $settings['sms_tencent_sdk_app_id'] }}" placeholder="SDKAppID"
+                                   class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                            <input type="text" name="sms_tencent_sign_name" value="{{ $settings['sms_tencent_sign_name'] }}" placeholder="短信签名"
+                                   class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                            <input type="text" name="sms_tencent_template_id" value="{{ $settings['sms_tencent_template_id'] }}" placeholder="模板 ID"
+                                   class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                        </div>
+                    </div>
+                    <p class="mt-2 text-xs text-gray-400">驱动与密钥保存在数据库（settings 表），优先于 .env；生产接入需在服务商控制台开通短信服务。</p>
+                </div>
+
                 {{-- 运行状态（只读）--}}
                 <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">运行状态</h3>
@@ -91,7 +146,7 @@
                             <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> 实时服务 ws://127.0.0.1:6001
                         </span>
                         <span class="text-gray-400">后台前缀：/{{ config('app.admin_url') }}</span>
-                        <span class="text-gray-400">短信通道：{{ config('services.sms.driver', 'demo') }}</span>
+                        <span class="text-gray-400">短信通道：{{ \App\Services\SmsService::driver() }}</span>
                         <span class="text-gray-400">微信登录：{{ \App\Services\WechatService::enabled() ? '真实模式' : '演示模式' }}</span>
                     </div>
                 </div>

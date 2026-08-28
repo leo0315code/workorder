@@ -9,13 +9,27 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
- * 短信验证码服务
+ * 短信验证码服务（配置优先读系统设置 settings，未设置时兜底 .env/config）
  * - driver=demo   ：不真正发送，验证码写入日志并随接口返回（本地联调用）
- * - driver=log    ：仅写日志
- * - driver=aliyun/tencent ：需配置对应 SDK（生产接入点，见 .env 注释）
+ * - driver=aliyun/tencent ：生产接入点（需在系统设置页填写密钥/签名/模板）
  */
 class SmsService
 {
+    /**
+     * 读取短信配置：settings 优先，兜底 config/services.php
+     */
+    public static function cfg(string $key, mixed $default = null): mixed
+    {
+        $fromSettings = SettingService::get('sms_'.$key);
+
+        return $fromSettings !== null ? $fromSettings : config('services.sms.'.$key, $default);
+    }
+
+    public static function driver(): string
+    {
+        return (string) self::cfg('driver', 'demo');
+    }
+
     public static function sendCode(string $phone, string $ip = null): string
     {
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -27,10 +41,10 @@ class SmsService
             'ip' => $ip,
         ]);
 
-        $driver = config('services.sms.driver', 'demo');
+        $driver = self::driver();
 
         if ($driver === 'aliyun' || $driver === 'tencent') {
-            // 生产接入点：调用阿里云/腾讯云短信 SDK
+            // 生产接入点：调用阿里云/腾讯云短信 SDK（参数已可在系统设置页维护）
             // self::sendViaProvider($phone, $code);
             Log::info("sms via {$driver} not wired, code={$code} phone={$phone}");
         } else {
@@ -42,8 +56,8 @@ class SmsService
 
     public static function verify(string $phone, string $code): bool
     {
-        // 演示万能验证码（生产务必移除）
-        if (config('services.sms.allow_demo_code') && $code === '123456') {
+        // 演示万能验证码（生产请关闭）
+        if ((bool) self::cfg('allow_demo_code', true) && $code === '123456') {
             return true;
         }
 

@@ -42,7 +42,7 @@ class PhoneLoginController extends Controller
 
         // 演示模式：直接把验证码返回给前端，方便本地联调
         $payload = ['message' => '验证码已发送', 'expires_in' => 300];
-        if (config('services.sms.driver', 'demo') === 'demo') {
+        if (SmsService::driver() === 'demo') {
             $payload['debug_code'] = $code;
         }
 
