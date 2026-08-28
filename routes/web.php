@@ -23,6 +23,10 @@ Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+Route::get('/dashboard/recent', [DashboardController::class, 'recentFragment'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard.recent');
+
 // ---- 工单（所有登录用户） ----
 // 注意：export/batch/changes 必须声明在 tickets 资源路由之前，避免被 {ticket} 匹配
 Route::middleware(['auth', 'verified'])->group(function () {

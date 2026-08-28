@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
@@ -18,6 +20,41 @@ class DashboardController extends Controller
         }
 
         return $this->customerDashboard();
+    }
+
+    /**
+     * 「最近工单」区块的局部刷新接口（AJAX，不整页刷新）
+     */
+    public function recentFragment(Request $request): View
+    {
+        $user = Auth::user();
+        $data = $this->recentData($request->input('scope', 'all'));
+
+        return view('dashboard.partials.recent', $data);
+    }
+
+    /**
+     * 计算「最近工单」查询与统计数据
+     */
+    protected function recentData(string $scope): array
+    {
+        $scope = in_array($scope, ['all', 'open', 'resolved'], true) ? $scope : 'all';
+
+        $byStatus = Ticket::selectRaw('status, count(*) as c')->groupBy('status')->pluck('c', 'status');
+        $total = Ticket::count();
+
+        $recentQuery = Ticket::with(['user', 'category', 'assignee'])->orderByDesc('updated_at');
+        if ($scope === 'open') {
+            $recentQuery->whereIn('status', [Ticket::STATUS_OPEN, Ticket::STATUS_PENDING, Ticket::STATUS_IN_PROGRESS]);
+        } elseif ($scope === 'resolved') {
+            $recentQuery->whereIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]);
+        }
+        $recent = $recentQuery->limit(10)->get();
+
+        $openCount = ($byStatus['open'] ?? 0) + ($byStatus['pending'] ?? 0) + ($byStatus['in_progress'] ?? 0);
+        $resolvedCount = ($byStatus['resolved'] ?? 0) + ($byStatus['closed'] ?? 0);
+
+        return compact('scope', 'recent', 'total', 'openCount', 'resolvedCount', 'byStatus');
     }
 
     protected function staffDashboard()
@@ -38,13 +75,8 @@ class DashboardController extends Controller
 
         // 「最近工单」按 scope 过滤：all/open/resolved
         $scope = request('scope', 'all');
-        $recentQuery = Ticket::with(['user', 'category', 'assignee'])->orderByDesc('updated_at');
-        if ($scope === 'open') {
-            $recentQuery->whereIn('status', [Ticket::STATUS_OPEN, Ticket::STATUS_PENDING, Ticket::STATUS_IN_PROGRESS]);
-        } elseif ($scope === 'resolved') {
-            $recentQuery->whereIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]);
-        }
-        $recent = $recentQuery->limit(10)->get();
+        $recentData = $this->recentData($scope);
+        $recent = $recentData['recent'];
 
         $myOpen = Ticket::where('assignee_id', Auth::id())
             ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
@@ -53,9 +85,9 @@ class DashboardController extends Controller
             ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
             ->count();
 
-        return view('dashboard', compact(
-            'total', 'open', 'resolvedToday', 'overdue',
-            'byStatus', 'byPriority', 'byCategory', 'recent', 'myOpen', 'unassigned', 'scope'
+        return view('dashboard', array_merge(
+            compact('total', 'open', 'resolvedToday', 'overdue', 'byStatus', 'byPriority', 'byCategory', 'recent', 'myOpen', 'unassigned', 'scope'),
+            $recentData
         ));
     }
 

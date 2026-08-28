@@ -90,91 +90,36 @@
         @endif
     </div>
 
-    {{-- 最近工单 --}}
+    {{-- 最近工单（AJAX 局部刷新：点 tab 不整页刷新） --}}
     <x-panel id="recent" title="最近工单" icon="list" class="mt-6">
-        <form method="GET" action="{{ route('dashboard') }}"
-              onsubmit="this.action = '{{ route('dashboard') }}' + '#recent';"
-              class="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 mb-4 text-sm w-fit">
-            <button type="submit" name="scope" value="all"
-                    class="inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer {{ ($scope ?? 'all') === 'all' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">全部<span class="text-xs opacity-70">({{ $total }})</span></button>
-            <button type="submit" name="scope" value="open"
-                    class="inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer {{ ($scope ?? 'all') === 'open' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">待处理<span class="text-xs opacity-70">({{ $byStatus['open'] ?? 0 }}+{{ $byStatus['pending'] ?? 0 }}+{{ $byStatus['in_progress'] ?? 0 }})</span></button>
-            <button type="submit" name="scope" value="resolved"
-                    class="inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer {{ ($scope ?? 'all') === 'resolved' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">已解决<span class="text-xs opacity-70">({{ ($byStatus['resolved'] ?? 0) + ($byStatus['closed'] ?? 0) }})</span></button>
-        </form>
-        @if ($recent->isEmpty())
-            <p class="text-sm text-gray-400 py-6 text-center">
-                @if (($scope ?? 'all') === 'open') 当前没有待处理工单 🎉
-                @elseif (($scope ?? 'all') === 'resolved') 暂无已解决工单
-                @else 暂无工单
-                @endif
-            </p>
-        @else
-            {{-- 移动端卡片 --}}
-            <div class="md:hidden space-y-3">
-                @foreach ($recent as $t)
-                    <a href="{{ route('tickets.show', $t) }}" class="block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm active:scale-[0.99] transition">
-                        <div class="flex items-center justify-between">
-                            <span class="font-mono text-xs text-indigo-600 dark:text-indigo-400">{{ $t->no }}</span>
-                            <div class="flex items-center gap-1.5">
-                                <x-ticket-priority :priority="$t->priority" />
-                                @if ($t->isOverdue())
-                                    <span class="inline-flex rounded-md bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-300 ring-1 ring-inset ring-red-200 dark:ring-red-500/30">超时</span>
-                                @endif
-                            </div>
-                        </div>
-                        <p class="mt-2 font-medium text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">{{ $t->subject }}</p>
-                        <div class="mt-2.5 flex items-center justify-between">
-                            <span><x-ticket-status :status="$t->status" /></span>
-                            <span class="text-xs text-gray-400">{{ $t->updated_at?->format('m-d H:i') }}</span>
-                        </div>
-                        <div class="mt-2 text-xs text-gray-400 flex items-center gap-2">
-                            <span>{{ $t->user?->name ?? '—' }}</span>
-                            <span>·</span>
-                            <span class="ml-auto">{{ $t->assignee?->name ?? '待认领' }}</span>
-                        </div>
-                    </a>
-                @endforeach
-            </div>
-
-            {{-- 桌面表格 --}}
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-200 dark:border-gray-800">
-                            <th class="py-2.5 pr-4">编号</th>
-                            <th class="py-2.5 pr-4">主题</th>
-                            <th class="py-2.5 pr-4">状态</th>
-                            <th class="py-2.5 pr-4">优先级</th>
-                            @if ($isAgent)<th class="py-2.5 pr-4">客户</th>@endif
-                            <th class="py-2.5 pr-4">负责人</th>
-                            <th class="py-2.5">更新时间</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($recent as $t)
-                            <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                                <td class="py-3 pr-4 font-mono text-xs text-indigo-600 dark:text-indigo-400">
-                                    <a href="{{ route('tickets.show', $t) }}">{{ $t->no }}</a>
-                                </td>
-                                <td class="py-3 pr-4 max-w-[260px] truncate">
-                                    <a href="{{ route('tickets.show', $t) }}" class="hover:underline">{{ $t->subject }}</a>
-                                </td>
-                                <td class="py-3 pr-4"><x-ticket-status :status="$t->status" /></td>
-                                <td class="py-3 pr-4"><x-ticket-priority :priority="$t->priority" /></td>
-                                @if ($isAgent)
-                                    <td class="py-3 pr-4 text-gray-600 dark:text-gray-400">{{ $t->user?->name ?? '-' }}</td>
-                                @endif
-                                <td class="py-3 pr-4 text-gray-600 dark:text-gray-400">{{ $t->assignee?->name ?? '-' }}</td>
-                                <td class="py-3 text-gray-400">{{ $t->updated_at?->format('m-d H:i') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
-        <div class="mt-4">
-            <a href="{{ route('tickets.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">查看全部工单 →</a>
+        <div id="recent-panel">
+            @include('dashboard.partials.recent')
         </div>
     </x-panel>
+
+    <script>
+        (function () {
+            // data-scope 按钮点击 → 局部刷新最近工单区块（不整页刷新）
+            document.addEventListener('click', function (e) {
+                var btn = e.target.closest('[data-scope]');
+                if (! btn || ! window.__recentPanel) return;
+                var scope = btn.getAttribute('data-scope');
+                window.__recentPanel(scope);
+            });
+        })();
+
+        function loadRecentPanel(scope) {
+            var panel = document.getElementById('recent-panel');
+            if (! panel) return;
+            fetch('{{ url('dashboard/recent') }}?scope=' + encodeURIComponent(scope), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { if (! r.ok) throw new Error('fail'); return r.text(); })
+                .then(function (html) {
+                    panel.innerHTML = html;
+                    history.replaceState(null, '', '?scope=' + scope + '#recent');
+                })
+                .catch(function () { window.location.href = '{{ route('dashboard') }}?scope=' + encodeURIComponent(scope); });
+        }
+        window.__recentPanel = loadRecentPanel;
+    </script>
+
 @endsection
