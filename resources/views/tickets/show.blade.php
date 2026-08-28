@@ -28,7 +28,7 @@
             </div>
 
             {{-- 工单信息卡 --}}
-            <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+            <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
@@ -75,7 +75,7 @@
             {{-- 满意度评分 --}}
             @php $rating = $ticket->rating; @endphp
             @if (! $isAgent && in_array($ticket->status, ['resolved', 'closed']) && ! $rating)
-                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6" x-data="{ stars: 0, comment: '' }">
+                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6" x-data="{ stars: 0, comment: '' }">
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">本次服务体验如何？</h3>
                     <form method="POST" action="{{ route('tickets.rate', $ticket) }}">
                         @csrf
@@ -95,7 +95,7 @@
                     </form>
                 </div>
             @elseif ($rating)
-                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6">
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">满意度评价</h3>
                     <div class="flex items-center gap-2">
                         <div class="flex gap-0.5">
@@ -122,7 +122,7 @@
             @endif
 
             {{-- 时间线 --}}
-            <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+            <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6">
                 <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">沟通记录</h3>
                 <div id="timeline" class="space-y-4" x-data="ticketRoom({{ json_encode($roomConfig) }})">
                     @foreach ($ticket->replies as $reply)
@@ -132,7 +132,7 @@
             </div>
 
             {{-- 回复表单 --}}
-            <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+            <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6">
                 <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">
                     {{ $isAgent ? '回复客户' : '补充说明 / 回复' }}
                 </h3>
@@ -192,7 +192,7 @@
 
             {{-- 操作记录（客服）--}}
             @if ($isAgent && $ticket->logs->isNotEmpty())
-                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6">
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">操作记录</h3>
                     <ol class="space-y-3">
                         @foreach ($ticket->logs as $log)
@@ -225,7 +225,7 @@
         {{-- 右侧：信息 + 客服操作 --}}
         <div class="space-y-6">
             {{-- 客户信息 --}}
-            <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
+            <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-5">
                 <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">客户信息</h3>
                 <dl class="space-y-3 text-sm">
                     <div class="flex justify-between gap-3">
@@ -276,7 +276,7 @@
 
             {{-- 客服操作面板 --}}
             @if ($isAgent)
-                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
+                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-5">
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">处理操作</h3>
 
                     @if (! $ticket->assignee_id)

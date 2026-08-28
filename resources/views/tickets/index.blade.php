@@ -84,7 +84,7 @@
                     <template x-for="id in selected" :key="id">
                         <input type="hidden" name="ticket_ids[]" :value="id">
                     </template>
-                    <span class="text-sm font-medium text-indigo-700 dark:text-indigo-300" x-text="'已选 ' + selected.length + ' 个'"></span>
+                    <span class="inline-flex items-center gap-1.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-500/30" x-text="'已选 ' + selected.length + ' 个'"></span>
                     <select name="action" class="rounded-lg border-indigo-300 dark:border-indigo-500/40 dark:bg-gray-900 text-sm" @change="batchAction = $event.target.value">
                         <option value="close">批量关闭</option>
                         <option value="assign">批量指派</option>
@@ -95,7 +95,7 @@
                             <option value="{{ $a->id }}">{{ $a->name }}{{ in_array($a->id, $onlineAgentIds, true) ? ' · 在线' : '' }}</option>
                         @endforeach
                     </select>
-                    <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white" onclick="return confirm('确认执行批量操作？');">执行</button>
+                    <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="return confirm('确认执行批量操作？');">执行</button>
                     <button type="button" @click="selected = []" class="text-sm text-indigo-500 hover:underline">取消</button>
                 </form>
             </template>
@@ -111,7 +111,7 @@
         </div>
 
         {{-- 列表 --}}
-        <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+        <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
@@ -136,7 +136,7 @@
                     </thead>
                     <tbody>
                         @forelse ($tickets as $t)
-                            <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                            <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-indigo-50/40 dark:hover:bg-indigo-500/5 transition">
                                 @if ($isAgent)
                                     <td class="py-3 pl-4 pr-2">
                                         <input type="checkbox" value="{{ $t->id }}" x-model="selected"

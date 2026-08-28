@@ -42,7 +42,7 @@
 
     <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
         {{-- 状态分布 --}}
-        <x-panel title="状态分布">
+        <x-panel title="状态分布" icon="chart">
             @foreach (['open' => '待处理', 'pending' => '待客户', 'in_progress' => '处理中', 'resolved' => '已解决', 'closed' => '已关闭'] as $key => $label)
                 @php $c = $byStatus[$key] ?? 0; $max = max(1, $byStatus->max()); @endphp
                 <div class="flex items-center gap-3 mb-3 last:mb-0">
@@ -57,7 +57,7 @@
         </x-panel>
 
         {{-- 优先级分布 --}}
-        <x-panel title="优先级分布">
+        <x-panel title="优先级分布" icon="chart">
             @foreach (['low' => '低', 'normal' => '普通', 'high' => '高', 'urgent' => '紧急'] as $key => $label)
                 @php $c = $byPriority[$key] ?? 0; $max = max(1, $byPriority->max()); @endphp
                 <div class="flex items-center gap-3 mb-3 last:mb-0">
@@ -73,7 +73,7 @@
 
         {{-- 分类分布（客服）--}}
         @if ($isAgent)
-            <x-panel title="分类分布">
+            <x-panel title="分类分布" icon="chart">
                 @foreach ($byCategory as $name => $c)
                     <div class="flex items-center gap-3 mb-2 last:mb-0">
                         <span class="w-24 truncate text-sm text-gray-600 dark:text-gray-400">{{ $name }}</span>
@@ -91,7 +91,7 @@
     </div>
 
     {{-- 最近工单 --}}
-    <x-panel title="最近工单" class="mt-6">
+    <x-panel title="最近工单" icon="list" class="mt-6">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
