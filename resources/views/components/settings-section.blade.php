@@ -1,4 +1,4 @@
-@props(['title' => '', 'icon' => 'gear', 'divider' => false])
+@props(['title' => '', 'icon' => 'gear', 'divider' => false, 'colSpan' => 1])
 
 @php
     $icons = [
@@ -9,13 +9,10 @@
         'chat' => '<path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />',
         'activity' => '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5 6 10.5l3 4.5 4.5-9 4.5 9M3.75 13.5h16.5" />',
     ];
+    $colClass = $colSpan === 2 ? 'md:col-span-2' : '';
 @endphp
 
-@if ($divider)
-    <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
-@else
-    <div>
-@endif
+<div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm {{ $colClass }}">
     <div class="flex items-center gap-2 mb-4">
         <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">{!! $icons[$icon] ?? '' !!}</svg>

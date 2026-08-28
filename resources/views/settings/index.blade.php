@@ -15,10 +15,10 @@
             <span class="text-indigo-600 dark:text-indigo-300 font-medium whitespace-nowrap">前往管理 →</span>
         </a>
 
-        <form method="POST" action="{{ route('admin.settings.save') }}" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-sm">
+        <form method="POST" action="{{ route('admin.settings.save') }}" class="space-y-4">
             @csrf
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {{-- 基本 --}}
                 <x-settings-section title="基本" icon="globe">
                     <div>
@@ -42,7 +42,7 @@
                 </x-settings-section>
 
                 {{-- 工单 --}}
-                <x-settings-section title="工单" icon="ticket" divider>
+                <x-settings-section title="工单" icon="ticket">
                     <label class="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-500/40 cursor-pointer">
                         <input type="checkbox" name="auto_assign" value="1" @checked($settings['auto_assign'] === '1')
                                class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
@@ -67,7 +67,7 @@
                 </x-settings-section>
 
                 {{-- 工作时间 --}}
-                <x-settings-section title="工作时间" icon="clock" divider>
+                <x-settings-section title="工作时间" icon="clock">
                     <label class="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-500/40 cursor-pointer">
                         <input type="checkbox" name="work_hours_enabled" value="1" @checked($settings['work_hours_enabled'] === '1')
                                class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
@@ -77,19 +77,21 @@
                         </span>
                     </label>
 
-                    <div class="grid grid-cols-[1fr_1fr_auto] gap-3 items-end">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">开始</label>
-                            <input type="time" name="work_start" value="{{ $settings['work_start'] }}"
-                                   class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <div>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">开始</label>
+                                <input type="time" name="work_start" value="{{ $settings['work_start'] }}"
+                                       class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">结束</label>
+                                <input type="time" name="work_end" value="{{ $settings['work_end'] }}"
+                                       class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">结束</label>
-                            <input type="time" name="work_end" value="{{ $settings['work_end'] }}"
-                                   class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">工作日</label>
+                        <div class="mt-2.5">
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">工作日</label>
                             <div class="flex gap-1">
                                 @foreach ([1 => '一', 2 => '二', 3 => '三', 4 => '四', 5 => '五', 6 => '六', 7 => '日'] as $d => $label)
                                     <label class="flex items-center justify-center w-8 h-8 rounded-md border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-500/40 text-xs text-gray-600 dark:text-gray-300 cursor-pointer has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-300 has-[:checked]:text-indigo-700 dark:has-[:checked]:bg-indigo-500/20 dark:has-[:checked]:text-indigo-300 transition">
@@ -105,7 +107,7 @@
             </div>
 
             {{-- 短信通道（横跨整行） --}}
-            <x-settings-section title="短信通道" icon="chat" divider>
+            <x-settings-section title="短信通道" icon="chat" :colSpan="2">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">发送驱动</label>
@@ -129,7 +131,7 @@
                     <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-orange-500"></span> 阿里云（AccessKey / 签名 / 模板）
                     </p>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         <input type="text" name="sms_aliyun_access_key_id" value="{{ $settings['sms_aliyun_access_key_id'] }}" placeholder="AccessKey ID（留空不修改）"
                                class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         <input type="password" name="sms_aliyun_access_key_secret" value="{{ $settings['sms_aliyun_access_key_secret'] }}" placeholder="AccessKey Secret（留空不修改）"
@@ -145,7 +147,7 @@
                     <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-blue-500"></span> 腾讯云（SecretId/SecretKey/SDKAppID/签名/模板）
                     </p>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
                         <input type="text" name="sms_tencent_secret_id" value="{{ $settings['sms_tencent_secret_id'] }}" placeholder="SecretId（留空不修改）"
                                class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         <input type="password" name="sms_tencent_secret_key" value="{{ $settings['sms_tencent_secret_key'] }}" placeholder="SecretKey（留空不修改）"
@@ -155,7 +157,7 @@
                         <input type="text" name="sms_tencent_sign_name" value="{{ $settings['sms_tencent_sign_name'] }}" placeholder="短信签名"
                                class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         <input type="text" name="sms_tencent_template_id" value="{{ $settings['sms_tencent_template_id'] }}" placeholder="模板 ID"
-                               class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 col-span-2">
+                               class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                 </div>
                 <p class="text-xs text-gray-400 flex items-start gap-1.5">
@@ -164,8 +166,8 @@
                 </p>
             </x-settings-section>
 
-            {{-- 运行状态（只读）--}}
-            <x-settings-section title="运行状态" icon="activity" divider>
+            {{-- 运行状态（横跨整行） --}}
+            <x-settings-section title="运行状态" icon="activity" :colSpan="2">
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 px-3 py-2.5">
                         <p class="text-[10px] uppercase tracking-wide text-gray-400 mb-1">实时服务</p>
@@ -189,7 +191,7 @@
             </x-settings-section>
 
             {{-- 浮动保存按钮（表单很长时始终可见） --}}
-            <div class="sticky bottom-4 pt-3 flex justify-end">
+            <div class="sticky bottom-4 pt-2 flex justify-end">
                 <button type="submit" class="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white shadow-lg ring-1 ring-indigo-700/20 hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     保存设置
                 </button>
