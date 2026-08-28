@@ -304,6 +304,28 @@
             @endif
         @endauth
 
+        {{-- 表单提交后恢复滚动位置（仅表单提交记录，避免全局 load 闪动） --}}
+        <script>
+            (function () {
+                if ('scrollRestoration' in history) history.scrollRestoration = 'auto';
+                // 只在用户主动提交表单（POST/PATCH/DELETE）时记录位置
+                document.addEventListener('submit', function (e) {
+                    var m = ((e.target.method || 'get').toLowerCase());
+                    if (m !== 'get') {
+                        sessionStorage.setItem('wb-scroll-pos', String(window.scrollY));
+                    }
+                }, true);
+                window.addEventListener('load', function () {
+                    var y = sessionStorage.getItem('wb-scroll-pos');
+                    if (y === null) return; // 没有表单提交则不干预，避免闪动
+                    sessionStorage.removeItem('wb-scroll-pos');
+                    requestAnimationFrame(function () {
+                        window.scrollTo(0, parseInt(y, 10) || 0);
+                    });
+                });
+            })();
+        </script>
+
         {{-- 通知点击兜底：即使旧版 JS 缓存未更新，点击 <a> 也能跳转 --}}
         <script>
             (function () {
