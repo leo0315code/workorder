@@ -30,7 +30,10 @@ class DashboardController extends Controller
         $user = Auth::user();
         $data = $this->recentData($request->input('scope', 'all'));
 
-        return view('dashboard.partials.recent', $data);
+        // 片段接口禁缓存（避免浏览器启发式缓存导致 tab 高亮/内容陈旧）
+        return response()->view('dashboard.partials.recent', $data)
+            ->header('Cache-Control', 'no-store, private, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
 
     /**

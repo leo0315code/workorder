@@ -119,10 +119,20 @@
                     ? 'inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium'
                     : 'inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer text-gray-500 dark:text-gray-400';
             });
-            fetch('{{ url('dashboard/recent') }}?scope=' + encodeURIComponent(scope), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            fetch('{{ url('dashboard/recent') }}?scope=' + encodeURIComponent(scope), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    cache: 'no-store',
+                })
                 .then(function (r) { if (! r.ok) throw new Error('fail'); return r.text(); })
                 .then(function (html) {
                     panel.innerHTML = html;
+                    // 替换后强制以点击的 scope 为准（防旧片段/缓存干扰高亮）
+                    panel.querySelectorAll('[data-scope]').forEach(function (b) {
+                        var active = b.getAttribute('data-scope') === scope;
+                        b.className = active
+                            ? 'inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium'
+                            : 'inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer text-gray-500 dark:text-gray-400';
+                    });
                     history.replaceState(null, '', '?scope=' + scope + '#recent');
                 })
                 .catch(function () { window.location.href = '{{ route('dashboard') }}?scope=' + encodeURIComponent(scope); });
