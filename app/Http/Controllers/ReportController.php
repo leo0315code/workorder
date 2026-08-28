@@ -159,10 +159,14 @@ class ReportController extends Controller
             'count' => (clone $ratingQuery)->count(),
             'avg' => (clone $ratingQuery)->avg('rating'),
             'positive' => (clone $ratingQuery)->where('rating', '>=', 4)->count(),
+            'solved' => (clone $ratingQuery)->where('is_solved', 1)->count(),
         ];
         $ratingStats['avg'] = $ratingStats['avg'] === null ? null : round((float) $ratingStats['avg'], 2);
         $ratingStats['positive_rate'] = $ratingStats['count'] > 0
             ? round($ratingStats['positive'] / $ratingStats['count'] * 100, 1)
+            : 0;
+        $ratingStats['solved_rate'] = $ratingStats['count'] > 0
+            ? round($ratingStats['solved'] / $ratingStats['count'] * 100, 1)
             : 0;
 
         return view('reports.index', compact('days', 'dates', 'dailySeries', 'agents', 'byStatus', 'byPriority', 'byCategory', 'summary', 'ratingStats'));

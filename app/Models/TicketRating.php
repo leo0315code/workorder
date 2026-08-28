@@ -10,9 +10,9 @@ class TicketRating extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['ticket_id', 'user_id', 'rating', 'comment'];
+    protected $fillable = ['ticket_id', 'user_id', 'rating', 'is_solved', 'comment'];
 
-    protected $casts = ['rating' => 'integer'];
+    protected $casts = ['rating' => 'integer', 'is_solved' => 'boolean'];
 
     public function ticket(): BelongsTo
     {

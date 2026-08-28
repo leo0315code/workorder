@@ -437,6 +437,7 @@ class TicketController extends Controller
 
         $request->validate([
             'rating' => ['required', 'integer', 'between:1,5'],
+            'is_solved' => ['required', 'boolean'],
             'comment' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -445,6 +446,7 @@ class TicketController extends Controller
             [
                 'user_id' => Auth::id(),
                 'rating' => $request->integer('rating'),
+                'is_solved' => $request->boolean('is_solved'),
                 'comment' => $request->input('comment'),
             ]
         );

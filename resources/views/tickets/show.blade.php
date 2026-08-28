@@ -100,6 +100,21 @@
                             </template>
                         </div>
                         <input type="hidden" name="rating" :value="stars" x-bind:required="stars > 0">
+
+                        <div class="mb-3">
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">问题是否已解决？<span class="text-red-500">*</span></p>
+                            <div class="flex gap-2">
+                                <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 cursor-pointer has-[:checked]:bg-green-50 has-[:checked]:border-green-300 has-[:checked]:text-green-700 dark:has-[:checked]:bg-green-500/10 dark:has-[:checked]:text-green-300 transition">
+                                    <input type="radio" name="is_solved" value="1" required class="accent-green-600">
+                                    <span class="text-sm">✅ 已解决</span>
+                                </label>
+                                <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-800 cursor-pointer has-[:checked]:bg-red-50 has-[:checked]:border-red-300 has-[:checked]:text-red-700 dark:has-[:checked]:bg-red-500/10 dark:has-[:checked]:text-red-300 transition">
+                                    <input type="radio" name="is_solved" value="0" required class="accent-red-600">
+                                    <span class="text-sm">❌ 未解决</span>
+                                </label>
+                            </div>
+                        </div>
+
                         <textarea name="comment" x-model="comment" rows="2" maxlength="500" placeholder="想说的话（可选）…"
                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm"></textarea>
                         <div class="mt-3 flex justify-end">
@@ -124,6 +139,11 @@
                             <span class="inline-flex rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300">一般</span>
                         @else
                             <span class="inline-flex rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-200 dark:bg-red-500/10 dark:text-red-300">不满意</span>
+                        @endif
+                        @if (! is_null($rating->is_solved))
+                            <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $rating->is_solved ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30' : 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/30' }}">
+                                {{ $rating->is_solved ? '问题已解决' : '问题未解决' }}
+                            </span>
                         @endif
                     </div>
                     @if ($rating->comment)
