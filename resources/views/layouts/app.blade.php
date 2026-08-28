@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>@yield('page_title', config('app.name')) — {{ config('app.name', '工单系统') }}</title>
+        <title>@yield('page_title', \App\Services\SettingService::siteName()) — {{ \App\Services\SettingService::siteName() }}</title>
 
         <!-- 暗色模式：class 驱动，跟随 localStorage / 系统 -->
         <script>
@@ -38,6 +38,7 @@
                     $nav[] = ['label' => '数据报表', 'route' => 'admin.reports', 'icon' => 'chart', 'active' => request()->routeIs('admin.reports')];
                     if ($user->isAdmin()) {
                         $nav[] = ['label' => '用户管理', 'route' => 'admin.users.index', 'icon' => 'user', 'active' => request()->routeIs('admin.users.*')];
+                        $nav[] = ['label' => '系统设置', 'route' => 'admin.settings', 'icon' => 'gear', 'active' => request()->routeIs('admin.settings')];
                     }
                 } else {
                     $nav[] = ['label' => '仪表盘', 'route' => 'dashboard', 'icon' => 'dashboard', 'active' => request()->routeIs('dashboard')];
@@ -53,7 +54,7 @@
                             <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-600 text-white">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                             </span>
-                            <span class="text-base font-bold text-gray-900 dark:text-white">工单系统</span>
+                            <span class="text-base font-bold text-gray-900 dark:text-white">{{ \App\Services\SettingService::siteName() }}</span>
                         </a>
                         <button @click="sidebarOpen = false" class="lg:hidden text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
@@ -100,7 +101,7 @@
                         </button>
 
                         <h1 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
-                            @yield('page_title', config('app.name'))
+                            @yield('page_title', \App\Services\SettingService::siteName())
                         </h1>
 
                         <div class="ml-auto flex items-center gap-2">

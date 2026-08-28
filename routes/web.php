@@ -8,6 +8,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuickReplyController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -21,7 +22,11 @@ Route::get('/dashboard', DashboardController::class)
     ->name('dashboard');
 
 // ---- 工单（所有登录用户） ----
-// 注意：export/batch 必须声明在 tickets 资源路由之前，避免被 {ticket} 匹配
+// 注意：export/batch/changes 必须声明在 tickets 资源路由之前，避免被 {ticket} 匹配
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('tickets/changes', [TicketController::class, 'changes'])->name('tickets.changes');
+});
+
 Route::middleware(['auth', 'verified', 'role:agent'])->group(function () {
     Route::get('tickets/export', [TicketController::class, 'export'])->name('tickets.export');
     Route::post('tickets/batch', [TicketController::class, 'batch'])->name('tickets.batch');
@@ -61,10 +66,12 @@ Route::middleware(['auth', 'verified', 'role:agent'])->prefix(config('app.admin_
     Route::resource('quick-replies', QuickReplyController::class)->except(['show', 'edit']);
 });
 
-// ---- 用户管理（仅管理员） ----
+// ---- 用户管理 / 系统设置（仅管理员） ----
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix(config('app.admin_url'))->name('admin.')->group(function () {
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
+    Route::get('settings', [SettingController::class, 'index'])->name('settings');
+    Route::post('settings', [SettingController::class, 'save'])->name('settings.save');
 });
 
 Route::middleware('auth')->group(function () {

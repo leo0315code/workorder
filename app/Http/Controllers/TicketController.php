@@ -13,7 +13,9 @@ use App\Models\TicketLog;
 use App\Models\TicketRating;
 use App\Models\TicketReply;
 use App\Models\User;
+use App\Services\AutoAssignService;
 use App\Services\NotificationService;
+use App\Services\SettingService;
 use App\Services\WebSocketService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,7 +50,36 @@ class TicketController extends Controller
         $statuses = self::STATUS_NAMES;
         $priorities = self::PRIORITY_NAMES;
 
-        return view('tickets.index', compact('tickets', 'categories', 'products', 'agents', 'statuses', 'priorities'));
+        // 列表页实时连接配置（订阅 ticket.all 房间）+ 轮询兜底基准时间
+        $uid = (int) Auth::id();
+        $wsConfig = [
+            'wsUrl' => env('VITE_WS_URL', 'ws://127.0.0.1:6001'),
+            'uid' => $uid,
+            'token' => WebSocketService::signature($uid, ['ticket.all']),
+            'rooms' => ['ticket.all'],
+            'pollUrl' => route('tickets.changes'),
+            'lastUpdated' => $tickets->first()?->updated_at?->toIso8601String() ?? now()->toIso8601String(),
+        ];
+
+        return view('tickets.index', compact('tickets', 'categories', 'products', 'agents', 'statuses', 'priorities', 'wsConfig'));
+    }
+
+    /**
+     * 列表页轮询兜底：返回 since 之后有更新的工单数（WS 掉线时使用）
+     */
+    public function changes(Request $request)
+    {
+        $since = $request->input('since');
+
+        if (! $since) {
+            return response()->json(['count' => 0]);
+        }
+
+        $count = $this->filterQuery($request)
+            ->where('updated_at', '>', $since)
+            ->count();
+
+        return response()->json(['count' => $count]);
     }
 
     /**
@@ -130,6 +161,13 @@ class TicketController extends Controller
         $user = Auth::user();
         $isAgent = $user->isAgent();
 
+        // 负责人：客服可手动指定；未指定且开启自动分配时按负载均衡指派
+        $assigneeId = $isAgent && $request->filled('assignee_id')
+            ? $request->integer('assignee_id')
+            : AutoAssignService::pick();
+
+        $slaHours = SettingService::slaHours();
+
         $ticket = Ticket::create([
             'no' => $this->nextNo(),
             'user_id' => $user->id,
@@ -140,14 +178,15 @@ class TicketController extends Controller
             'description' => $request->input('description'),
             'priority' => $request->input('priority'),
             'status' => Ticket::STATUS_OPEN,
-            'assignee_id' => $isAgent && $request->filled('assignee_id') ? $request->integer('assignee_id') : null,
-            'sla_due_at' => now()->addHours(Ticket::$slaHours[$request->input('priority')]),
+            'assignee_id' => $assigneeId,
+            'sla_due_at' => now()->addHours($slaHours[$request->input('priority')]),
         ]);
 
         $this->storeAttachments($request, $ticket);
 
         // 操作日志
-        $this->logAction($ticket, 'created', null, null, null, $isAgent ? '客服代客户创建' : '客户提交');
+        $this->logAction($ticket, 'created', null, null, null,
+            $isAgent ? '客服代客户创建' : '客户提交'.($assigneeId ? '（自动分配）' : ''));
 
         // 实时推送：新工单
         WebSocketService::pushToRoom('ticket.all', [

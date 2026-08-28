@@ -5,7 +5,7 @@
 @section('content')
     @php $isAgent = auth()->user()->isAgent(); @endphp
 
-    <div x-data="ticketList()">
+    <div x-data="ticketList({{ json_encode($wsConfig) }})">
         {{-- 筛选 --}}
         <form method="GET" action="{{ route('tickets.index') }}" class="mb-5">
             <div class="flex flex-wrap items-center gap-3">
@@ -179,12 +179,44 @@
     </div>
 
     <script>
-        function ticketList() {
+        function ticketList(config) {
             return {
                 isAgent: @json($isAgent),
                 selected: [],
                 batchAction: 'close',
                 dirty: false,
+                wsConnected: false,
+                realtime: null,
+                pollTimer: null,
+
+                init() {
+                    // 建立实时连接（ticket.all 房间），新工单/更新即时提示
+                    try {
+                        this.realtime = new TicketRealtime(config);
+                    } catch (e) { /* noop */ }
+                    // WS 4 秒未连接成功 → 启动轮询兜底
+                    setTimeout(() => {
+                        if (!this.wsConnected) this.startPolling();
+                    }, 4000);
+                    window.addEventListener('ticket:status', (e) => {
+                        this.wsConnected = !!e.detail.connected;
+                        if (!this.wsConnected) this.startPolling();
+                    });
+                    window.addEventListener('ticket:fallback', () => this.startPolling());
+                },
+
+                startPolling() {
+                    if (this.pollTimer) return;
+                    this.pollTimer = setInterval(() => this.poll(), 20000);
+                },
+
+                poll() {
+                    fetch(config.pollUrl + '?since=' + encodeURIComponent(config.lastUpdated))
+                        .then((r) => r.json())
+                        .then((d) => { if (d.count > 0) this.dirty = true; })
+                        .catch(() => {});
+                },
+
                 get allSelected() {
                     const ids = @json($tickets->pluck('id')->all());
                     return ids.length > 0 && ids.every((id) => this.selected.includes(id));
@@ -194,7 +226,7 @@
                     this.selected = checked ? [...new Set([...this.selected, ...ids])] : this.selected.filter((id) => !ids.includes(id));
                 },
                 onLiveEvent(msg) {
-                    if (['new_ticket', 'status_changed', 'reply'].includes(msg.type)) {
+                    if (['new_ticket', 'status_changed', 'reply', 'notification'].includes(msg.type)) {
                         this.dirty = true;
                     }
                 },

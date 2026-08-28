@@ -40,6 +40,19 @@ class DatabaseSeeder extends Seeder
         // 种子用户直接标记为已验证（演示环境）
         User::query()->whereNull('email_verified_at')->update(['email_verified_at' => now()]);
 
+        // ---- 系统配置 ----
+        $settings = [
+            'site_name' => '工单系统',
+            'auto_assign' => '1',
+            'sla_low' => '72',
+            'sla_normal' => '48',
+            'sla_high' => '24',
+            'sla_urgent' => '8',
+        ];
+        foreach ($settings as $key => $value) {
+            \App\Models\Setting::updateOrCreate(['setting_key' => $key], ['value' => $value]);
+        }
+
         // ---- 分类 ----
         $categories = [
             ['name' => '产品咨询', 'description' => '产品功能、使用、报价咨询'],
