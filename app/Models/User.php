@@ -34,6 +34,7 @@ class User extends Authenticatable
         'wechat_unionid',
         'wechat_nickname',
         'wechat_avatar',
+        'manual_offline',
     ];
 
     protected $hidden = [
@@ -44,6 +45,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'manual_offline' => 'boolean',
     ];
 
     public function isAdmin(): bool
@@ -59,6 +61,14 @@ class User extends Authenticatable
     public function isCustomer(): bool
     {
         return $this->role === 'customer';
+    }
+
+    /**
+     * 是否被管理员手动置为离线（不参与自动分配）
+     */
+    public function isManuallyOffline(): bool
+    {
+        return (bool) $this->manual_offline;
     }
 
     public function tickets(): HasMany

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\AutoAssignService;
+use App\Services\WebSocketService;
+use GatewayClient\Gateway;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -27,7 +30,10 @@ class UserController extends Controller
 
         $users = $query->orderByDesc('updated_at')->paginate(15)->withQueryString();
 
-        return view('users.index', compact('users'));
+        // 在线 uid 集合（用于展示实时状态）
+        $onlineUids = AutoAssignService::onlineUids() ?: [];
+
+        return view('users.index', compact('users', 'onlineUids'));
     }
 
     public function updateRole(Request $request, User $user): RedirectResponse
@@ -42,5 +48,33 @@ class UserController extends Controller
         $user->update(['role' => $request->input('role')]);
 
         return back()->with('success', '用户 '.$user->name.' 角色已更新为 '.$request->input('role'));
+    }
+
+    /**
+     * 管理员手动置为离线/恢复在线（离线客服不参与自动分配；可选断开其连接）
+     */
+    public function toggleOffline(Request $request, User $user): RedirectResponse
+    {
+        // 不能把自己置为离线
+        if ($user->id === $request->user()->id) {
+            return back()->with('error', '不能设置自己的在线状态');
+        }
+
+        $offline = $user->isManuallyOffline();
+        $user->update(['manual_offline' => ! $offline]);
+
+        // 置为离线时，若其 WS 在线则强制断开（踢下线）
+        if (! $offline) {
+            try {
+                WebSocketService::boot();
+                foreach (Gateway::getClientIdByUid($user->id) as $clientId) {
+                    Gateway::closeClient($clientId, '管理员已将你设为离线');
+                }
+            } catch (\Throwable $e) {
+                // 实时服务不可用时忽略（仅标记离线，仍不参与分配）
+            }
+        }
+
+        return back()->with('success', $user->name.' 已'.($offline ? '恢复在线' : '设为离线'));
     }
 }

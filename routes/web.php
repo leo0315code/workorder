@@ -70,6 +70,7 @@ Route::middleware(['auth', 'verified', 'role:agent'])->prefix(config('app.admin_
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix(config('app.admin_url'))->name('admin.')->group(function () {
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
+    Route::post('users/{user}/offline', [UserController::class, 'toggleOffline'])->name('users.toggle-offline');
     Route::get('settings', [SettingController::class, 'index'])->name('settings');
     Route::post('settings', [SettingController::class, 'save'])->name('settings.save');
 });

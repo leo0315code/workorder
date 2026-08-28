@@ -26,6 +26,7 @@ class AutoAssignService
         }
 
         $candidates = User::whereIn('role', ['agent', 'admin'])
+            ->where('manual_offline', false)
             ->withCount(['assignedTickets' => fn ($q) => $q->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])])
             ->orderByRaw("CASE WHEN role = 'agent' THEN 0 ELSE 1 END")
             ->orderBy('assigned_tickets_count')

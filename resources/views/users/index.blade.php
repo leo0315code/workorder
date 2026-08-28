@@ -26,6 +26,7 @@
                         <th class="py-3 px-4">提交工单</th>
                         <th class="py-3 px-4">处理工单</th>
                         <th class="py-3 px-4">角色</th>
+                        <th class="py-3 px-4">在线状态</th>
                         <th class="py-3 px-4">注册时间</th>
                     </tr>
                 </thead>
@@ -62,6 +63,33 @@
                                     </form>
                                 @endif
                             </td>
+                            @if ($u->isAgent())
+                                <td class="py-3 px-4">
+                                    @if ($u->isManuallyOffline())
+                                        <span class="inline-flex items-center gap-1.5 rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 ring-1 ring-inset ring-gray-200 dark:ring-gray-700">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span> 手动离线
+                                        </span>
+                                    @elseif (isset($onlineUids[$u->id]))
+                                        <span class="inline-flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-300 ring-1 ring-inset ring-green-200 dark:ring-green-500/30">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> 在线
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1.5 rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 ring-1 ring-inset ring-gray-200 dark:ring-gray-700">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></span> 离线
+                                        </span>
+                                    @endif
+                                    @if ($u->id !== auth()->id())
+                                        <form method="POST" action="{{ route('admin.users.toggle-offline', $u) }}" class="inline mt-1 block">
+                                            @csrf
+                                            <button type="submit" class="text-xs {{ $u->isManuallyOffline() ? 'text-green-600 dark:text-green-400' : 'text-red-500' }} hover:underline">
+                                                {{ $u->isManuallyOffline() ? '恢复在线' : '设为离线' }}
+                                            </button>
+                                        </form>
+                                    @endif
+                                </td>
+                            @else
+                                <td class="py-3 px-4 text-gray-400 text-xs">-</td>
+                            @endif
                             <td class="py-3 px-4 text-gray-400 whitespace-nowrap">{{ $u->created_at?->format('Y-m-d') }}</td>
                         </tr>
                     @empty
