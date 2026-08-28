@@ -105,4 +105,41 @@ class Ticket extends Model
             && $this->sla_due_at->isPast()
             && ! in_array($this->status, [self::STATUS_RESOLVED, self::STATUS_CLOSED]);
     }
+
+    /**
+     * SLA 剩余时间文案：如「剩余 23h」/「超时 5h」；已解决或无时限返回 null
+     */
+    public function slaLabel(): ?string
+    {
+        if (! $this->sla_due_at || in_array($this->status, [self::STATUS_RESOLVED, self::STATUS_CLOSED])) {
+            return null;
+        }
+
+        $diff = $this->sla_due_at->diffInMinutes(now(), false);
+
+        if ($diff < 0) {
+            return '超时 '.self::formatDuration(abs($diff));
+        }
+
+        return '剩余 '.self::formatDuration($diff);
+    }
+
+    public function isSlaWarning(): bool
+    {
+        return $this->sla_due_at && ! $this->isOverdue()
+            && $this->sla_due_at->isBefore(now()->addHours(6))
+            && ! in_array($this->status, [self::STATUS_RESOLVED, self::STATUS_CLOSED]);
+    }
+
+    protected static function formatDuration(int $minutes): string
+    {
+        if ($minutes < 60) {
+            return $minutes.'m';
+        }
+        if ($minutes < 24 * 60) {
+            return round($minutes / 60).'h';
+        }
+
+        return round($minutes / 60 / 24).'d';
+    }
 }

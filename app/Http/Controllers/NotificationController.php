@@ -14,11 +14,16 @@ class NotificationController extends Controller
 {
     public function index(): View
     {
-        $notifications = UserNotification::where('user_id', auth()->id())
-            ->orderByDesc('created_at')
-            ->paginate(20);
+        $query = UserNotification::where('user_id', auth()->id());
 
-        return view('notifications.index', compact('notifications'));
+        if (request()->boolean('unread')) {
+            $query->unread();
+        }
+
+        $notifications = $query->orderByDesc('created_at')->paginate(20);
+        $unreadCount = UserNotification::where('user_id', auth()->id())->unread()->count();
+
+        return view('notifications.index', compact('notifications', 'unreadCount'));
     }
 
     public function unreadCount(): JsonResponse
@@ -34,7 +39,14 @@ class NotificationController extends Controller
             ->orderByDesc('created_at')
             ->limit(8)
             ->get(['id', 'title', 'body', 'link', 'is_read', 'created_at'])
-            ->map(fn ($n) => $n + ['created_at' => $n->created_at?->format('Y-m-d H:i')]);
+            ->map(fn ($n) => [
+                'id' => $n->id,
+                'title' => $n->title,
+                'body' => $n->body,
+                'link' => $n->link,
+                'is_read' => $n->is_read,
+                'created_at' => $n->created_at?->format('Y-m-d H:i'),
+            ]);
 
         return response()->json(['items' => $items]);
     }

@@ -130,6 +130,7 @@
                             <th class="py-3 px-4">状态</th>
                             <th class="py-3 px-4">优先级</th>
                             @if ($isAgent)<th class="py-3 px-4">负责人</th>@endif
+                            @if ($isAgent)<th class="py-3 px-4">SLA</th>@endif
                             <th class="py-3 px-4">更新时间</th>
                             <th class="py-3 px-4 text-right">操作</th>
                         </tr>
@@ -165,6 +166,19 @@
                                             {{ $t->assignee->name }}
                                         @else
                                             <span class="text-red-500">未指派</span>
+                                        @endif
+                                    </td>
+                                @endif
+                                @if ($isAgent)
+                                    <td class="py-3 px-4 whitespace-nowrap">
+                                        @php $sla = $t->slaLabel(); @endphp
+                                        @if ($sla)
+                                            <span class="inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset
+                                                {{ $t->isOverdue() ? 'bg-red-50 text-red-600 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/30' : ($t->isSlaWarning() ? 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/30' : 'bg-green-50 text-green-700 ring-green-200 dark:bg-green-500/10 dark:text-green-300 dark:ring-green-500/30') }}">
+                                                {{ $sla }}
+                                            </span>
+                                        @else
+                                            <span class="text-xs text-gray-300 dark:text-gray-600">-</span>
                                         @endif
                                     </td>
                                 @endif

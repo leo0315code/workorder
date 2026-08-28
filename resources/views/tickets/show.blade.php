@@ -48,8 +48,22 @@
                 </div>
 
                 @if ($ticket->sla_due_at)
-                    <div class="mt-4 rounded-lg bg-gray-50 dark:bg-gray-800/60 px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400">
-                        SLA 时限：{{ $ticket->sla_due_at->format('Y-m-d H:i') }}（{{ \App\Http\Controllers\TicketController::PRIORITY_NAMES[$ticket->priority] }}级）
+                    @php
+                        $slaLabel = $ticket->slaLabel();
+                        $slaTone = $ticket->isOverdue() ? 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/30' : ($ticket->isSlaWarning() ? 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/30' : 'bg-green-50 text-green-700 ring-green-200 dark:bg-green-500/10 dark:text-green-300 dark:ring-green-500/30');
+                    @endphp
+                    <div class="mt-4 rounded-lg bg-gray-50 dark:bg-gray-800/60 px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                        <span>SLA 时限：{{ $ticket->sla_due_at->format('Y-m-d H:i') }}（{{ \App\Http\Controllers\TicketController::PRIORITY_NAMES[$ticket->priority] }}级）</span>
+                        @if ($slaLabel)
+                            <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset {{ $slaTone }}">
+                                @if ($ticket->isOverdue())
+                                    <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+                                @else
+                                    <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                                @endif
+                                {{ $slaLabel }}
+                            </span>
+                        @endif
                     </div>
                 @endif
 
