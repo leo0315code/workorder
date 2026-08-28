@@ -94,11 +94,11 @@
     <x-panel title="最近工单" icon="list" class="mt-6">
         <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 mb-4 text-sm w-fit">
             <button type="submit" name="scope" value="all"
-                    class="rounded-md px-3 py-1 transition cursor-pointer {{ ($scope ?? 'all') === 'all' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">全部</button>
+                    class="inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer {{ ($scope ?? 'all') === 'all' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">全部<span class="text-xs opacity-70">({{ $total }})</span></button>
             <button type="submit" name="scope" value="open"
-                    class="rounded-md px-3 py-1 transition cursor-pointer {{ ($scope ?? 'all') === 'open' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">待处理</button>
+                    class="inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer {{ ($scope ?? 'all') === 'open' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">待处理<span class="text-xs opacity-70">({{ $byStatus['open'] ?? 0 }}+{{ $byStatus['pending'] ?? 0 }}+{{ $byStatus['in_progress'] ?? 0 }})</span></button>
             <button type="submit" name="scope" value="resolved"
-                    class="rounded-md px-3 py-1 transition cursor-pointer {{ ($scope ?? 'all') === 'resolved' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">已解决</button>
+                    class="inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer {{ ($scope ?? 'all') === 'resolved' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">已解决<span class="text-xs opacity-70">({{ ($byStatus['resolved'] ?? 0) + ($byStatus['closed'] ?? 0) }})</span></button>
         </form>
         @if ($recent->isEmpty())
             <p class="text-sm text-gray-400 py-6 text-center">
