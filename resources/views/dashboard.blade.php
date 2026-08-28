@@ -92,42 +92,72 @@
 
     {{-- 最近工单 --}}
     <x-panel title="最近工单" icon="list" class="mt-6">
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-200 dark:border-gray-800">
-                        <th class="py-2.5 pr-4">编号</th>
-                        <th class="py-2.5 pr-4">主题</th>
-                        <th class="py-2.5 pr-4">状态</th>
-                        <th class="py-2.5 pr-4">优先级</th>
-                        @if ($isAgent)<th class="py-2.5 pr-4">客户</th>@endif
-                        <th class="py-2.5 pr-4">负责人</th>
-                        <th class="py-2.5">更新时间</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($recent as $t)
-                        <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                            <td class="py-3 pr-4 font-mono text-xs text-indigo-600 dark:text-indigo-400">
-                                <a href="{{ route('tickets.show', $t) }}">{{ $t->no }}</a>
-                            </td>
-                            <td class="py-3 pr-4 max-w-[260px] truncate">
-                                <a href="{{ route('tickets.show', $t) }}" class="hover:underline">{{ $t->subject }}</a>
-                            </td>
-                            <td class="py-3 pr-4"><x-ticket-status :status="$t->status" /></td>
-                            <td class="py-3 pr-4"><x-ticket-priority :priority="$t->priority" /></td>
-                            @if ($isAgent)
-                                <td class="py-3 pr-4 text-gray-600 dark:text-gray-400">{{ $t->user?->name ?? '-' }}</td>
-                            @endif
-                            <td class="py-3 pr-4 text-gray-600 dark:text-gray-400">{{ $t->assignee?->name ?? '-' }}</td>
-                            <td class="py-3 text-gray-400">{{ $t->updated_at?->format('m-d H:i') }}</td>
+        @if ($recent->isEmpty())
+            <p class="text-sm text-gray-400 py-6 text-center">暂无工单</p>
+        @else
+            {{-- 移动端卡片 --}}
+            <div class="md:hidden space-y-3">
+                @foreach ($recent as $t)
+                    <a href="{{ route('tickets.show', $t) }}" class="block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm active:scale-[0.99] transition">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-xs text-indigo-600 dark:text-indigo-400">{{ $t->no }}</span>
+                            <div class="flex items-center gap-1.5">
+                                <x-ticket-priority :priority="$t->priority" />
+                                @if ($t->isOverdue())
+                                    <span class="inline-flex rounded-md bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-300 ring-1 ring-inset ring-red-200 dark:ring-red-500/30">超时</span>
+                                @endif
+                            </div>
+                        </div>
+                        <p class="mt-2 font-medium text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">{{ $t->subject }}</p>
+                        <div class="mt-2.5 flex items-center justify-between">
+                            <span><x-ticket-status :status="$t->status" /></span>
+                            <span class="text-xs text-gray-400">{{ $t->updated_at?->format('m-d H:i') }}</span>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-400 flex items-center gap-2">
+                            <span>{{ $t->user?->name ?? '—' }}</span>
+                            <span>·</span>
+                            <span class="ml-auto">{{ $t->assignee?->name ?? '待认领' }}</span>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+
+            {{-- 桌面表格 --}}
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                            <th class="py-2.5 pr-4">编号</th>
+                            <th class="py-2.5 pr-4">主题</th>
+                            <th class="py-2.5 pr-4">状态</th>
+                            <th class="py-2.5 pr-4">优先级</th>
+                            @if ($isAgent)<th class="py-2.5 pr-4">客户</th>@endif
+                            <th class="py-2.5 pr-4">负责人</th>
+                            <th class="py-2.5">更新时间</th>
                         </tr>
-                    @empty
-                        <tr><td colspan="8" class="py-8 text-center text-gray-400">暂无工单</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        @foreach ($recent as $t)
+                            <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                                <td class="py-3 pr-4 font-mono text-xs text-indigo-600 dark:text-indigo-400">
+                                    <a href="{{ route('tickets.show', $t) }}">{{ $t->no }}</a>
+                                </td>
+                                <td class="py-3 pr-4 max-w-[260px] truncate">
+                                    <a href="{{ route('tickets.show', $t) }}" class="hover:underline">{{ $t->subject }}</a>
+                                </td>
+                                <td class="py-3 pr-4"><x-ticket-status :status="$t->status" /></td>
+                                <td class="py-3 pr-4"><x-ticket-priority :priority="$t->priority" /></td>
+                                @if ($isAgent)
+                                    <td class="py-3 pr-4 text-gray-600 dark:text-gray-400">{{ $t->user?->name ?? '-' }}</td>
+                                @endif
+                                <td class="py-3 pr-4 text-gray-600 dark:text-gray-400">{{ $t->assignee?->name ?? '-' }}</td>
+                                <td class="py-3 text-gray-400">{{ $t->updated_at?->format('m-d H:i') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
         <div class="mt-4">
             <a href="{{ route('tickets.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">查看全部工单 →</a>
         </div>
