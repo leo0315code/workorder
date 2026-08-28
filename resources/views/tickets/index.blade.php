@@ -110,8 +110,53 @@
             </div>
         </div>
 
-        {{-- 列表 --}}
-        <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
+        {{-- 移动端卡片列表 --}}
+        @if ($tickets->isEmpty())
+            <div class="md:hidden rounded-xl border border-dashed border-gray-300 dark:border-gray-700 py-14 text-center">
+                <p class="text-sm text-gray-400">暂无工单</p>
+                @if (! $isAgent)
+                    <a href="{{ route('tickets.create') }}" class="mt-2 inline-block text-sm text-indigo-600 dark:text-indigo-400 hover:underline">去创建第一个工单 →</a>
+                @endif
+            </div>
+        @endif
+        @if ($tickets->isNotEmpty())
+            <div class="md:hidden space-y-3 mb-4">
+                @foreach ($tickets as $t)
+                    <a href="{{ route('tickets.show', $t) }}" class="block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm active:scale-[0.99] transition">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="font-mono text-xs text-indigo-600 dark:text-indigo-400">{{ $t->no }}</span>
+                            <div class="flex items-center gap-1.5">
+                                <x-ticket-priority :priority="$t->priority" />
+                                @if ($t->isOverdue() && $isAgent)
+                                    <span class="inline-flex rounded-md bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-300 ring-1 ring-inset ring-red-200 dark:ring-red-500/30">超时</span>
+                                @endif
+                            </div>
+                        </div>
+                        <p class="mt-2 font-medium text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">{{ $t->subject }}</p>
+                        <div class="mt-2.5 flex items-center justify-between">
+                            <span><x-ticket-status :status="$t->status" /></span>
+                            <span class="text-xs text-gray-400">{{ $t->updated_at?->format('m-d H:i') }}</span>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-400 flex items-center gap-2">
+                            <span>{{ $t->category?->name ?? '未分类' }}</span>
+                            <span>·</span>
+                            <span>{{ $t->product?->name ?? '无产品' }}</span>
+                            @if ($isAgent && $t->assignee)
+                                <span class="ml-auto">{{ $t->assignee->name }}</span>
+                            @elseif ($isAgent)
+                                <span class="ml-auto text-amber-600 dark:text-amber-400">待认领</span>
+                            @endif
+                        </div>
+                    </a>
+                @endforeach
+                <div class="pt-1">
+                    {{ $tickets->links() }}
+                </div>
+            </div>
+        @endif
+
+        {{-- 桌面端表格 --}}
+        <div class="hidden md:block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
@@ -195,12 +240,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="py-12 text-center text-gray-400">
-                                    暂无工单
-                                    @if (! $isAgent)
-                                        ，<a href="{{ route('tickets.create') }}" class="text-indigo-600 hover:underline">去创建</a>
-                                    @endif
-                                </td>
+                                <td colspan="11" class="py-12 text-center text-gray-400">暂无工单</td>
                             </tr>
                         @endforelse
                     </tbody>

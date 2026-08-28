@@ -179,7 +179,6 @@
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                     <span class="hidden sm:inline">新建工单</span>
                                 </a>
-
                                 <form method="POST" action="{{ route('logout') }}" class="inline">
                                     @csrf
                                     <button type="submit" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" title="退出登录">
@@ -264,6 +263,16 @@
                 };
             }
         </script>
+
+        {{-- 移动端浮动「新建工单」（仅客户，小屏常驻，提升转化） --}}
+        @auth
+            @if (! auth()->user()->isAgent() && ! request()->routeIs('tickets.create'))
+                <a href="{{ route('tickets.create') }}"
+                   class="md:hidden fixed bottom-5 right-5 z-40 inline-flex items-center justify-center w-14 h-14 rounded-full bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 hover:bg-indigo-500 active:scale-95 transition">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                </a>
+            @endif
+        @endauth
 
         {{-- 全局实时连接：保持在线状态（供自动分配判断）+ 铃铛/列表实时 --}}
         @auth
