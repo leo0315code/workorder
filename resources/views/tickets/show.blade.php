@@ -263,6 +263,16 @@
             @if ($isAgent)
                 <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">处理操作</h3>
+
+                    @if (! $ticket->assignee_id)
+                        <form method="POST" action="{{ route('tickets.claim', $ticket) }}" class="mb-4">
+                            @csrf
+                            <button type="submit" class="w-full rounded-lg bg-green-600 py-2.5 text-sm font-medium text-white hover:bg-green-500 shadow-sm">
+                                认领此工单（指派给自己）
+                            </button>
+                        </form>
+                    @endif
+
                     <form method="POST" action="{{ route('tickets.update', $ticket) }}" class="space-y-4">
                         @csrf
                         @method('PATCH')

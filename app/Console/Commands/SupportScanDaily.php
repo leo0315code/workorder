@@ -37,7 +37,21 @@ class SupportScanDaily extends Command
             $notified += count($targetIds);
         }
 
-        // ---- 2. 售后临期（7 天内）与已过期客户 ----
+        // ---- 2. 待认领超过 24 小时的工单（升级提醒管理员） ----
+        $staleUnclaimed = Ticket::whereNull('assignee_id')
+            ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
+            ->where('created_at', '<', now()->subHours(24))
+            ->get();
+
+        if ($staleUnclaimed->isNotEmpty()) {
+            $adminIds = User::where('role', 'admin')->pluck('id')->all();
+            $count = $staleUnclaimed->count();
+            $first = $staleUnclaimed->first();
+            NotificationService::notifyUsers($adminIds, "有 {$count} 个工单待认领超过 24 小时", $first?->no.' '.$first?->subject.' 等工单无人接单，请尽快处理', route('tickets.index', ['unassigned' => 1]));
+            $notified += count($adminIds);
+        }
+
+        // ---- 3. 售后临期（7 天内）与已过期客户 ----
         $expiring = Customer::whereBetween('after_sales_expired_at', [now(), now()->addDays(7)])->get();
         $expired = Customer::where('after_sales_expired_at', '<', now())->get();
 

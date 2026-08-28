@@ -38,6 +38,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('tickets/{ticket}/note', [TicketController::class, 'note'])->name('tickets.note');
     Route::patch('tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
     Route::post('tickets/{ticket}/rate', [TicketController::class, 'rate'])->name('tickets.rate');
+    Route::post('tickets/{ticket}/claim', [TicketController::class, 'claim'])->name('tickets.claim');
     Route::get('tickets/{ticket}/replies', [TicketController::class, 'pollReplies'])->name('tickets.replies');
     Route::get('attachments/{attachment}/download', [TicketController::class, 'downloadAttachment'])
         ->whereNumber('attachment')

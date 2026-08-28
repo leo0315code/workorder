@@ -439,6 +439,31 @@ class TicketController extends Controller
     }
 
     /**
+     * 客服认领（抢单）：仅未指派工单，认领后指派给自己
+     */
+    public function claim(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $this->authorizeStaff($ticket);
+
+        if ($ticket->assignee_id !== null) {
+            return back()->with('error', '该工单已有负责人，无法认领');
+        }
+
+        $ticket->update(['assignee_id' => Auth::id()]);
+
+        $this->logAction($ticket, 'change', 'assignee', '未指派', Auth::user()->name, '客服认领');
+
+        WebSocketService::pushToRoom('ticket.'.$ticket->id, [
+            'type' => 'status_changed',
+            'ticket' => $this->ticketPayload($ticket->fresh(['user', 'category', 'product', 'assignee'])),
+        ]);
+
+        session()->flash('success', '已认领工单 '.$ticket->no.'，请及时处理');
+
+        return redirect()->route('tickets.show', $ticket);
+    }
+
+    /**
      * 轮询兜底接口：返回自 $after 之后的新回复（WS 不可用时的降级方案）
      */
     public function pollReplies(Request $request, Ticket $ticket)

@@ -36,6 +36,11 @@
                 </select>
 
                 @if ($isAgent)
+                    <a href="{{ route('tickets.index', array_merge(request()->query(), ['unassigned' => 1])) }}"
+                       class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition
+                              {{ request()->boolean('unassigned') ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20' }}">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span> 待认领
+                    </a>
                     <select name="assignee" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
                         <option value="">全部负责人</option>
                         @foreach ($agents as $a)
@@ -154,8 +159,14 @@
                                     </td>
                                 @endif
                                 <td class="py-3 px-4 text-gray-400 whitespace-nowrap">{{ $t->updated_at?->format('m-d H:i') }}</td>
-                                <td class="py-3 px-4 text-right">
+                                <td class="py-3 px-4 text-right whitespace-nowrap">
                                     <a href="{{ route('tickets.show', $t) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">查看</a>
+                                    @if ($isAgent && ! $t->assignee)
+                                        <form method="POST" action="{{ route('tickets.claim', $t) }}" class="inline ml-2">
+                                            @csrf
+                                            <button type="submit" class="text-green-600 dark:text-green-400 hover:underline">认领</button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
