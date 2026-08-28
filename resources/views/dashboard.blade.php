@@ -93,7 +93,6 @@
     {{-- 最近工单 --}}
     <x-panel title="最近工单" icon="list" class="mt-6">
         <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 mb-4 text-sm w-fit">
-            <input type="hidden" name="scope" value="all">
             <button type="submit" name="scope" value="all"
                     class="rounded-md px-3 py-1 transition cursor-pointer {{ ($scope ?? 'all') === 'all' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium' : 'text-gray-500 dark:text-gray-400' }}">全部</button>
             <button type="submit" name="scope" value="open"
