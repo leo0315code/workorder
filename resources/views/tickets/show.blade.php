@@ -137,7 +137,8 @@
                     {{ $isAgent ? '回复客户' : '补充说明 / 回复' }}
                 </h3>
                 <form method="POST" action="{{ route('tickets.reply', $ticket) }}"
-                      x-data="{ content: '', quick: '' }"
+                      enctype="multipart/form-data"
+                      x-data="{ content: '', quick: '', files: [] }"
                       @submit="if (content.trim() === '') { $event.preventDefault(); }">
                     @csrf
                     @if ($isAgent && $quickReplies->isNotEmpty())
@@ -154,6 +155,20 @@
                     <textarea name="content" x-model="content" required rows="4" maxlength="10000" placeholder="输入回复内容…"
                               class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                     @error('content')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                    <div class="mt-3">
+                        <label class="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 cursor-pointer hover:text-indigo-600">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
+                            附带附件（最多 5 个，每个 ≤10MB）
+                            <input type="file" name="attachments[]" multiple class="hidden"
+                                   @change="files = Array.from($event.target.files).map(f => f.name)">
+                        </label>
+                        <div class="mt-1.5 space-y-0.5">
+                            <template x-for="f in files" :key="f">
+                                <p class="text-xs text-gray-500 dark:text-gray-400" x-text="f"></p>
+                            </template>
+                        </div>
+                        @error('attachments')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                    </div>
                     <div class="mt-3 flex justify-end">
                         <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-500">发送回复</button>
                     </div>

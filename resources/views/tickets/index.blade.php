@@ -41,6 +41,11 @@
                               {{ request()->boolean('unassigned') ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20' }}">
                         <span class="w-2 h-2 rounded-full bg-amber-500"></span> 待认领
                     </a>
+                    <a href="{{ route('tickets.index', array_merge(request()->query(), ['overdue' => 1])) }}"
+                       class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition
+                              {{ request()->boolean('overdue') ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300' : 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20' }}">
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span> SLA 超时
+                    </a>
                     <select name="assignee" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
                         <option value="">全部负责人</option>
                         @foreach ($agents as $a)
@@ -140,7 +145,12 @@
                                 @endif
                                 <td class="py-3 px-4 font-mono text-xs text-indigo-600 dark:text-indigo-400">{{ $t->no }}</td>
                                 <td class="py-3 px-4 max-w-[240px]">
-                                    <a href="{{ route('tickets.show', $t) }}" class="font-medium text-gray-800 dark:text-gray-200 hover:underline line-clamp-1">{{ $t->subject }}</a>
+                                    <div class="flex items-center gap-1.5">
+                                        <a href="{{ route('tickets.show', $t) }}" class="font-medium text-gray-800 dark:text-gray-200 hover:underline line-clamp-1">{{ $t->subject }}</a>
+                                        @if ($t->isOverdue())
+                                            <span class="shrink-0 inline-flex rounded-md bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-300 ring-1 ring-inset ring-red-200 dark:ring-red-500/30">超时</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 @if ($isAgent)
                                     <td class="py-3 px-4 text-gray-600 dark:text-gray-400">{{ $t->user?->name ?? '-' }}</td>

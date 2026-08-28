@@ -269,5 +269,62 @@ class DatabaseSeeder extends Seeder
                 );
             }
         }
+
+        // ---- 补充产品演示数据（分页演示，合计 16 个）----
+        $bulkProducts = [
+            ['name' => '企业邮箱服务', 'sku' => 'MAIL-001', 'warranty_days' => 365],
+            ['name' => '云主机套餐 A', 'sku' => 'CLOUD-A-01', 'warranty_days' => 730],
+            ['name' => '云主机套餐 B', 'sku' => 'CLOUD-B-01', 'warranty_days' => 730],
+            ['name' => '数据库托管', 'sku' => 'DB-HOST-01', 'warranty_days' => 365],
+            ['name' => '文件存储服务', 'sku' => 'OSS-001', 'warranty_days' => 365],
+            ['name' => '短信通知服务', 'sku' => 'SMS-SVC-01', 'warranty_days' => 365],
+            ['name' => '报表中心专业版', 'sku' => 'BI-PRO-01', 'warranty_days' => 730],
+            ['name' => '客服机器人训练包', 'sku' => 'BOT-TRAIN-01', 'warranty_days' => 180],
+            ['name' => 'API 网关服务', 'sku' => 'API-GW-01', 'warranty_days' => 365],
+            ['name' => '终端运维服务', 'sku' => 'OPS-001', 'warranty_days' => 365],
+            ['name' => '备份容灾服务', 'sku' => 'DR-001', 'warranty_days' => 1095],
+            ['name' => '专属实施服务', 'sku' => 'IMPL-001', 'warranty_days' => 180],
+        ];
+        foreach ($bulkProducts as $p) {
+            Product::updateOrCreate(['sku' => $p['sku']], $p + ['description' => '【演示数据】'.$p['name'], 'is_active' => true]);
+        }
+
+        // ---- 补充客户用户演示数据（分页演示，合计 18 人）----
+        $bulkCustomerNames = [
+            '张伟', '李娜', '王强', '赵敏', '陈杰', '刘洋', '杨雪', '黄磊', '周芳', '吴刚',
+        ];
+        $newUsers = [];
+        foreach ($bulkCustomerNames as $i => $name) {
+            $u = User::updateOrCreate(
+                ['email' => 'demo'.$i.'@example.com'],
+                ['name' => $name, 'role' => 'customer', 'phone' => '137000000'.str_pad((string) (10 + $i), 2, '0', STR_PAD_LEFT), 'password' => Hash::make('password')]
+            );
+            $newUsers[] = $u->id;
+        }
+
+        // ---- 补充客户档案演示数据（分页演示，合计 16 家）----
+        $bulkCompanies = [
+            ['中科云创科技有限公司', 0], ['恒远信息技术有限公司', 1], ['蓝海网络科技', 2],
+            ['绿洲数据服务', 3], ['极光软件', 4], ['天际电子商务', 5],
+            ['万象智能科技', 6], ['飞腾网络工程', 7], ['智汇金融科技', 8],
+            ['拓疆物流科技', 9], ['皓月医疗信息', 0], ['金石教育科技', 1],
+            ['磐石物联网', 2],
+        ];
+        $allProducts = Product::orderBy('id')->pluck('id')->all();
+        foreach ($bulkCompanies as $i => [$company, $userOffset]) {
+            $prodId = $allProducts[$i % count($allProducts)];
+            Customer::updateOrCreate(
+                ['company' => $company],
+                [
+                    'contact_name' => $bulkCustomerNames[$i % 10],
+                    'phone' => '136000000'.str_pad((string) (20 + $i), 2, '0', STR_PAD_LEFT),
+                    'email' => 'c'.$i.'@demo.com',
+                    'product_id' => $prodId,
+                    'user_id' => $newUsers[$userOffset] ?? null,
+                    'registered_at' => now()->subMonths(($i % 12) + 1),
+                    'after_sales_expired_at' => now()->subMonths(($i % 12) + 1)->addDays((int) Product::find($prodId)?->warranty_days),
+                ]
+            );
+        }
     }
 }

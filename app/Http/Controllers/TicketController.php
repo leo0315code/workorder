@@ -106,6 +106,10 @@ class TicketController extends Controller
             if ($request->boolean('unassigned')) {
                 $query->whereNull('assignee_id');
             }
+            if ($request->boolean('overdue')) {
+                $query->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
+                    ->where('sla_due_at', '<', now());
+            }
         }
 
         if ($request->filled('status')) {
@@ -271,6 +275,8 @@ class TicketController extends Controller
 
         $request->validate([
             'content' => ['required', 'string', 'max:10000'],
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => ['file', 'max:10240'], // 10MB
         ]);
 
         $reply = TicketReply::create([
@@ -279,6 +285,9 @@ class TicketController extends Controller
             'content' => $request->input('content'),
             'type' => TicketReply::TYPE_REPLY,
         ]);
+
+        // 回复附件（挂到工单附件区统一展示）
+        $this->storeAttachments($request, $ticket);
 
         $reopened = in_array($ticket->status, [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]);
 
