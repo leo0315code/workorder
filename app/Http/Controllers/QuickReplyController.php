@@ -13,7 +13,7 @@ class QuickReplyController extends Controller
 {
     public function index(): View
     {
-        $quickReplies = QuickReply::orderByDesc('updated_at')->get();
+        $quickReplies = QuickReply::orderByDesc('updated_at')->paginate(15);
 
         return view('quick-replies.index', compact('quickReplies'));
     }

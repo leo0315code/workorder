@@ -14,7 +14,7 @@ class CategoryController extends Controller
 {
     public function index(): View
     {
-        $categories = Category::withCount('tickets')->orderByDesc('updated_at')->get();
+        $categories = Category::withCount('tickets')->orderByDesc('updated_at')->paginate(15);
 
         return view('categories.index', compact('categories'));
     }
