@@ -193,5 +193,81 @@ class DatabaseSeeder extends Seeder
             ['ticket_id' => $t3->id, 'user_id' => $agent2->id, 'content' => '客户对排期满意，先按建议单处理，内部跟踪排期即可。'],
             ['type' => TicketReply::TYPE_NOTE]
         );
+
+        // ---- 批量演示工单（分页演示，no: TK-DEMO-1001..1018，与上述 3 条合计 21 条）----
+        $bulkUsers = [$customer1->id, $customer2->id, $customer1->id, $customer2->id];
+        $bulkCategories = [$catAsk?->id, $catBug?->id, $catSvc?->id, $catBug?->id, $catAsk?->id];
+        $bulkProducts = [$prodSass?->id, $prodHw?->id, $prodSass?->id, $prodHw?->id];
+        $bulkAssignees = [$agent1->id, $agent2->id, null, $agent1->id, $agent2->id, $admin->id];
+        $bulkSubjects = [
+            '登录后无法进入工单列表',
+            '消息通知不提醒，需要排查',
+            '咨询数据导出权限',
+            '工单附件上传失败',
+            '希望支持批量导入客户',
+            '报表统计口径问题',
+            '账号绑定微信失败',
+            '短信验证码收不到',
+            '产品续费价格咨询',
+            '页面加载缓慢',
+            '历史工单无法检索',
+            '希望增加工单模板',
+            '接口调用报 500',
+            '售后保修期计算疑问',
+            '客户资料修改权限',
+            '夜间是否有人值班',
+            '建议增加满意度回访',
+            '关于服务协议的确认',
+        ];
+        $bulkStatuses = [
+            Ticket::STATUS_OPEN, Ticket::STATUS_IN_PROGRESS, Ticket::STATUS_PENDING,
+            Ticket::STATUS_OPEN, Ticket::STATUS_IN_PROGRESS, Ticket::STATUS_RESOLVED,
+            Ticket::STATUS_OPEN, Ticket::STATUS_PENDING, Ticket::STATUS_IN_PROGRESS,
+            Ticket::STATUS_OPEN, Ticket::STATUS_RESOLVED, Ticket::STATUS_OPEN,
+            Ticket::STATUS_IN_PROGRESS, Ticket::STATUS_OPEN, Ticket::STATUS_PENDING,
+            Ticket::STATUS_OPEN, Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED,
+        ];
+        $bulkPriorities = [
+            Ticket::PRIORITY_NORMAL, Ticket::PRIORITY_HIGH, Ticket::PRIORITY_LOW,
+            Ticket::PRIORITY_HIGH, Ticket::PRIORITY_NORMAL, Ticket::PRIORITY_LOW,
+            Ticket::PRIORITY_NORMAL, Ticket::PRIORITY_URGENT, Ticket::PRIORITY_NORMAL,
+            Ticket::PRIORITY_LOW, Ticket::PRIORITY_NORMAL, Ticket::PRIORITY_NORMAL,
+            Ticket::PRIORITY_URGENT, Ticket::PRIORITY_NORMAL, Ticket::PRIORITY_LOW,
+            Ticket::PRIORITY_HIGH, Ticket::PRIORITY_LOW, Ticket::PRIORITY_NORMAL,
+        ];
+
+        foreach ($bulkSubjects as $i => $subject) {
+            $idx = $i + 1;
+            $isResolved = in_array($bulkStatuses[$i], [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]);
+            $isOverdue = in_array($i, [1, 12, 15]); // 造 3 条 SLA 超时示例
+            $createdAt = now()->subDays(($idx * 3) % 20 + 1)->subHours(($idx * 5) % 24);
+
+            Ticket::updateOrCreate(
+                ['no' => sprintf('TK-DEMO-%04d', 1000 + $idx)],
+                [
+                    'user_id' => $bulkUsers[$i % 4],
+                    'category_id' => $bulkCategories[$i % 5],
+                    'product_id' => $bulkProducts[$i % 4],
+                    'subject' => $subject,
+                    'description' => '【演示数据】'.$subject.'，请协助处理，谢谢。',
+                    'priority' => $bulkPriorities[$i],
+                    'status' => $bulkStatuses[$i],
+                    'assignee_id' => $bulkAssignees[$i % 6],
+                    'sla_due_at' => $isOverdue ? $createdAt->addHours(2) : $createdAt->addHours(48),
+                    'closed_at' => $isResolved ? $createdAt->addDays(2) : null,
+                    'last_reply_at' => $isResolved ? $createdAt->addDays(1) : null,
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
+                ]
+            );
+
+            // 给半数工单补一条客户提问回复
+            if ($i % 2 === 0) {
+                TicketReply::updateOrCreate(
+                    ['ticket_id' => Ticket::where('no', sprintf('TK-DEMO-%04d', 1000 + $idx))->value('id'), 'user_id' => $bulkUsers[$i % 4], 'content' => '请问处理进度如何？'],
+                    ['type' => TicketReply::TYPE_REPLY]
+                );
+            }
+        }
     }
 }
