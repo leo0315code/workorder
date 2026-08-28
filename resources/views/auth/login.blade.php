@@ -3,10 +3,7 @@
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
     <div class="mb-6 text-center">
-        <span class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-600 text-white mb-3">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-        </span>
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">工单系统 · 用户登录</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">用户登录</h2>
         <p class="text-sm text-gray-500 mt-1">提交工单、跟进处理进度</p>
     </div>
 

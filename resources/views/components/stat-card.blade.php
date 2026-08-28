@@ -2,17 +2,17 @@
 
 @php
     $colors = [
-        'indigo' => 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400',
-        'amber' => 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400',
-        'green' => 'bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400',
-        'red' => 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400',
-        'sky' => 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400',
-        'orange' => 'bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400',
+        'indigo' => 'from-indigo-500 to-violet-500 shadow-indigo-500/25',
+        'amber' => 'from-amber-500 to-orange-500 shadow-amber-500/25',
+        'green' => 'from-emerald-500 to-green-500 shadow-emerald-500/25',
+        'red' => 'from-rose-500 to-red-500 shadow-rose-500/25',
+        'sky' => 'from-sky-500 to-cyan-500 shadow-sky-500/25',
+        'orange' => 'from-orange-500 to-amber-500 shadow-orange-500/25',
     ];
 @endphp
 
-<div class="flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4">
-    <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl {{ $colors[$color] ?? $colors['indigo'] }}">
+<div class="group flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4 shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-700 transition">
+    <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br text-white shadow-lg {{ $colors[$color] ?? $colors['indigo'] }} group-hover:scale-105 transition-transform">
         <x-nav-icon :name="$icon" class="w-5 h-5" />
     </span>
     <div>

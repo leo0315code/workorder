@@ -3,10 +3,10 @@
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
     <div class="mb-6 text-center">
-        <span class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gray-900 text-white mb-3">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" /></svg>
+        <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 text-white dark:text-gray-900 shadow-lg shadow-gray-500/20 mb-3">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" /></svg>
         </span>
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">工单系统 · 管理后台</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">管理后台</h2>
         <p class="text-sm text-gray-500 mt-1">仅限客服 / 管理员登录</p>
     </div>
 
