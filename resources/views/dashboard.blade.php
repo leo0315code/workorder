@@ -119,7 +119,8 @@
                     ? 'inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium'
                     : 'inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer text-gray-500 dark:text-gray-400';
             });
-            fetch('{{ url('dashboard/recent') }}?scope=' + encodeURIComponent(scope), {
+            // 相对路径：跟随当前页面 origin，杜绝跨域/混合内容导致的失败
+            fetch('/dashboard/recent?scope=' + encodeURIComponent(scope), {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     cache: 'no-store',
                 })
@@ -135,7 +136,10 @@
                     });
                     history.replaceState(null, '', '?scope=' + scope + '#recent');
                 })
-                .catch(function () { window.location.href = '{{ route('dashboard') }}?scope=' + encodeURIComponent(scope); });
+                .catch(function () {
+                    // 失败时不整页跳转（避免『突然刷新』），高亮保持点击的 scope
+                    console.warn('recent panel load failed for scope=' + scope);
+                });
         }
         window.__recentPanel = loadRecentPanel;
     </script>
