@@ -17,7 +17,7 @@ class WebSocketService
      * - VITE_WS_URL 显式配置时优先（可写死完整地址）
      * - WS_PROXY_PATH 配置时：走同源反向代理（生产推荐，TLS 由 Nginx/Apache 终结），
      *   如 wss://new-order.test/ws，需在 Web 服务器把该路径 Upgrade 转发到 ws://127.0.0.1:6001
-     * - 否则按当前页面协议直连：HTTPS 页面 → wss://host:6002，HTTP → ws://host:6001
+     * - 否则按当前页面协议直连：ws://host:6001（HTTPS 页面需配置代理路径避免混合内容）
      */
     public static function frontendWsUrl(): string
     {
@@ -34,7 +34,7 @@ class WebSocketService
             return $scheme.'://'.$host.'/'.ltrim($proxyPath, '/');
         }
 
-        $listen = $scheme === 'wss' ? (string) (config('websocket.ssl.listen') ?? '0.0.0.0:6002') : (string) config('websocket.gateway_listen');
+        $listen = (string) config('websocket.gateway_listen');
         $port = substr((string) strrchr($listen, ':'), 1);
 
         return $scheme.'://'.$host.':'.($port ?: '6001');
