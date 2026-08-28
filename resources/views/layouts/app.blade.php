@@ -133,7 +133,8 @@
 
                             {{-- 通知下拉：与铃铛同属外层 flex 容器，absolute 不再被压缩到 40px --}}
                             <div x-show="open" x-cloak x-transition @click.outside="open = false"
-                                 style="width:352px!important;min-width:352px;max-width:calc(100vw - 1rem);box-sizing:border-box;" class="absolute right-0 top-full mt-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl z-50">
+                                 :style="open ? 'position:fixed; top:60px; right:16px; width:352px!important; min-width:352px; max-width:calc(100vw - 1rem); box-sizing:border-box; z-index:60;' : ''"
+                                 class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl">
                                 <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                                     <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">通知</span>
                                     <button @click="markAllRead()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">全部已读</button>
@@ -149,8 +150,8 @@
                                             <div class="flex items-start gap-2.5">
                                                 <span class="mt-1.5 w-2 h-2 rounded-full shrink-0" :class="n.is_read ? 'bg-gray-200 dark:bg-gray-700' : 'bg-indigo-500'"></span>
                                                 <div class="min-w-0 flex-1">
-                                                    <p class="text-sm text-gray-800 dark:text-gray-200 break-words" x-text="n.title"></p>
-                                                    <p class="text-xs text-gray-400 mt-1 break-words line-clamp-2" x-text="n.body || ''"></p>
+                                                    <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-normal" x-text="n.title"></p>
+                                                    <p class="text-xs text-gray-400 mt-1 break-words whitespace-normal line-clamp-2" x-text="n.body || ''"></p>
                                                     <p class="text-[10px] text-gray-300 dark:text-gray-600 mt-1" x-text="formatTime(n.created_at)"></p>
                                                 </div>
                                             </div>
