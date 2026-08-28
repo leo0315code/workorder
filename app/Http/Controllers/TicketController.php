@@ -53,7 +53,7 @@ class TicketController extends Controller
         // 列表页实时连接配置（订阅 ticket.all 房间）+ 轮询兜底基准时间
         $uid = (int) Auth::id();
         $wsConfig = [
-            'wsUrl' => env('VITE_WS_URL', 'ws://127.0.0.1:6001'),
+            'wsUrl' => \App\Services\WebSocketService::frontendWsUrl(),
             'uid' => $uid,
             'token' => WebSocketService::signature($uid, ['ticket.all']),
             'rooms' => ['ticket.all'],
@@ -257,7 +257,7 @@ class TicketController extends Controller
 
         // 前端实时组件配置（避免在 Blade 属性中用复杂 @json）
         $roomConfig = [
-            'wsUrl' => env('VITE_WS_URL', 'ws://127.0.0.1:6001'),
+            'wsUrl' => \App\Services\WebSocketService::frontendWsUrl(),
             'uid' => (int) $wsUid,
             'token' => $wsToken,
             'rooms' => $wsRooms,

@@ -26,3 +26,4 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 websocket/*.pid
+storage/websocket-ssl/

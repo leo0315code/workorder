@@ -35,7 +35,11 @@
 - **列表实时与兜底**：所有登录页面建立全局 WebSocket 连接（在线状态 + 通知/工单实时），工单列表页新工单实时提示；WS 掉线自动降级为 20s 轮询 `/tickets/changes`
 - **管理后台**：客户档案（绑定注册账号 + 产品保修期自动计算售后到期）、产品管理、分类管理、用户角色管理
 - **数据报表**：近 7/30/90 天每日新增趋势、客服处理排行（处理数/回复数/平均首次响应时长）、状态/优先级/分类分布、满意度
-- **实时推送**：新回复 / 状态变更 / 新工单 / 新通知即时送达（WS 不可用时自动降级为 8s 轮询）
+- **实时推送**：新回复 / 状态变更 / 新工单 / 新通知即时送达（WS 不可用自动降级：详情页 8s 轮询、列表页 20s 轮询）
+- **WSS 支持（生产 HTTPS 必备）**：三种接入方式
+  1. **Nginx/Apache 反向代理（推荐）**：设置 `WS_PROXY_PATH=/ws`，页面按协议自动生成 `wss://域名/ws` 或 `ws://域名/ws`，TLS 由 Web 服务器终结
+  2. 直连加密：`WS_SSL_ENABLED=true` + 证书（`websocket/start_gateway.php` 自动监听 wss:6002）
+  3. 直连明文：默认 `ws://host:6001`（本地联调）
 - **仪表盘**：状态/优先级/分类分布、今日解决、SLA 超时、最近工单
 
 ## 快速开始
@@ -162,6 +166,31 @@ php artisan ws:start
 - 单进程模式吞吐低于 Linux 多进程，生产高并发建议部署到 Linux / WSL2 / Docker。
 - 附件路径、日志路径均为相对路径，无平台差异；`storage` 目录需保持可写。
 - 开发调试时保持 `php artisan serve` 或上述 Web 服务运行，前端已内置 WS 不可用时的轮询兜底。
+
+## WSS 反向代理配置（推荐方案）
+
+GatewayWorker 保持明文监听 `127.0.0.1:6001`，Nginx/Apache 负责 TLS 终结并把 `/ws` 路径 Upgrade 转发：
+
+```nginx
+# HTTPS server 块内
+location /ws {
+    proxy_pass http://127.0.0.1:6001;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+}
+# PHP 需要知道请求是 https（否则 Laravel 判定不了 secure，ws 地址会生成成 ws://）
+location / {
+    try_files $uri $uri/ /index.php?$query_string;
+    fastcgi_param HTTPS on;   # 仅当该 server 块恒为 443 时
+}
+```
+
+启用方式：`.env` 设置 `WS_PROXY_PATH=/ws`（并移除/注释 `VITE_WS_URL` 硬编码），前端自动使用 `wss://域名/ws`。
+> 注意：ServBay 的 `vhosts/*.conf` 是自动生成的，手动改动可能被重新生成覆盖，重新生成后需重新添加 `location /ws` 块（备份见 `/tmp/new-order.test.conf.bak`）。
 
 ## 定时任务（SLA / 售后提醒）
 

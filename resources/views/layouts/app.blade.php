@@ -257,7 +257,7 @@
                 (function () {
                     try {
                         window.__ticketRT = new TicketRealtime({
-                            wsUrl: '{{ env('VITE_WS_URL', 'ws://127.0.0.1:6001') }}',
+                            wsUrl: '{{ \App\Services\WebSocketService::frontendWsUrl() }}',
                             uid: {{ (int) auth()->id() }},
                             token: '{{ \App\Services\WebSocketService::signature((int) auth()->id(), ['ticket.all']) }}',
                             rooms: ['ticket.all'],

@@ -13,6 +13,33 @@ use Illuminate\Support\Facades\Log;
 class WebSocketService
 {
     /**
+     * 前端浏览器应使用的 WebSocket 地址（自动适配 ws / wss）
+     * - VITE_WS_URL 显式配置时优先（可写死完整地址）
+     * - WS_PROXY_PATH 配置时：走同源反向代理（生产推荐，TLS 由 Nginx/Apache 终结），
+     *   如 wss://new-order.test/ws，需在 Web 服务器把该路径 Upgrade 转发到 ws://127.0.0.1:6001
+     * - 否则按当前页面协议直连：HTTPS 页面 → wss://host:6002，HTTP → ws://host:6001
+     */
+    public static function frontendWsUrl(): string
+    {
+        $configured = env('VITE_WS_URL');
+        if ($configured) {
+            return $configured;
+        }
+
+        $scheme = request()->isSecure() ? 'wss' : 'ws';
+        $host = request()->getHost();
+
+        $proxyPath = (string) env('WS_PROXY_PATH');
+        if ($proxyPath !== '') {
+            return $scheme.'://'.$host.'/'.ltrim($proxyPath, '/');
+        }
+
+        $listen = $scheme === 'wss' ? (string) (config('websocket.ssl.listen') ?? '0.0.0.0:6002') : (string) config('websocket.gateway_listen');
+        $port = substr((string) strrchr($listen, ':'), 1);
+
+        return $scheme.'://'.$host.':'.($port ?: '6001');
+    }
+    /**
      * 推送消息到房间（如 ticket.12）
      */
     public static function pushToRoom(string $room, array $payload): bool
