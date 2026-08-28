@@ -3,7 +3,7 @@
 @section('page_title', '系统设置')
 
 @section('content')
-    <div class="max-w-2xl space-y-4">
+    <div class="max-w-5xl space-y-4">
         {{-- 角色管理快捷入口 --}}
         <a href="{{ route('admin.agent-roles.index') }}"
            class="flex items-center justify-between rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-500/10 dark:to-violet-500/10 px-5 py-3.5 text-sm hover:from-indigo-100 hover:to-violet-100 dark:hover:from-indigo-500/20 dark:hover:to-violet-500/20 shadow-sm transition">
@@ -15,94 +15,96 @@
             <span class="text-indigo-600 dark:text-indigo-300 font-medium whitespace-nowrap">前往管理 →</span>
         </a>
 
-        <form method="POST" action="{{ route('admin.settings.save') }}" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 space-y-6 shadow-sm">
+        <form method="POST" action="{{ route('admin.settings.save') }}" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-sm">
             @csrf
 
-            {{-- 基本 --}}
-            <x-settings-section title="基本" icon="globe">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">系统名称 <span class="text-red-500">*</span></label>
-                    <input type="text" name="site_name" value="{{ $settings['site_name'] }}" required maxlength="50"
-                           class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    <p class="mt-1.5 text-xs text-gray-400">显示在浏览器标题与登录页</p>
-                </div>
-            </x-settings-section>
-
-            {{-- 通知 --}}
-            <x-settings-section title="通知" icon="bell" divider>
-                <label class="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-500/40 cursor-pointer">
-                    <input type="checkbox" name="email_notify_enabled" value="1" @checked($settings['email_notify_enabled'] === '1')
-                           class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-sm">
-                        <span class="font-medium text-gray-700 dark:text-gray-300">新工单 / 新回复 / 状态变更发送邮件提醒</span>
-                        <span class="block text-xs text-gray-400 mt-0.5">发送渠道由 .env 的 MAIL_MAILER 决定，log 为写日志，smtp 为真实发送</span>
-                    </span>
-                </label>
-            </x-settings-section>
-
-            {{-- 工单 --}}
-            <x-settings-section title="工单" icon="ticket" divider>
-                <label class="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-500/40 cursor-pointer">
-                    <input type="checkbox" name="auto_assign" value="1" @checked($settings['auto_assign'] === '1')
-                           class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-sm">
-                        <span class="font-medium text-gray-700 dark:text-gray-300">新工单自动分配</span>
-                        <span class="block text-xs text-gray-400 mt-0.5">仅分配给在线客服，按未完成工单数最少优先；关闭后新工单进入待认领</span>
-                    </span>
-                </label>
-
-                <div>
-                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">SLA 时限（小时）</p>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        @foreach (['sla_low' => '低', 'sla_normal' => '普通', 'sla_high' => '高', 'sla_urgent' => '紧急'] as $key => $label)
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">{{ $label }}</label>
-                                <input type="number" name="{{ $key }}" value="{{ $settings[$key] }}" min="1" max="720"
-                                       class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </x-settings-section>
-
-            {{-- 工作时间 --}}
-            <x-settings-section title="工作时间" icon="clock" divider>
-                <label class="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-500/40 cursor-pointer">
-                    <input type="checkbox" name="work_hours_enabled" value="1" @checked($settings['work_hours_enabled'] === '1')
-                           class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-sm">
-                        <span class="font-medium text-gray-700 dark:text-gray-300">启用工作时间限制</span>
-                        <span class="block text-xs text-gray-400 mt-0.5">非工作时间客户不能提交工单，客服不受限</span>
-                    </span>
-                </label>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                {{-- 基本 --}}
+                <x-settings-section title="基本" icon="globe">
                     <div>
-                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">开始时间</label>
-                        <input type="time" name="work_start" value="{{ $settings['work_start'] }}"
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">系统名称 <span class="text-red-500">*</span></label>
+                        <input type="text" name="site_name" value="{{ $settings['site_name'] }}" required maxlength="50"
                                class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="mt-1.5 text-xs text-gray-400">显示在浏览器标题与登录页</p>
                     </div>
+                </x-settings-section>
+
+                {{-- 通知 --}}
+                <x-settings-section title="通知" icon="bell">
+                    <label class="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-500/40 cursor-pointer">
+                        <input type="checkbox" name="email_notify_enabled" value="1" @checked($settings['email_notify_enabled'] === '1')
+                               class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                        <span class="text-sm">
+                            <span class="font-medium text-gray-700 dark:text-gray-300">新工单 / 新回复 / 状态变更发送邮件提醒</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">发送渠道由 .env 的 MAIL_MAILER 决定，log 为写日志，smtp 为真实发送</span>
+                        </span>
+                    </label>
+                </x-settings-section>
+
+                {{-- 工单 --}}
+                <x-settings-section title="工单" icon="ticket" divider>
+                    <label class="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-500/40 cursor-pointer">
+                        <input type="checkbox" name="auto_assign" value="1" @checked($settings['auto_assign'] === '1')
+                               class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                        <span class="text-sm">
+                            <span class="font-medium text-gray-700 dark:text-gray-300">新工单自动分配</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">仅分配给在线客服，按未完成工单数最少优先；关闭后新工单进入待认领</span>
+                        </span>
+                    </label>
+
                     <div>
-                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">结束时间</label>
-                        <input type="time" name="work_end" value="{{ $settings['work_end'] }}"
-                               class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">工作日</label>
-                        <div class="grid grid-cols-7 gap-1.5">
-                            @foreach ([1 => '一', 2 => '二', 3 => '三', 4 => '四', 5 => '五', 6 => '六', 7 => '日'] as $d => $label)
-                                <label class="flex items-center justify-center px-1 py-1.5 rounded-md border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-500/40 text-xs text-gray-600 dark:text-gray-300 cursor-pointer has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-300 has-[:checked]:text-indigo-700 dark:has-[:checked]:bg-indigo-500/20 dark:has-[:checked]:text-indigo-300 transition">
-                                    <input type="checkbox" name="work_days[]" value="{{ $d }}" @checked(in_array((string) $d, explode(',', (string) $settings['work_days']), true))
-                                           class="hidden">
-                                    周{{ $label }}
-                                </label>
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">SLA 时限（小时）</p>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            @foreach (['sla_low' => '低', 'sla_normal' => '普通', 'sla_high' => '高', 'sla_urgent' => '紧急'] as $key => $label)
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ $label }}</label>
+                                    <input type="number" name="{{ $key }}" value="{{ $settings[$key] }}" min="1" max="720"
+                                           class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
                             @endforeach
                         </div>
                     </div>
-                </div>
-            </x-settings-section>
+                </x-settings-section>
 
-            {{-- 短信通道 --}}
+                {{-- 工作时间 --}}
+                <x-settings-section title="工作时间" icon="clock" divider>
+                    <label class="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-500/40 cursor-pointer">
+                        <input type="checkbox" name="work_hours_enabled" value="1" @checked($settings['work_hours_enabled'] === '1')
+                               class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                        <span class="text-sm">
+                            <span class="font-medium text-gray-700 dark:text-gray-300">启用工作时间限制</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">非工作时间客户不能提交工单，客服不受限</span>
+                        </span>
+                    </label>
+
+                    <div class="grid grid-cols-[1fr_1fr_auto] gap-3 items-end">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">开始</label>
+                            <input type="time" name="work_start" value="{{ $settings['work_start'] }}"
+                                   class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">结束</label>
+                            <input type="time" name="work_end" value="{{ $settings['work_end'] }}"
+                                   class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">工作日</label>
+                            <div class="flex gap-1">
+                                @foreach ([1 => '一', 2 => '二', 3 => '三', 4 => '四', 5 => '五', 6 => '六', 7 => '日'] as $d => $label)
+                                    <label class="flex items-center justify-center w-8 h-8 rounded-md border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-500/40 text-xs text-gray-600 dark:text-gray-300 cursor-pointer has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-300 has-[:checked]:text-indigo-700 dark:has-[:checked]:bg-indigo-500/20 dark:has-[:checked]:text-indigo-300 transition">
+                                        <input type="checkbox" name="work_days[]" value="{{ $d }}" @checked(in_array((string) $d, explode(',', (string) $settings['work_days']), true))
+                                               class="hidden">
+                                        {{ $label }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </x-settings-section>
+            </div>
+
+            {{-- 短信通道（横跨整行） --}}
             <x-settings-section title="短信通道" icon="chat" divider>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
