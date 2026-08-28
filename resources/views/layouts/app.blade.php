@@ -304,21 +304,6 @@
             @endif
         @endauth
 
-        {{-- 表单提交/刷新后恢复滚动位置（避免筛选后回到顶部） --}}
-        <script>
-            (function () {
-                if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-                window.addEventListener('beforeunload', () => sessionStorage.setItem('wb-scroll-pos', String(window.scrollY)));
-                window.addEventListener('load', () => {
-                    const y = sessionStorage.getItem('wb-scroll-pos');
-                    if (y !== null && ! location.hash) {
-                        window.scrollTo(0, parseInt(y, 10) || 0);
-                        sessionStorage.removeItem('wb-scroll-pos');
-                    }
-                });
-            })();
-        </script>
-
         {{-- 通知点击兜底：即使旧版 JS 缓存未更新，点击 <a> 也能跳转 --}}
         <script>
             (function () {
