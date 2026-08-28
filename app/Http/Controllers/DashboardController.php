@@ -44,7 +44,7 @@ class DashboardController extends Controller
         } elseif ($scope === 'resolved') {
             $recentQuery->whereIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]);
         }
-        $recent = $recentQuery->limit(8)->get();
+        $recent = $recentQuery->limit(10)->get();
 
         $myOpen = Ticket::where('assignee_id', Auth::id())
             ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
