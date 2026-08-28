@@ -83,6 +83,17 @@
                     </div>
                 </div>
 
+                {{-- 通知 --}}
+                <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">通知</h3>
+                    <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                        <input type="checkbox" name="email_notify_enabled" value="1" @checked($settings['email_notify_enabled'] === '1')
+                               class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                        新工单 / 新回复 / 状态变更发送邮件提醒
+                        <span class="text-xs text-gray-400">（发送渠道由 .env 的 MAIL_MAILER 决定，log 为写日志，smtp 为真实发送）</span>
+                    </label>
+                </div>
+
                 {{-- 短信通道 --}}
                 <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">短信通道</h3>

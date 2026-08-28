@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\User;
 use App\Models\UserNotification;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 /**
- * 站内通知服务：入库 + GatewayWorker 实时推送（推送到目标用户 uid）
+ * 站内通知服务：入库 + GatewayWorker 实时推送 + 可选邮件提醒
  */
 class NotificationService
 {
     /**
-     * 给单个用户发通知（入库 + 推送）
+     * 给单个用户发通知（入库 + 推送 + 可选邮件）
      */
     public static function notifyUser(int $userId, string $title, ?string $body = null, ?string $link = null): ?UserNotification
     {
@@ -36,6 +38,9 @@ class NotificationService
             ],
         ]);
 
+        // 邮件提醒（系统设置开启时）
+        self::sendEmailIfEnabled($userId, $title, $body, $link);
+
         return $notification;
     }
 
@@ -50,6 +55,34 @@ class NotificationService
             } catch (\Throwable $e) {
                 Log::warning('notification send failed: '.$e->getMessage());
             }
+        }
+    }
+
+    /**
+     * 邮件提醒：设置页开启 email_notify_enabled 且用户有邮箱时发送
+     * MAIL_MAILER=log（默认）时写入日志；生产配 SMTP 后真实发送
+     */
+    protected static function sendEmailIfEnabled(int $userId, string $title, ?string $body, ?string $link): void
+    {
+        if (SettingService::get('email_notify_enabled', '0') !== '1') {
+            return;
+        }
+
+        $user = User::find($userId);
+        if (! $user?->email) {
+            return;
+        }
+
+        try {
+            Mail::raw(
+                ($body ? $body."\n\n" : '').($link ? '查看详情：'.$link : '')."\n\n—— 来自 ".SettingService::siteName().' 自动提醒',
+                function ($message) use ($user, $title) {
+                    $message->to($user->email)
+                        ->subject('【'.SettingService::siteName().'】'.$title);
+                }
+            );
+        } catch (\Throwable $e) {
+            Log::warning('email notify failed: '.$e->getMessage());
         }
     }
 }

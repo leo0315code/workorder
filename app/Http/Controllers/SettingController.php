@@ -25,6 +25,7 @@ class SettingController extends Controller
             'work_start' => SettingService::get('work_start', '09:00'),
             'work_end' => SettingService::get('work_end', '18:00'),
             'work_days' => SettingService::get('work_days', '1,2,3,4,5'),
+            'email_notify_enabled' => SettingService::get('email_notify_enabled', '0'),
             // 短信通道（运行时配置，兜底 .env）
             'sms_driver' => SmsService::driver(),
             'sms_allow_demo_code' => (string) (SmsService::cfg('allow_demo_code', true) ? '1' : '0'),
@@ -58,6 +59,7 @@ class SettingController extends Controller
             'work_days.*' => ['in:1,2,3,4,5,6,7'],
             'sms_driver' => ['required', 'in:demo,aliyun,tencent'],
             'sms_allow_demo_code' => ['nullable', 'boolean'],
+            'email_notify_enabled' => ['nullable', 'boolean'],
         ]);
 
         SettingService::setMany([
@@ -73,6 +75,7 @@ class SettingController extends Controller
             'work_days' => implode(',', $data['work_days']),
             'sms_driver' => $data['sms_driver'],
             'sms_allow_demo_code' => $request->boolean('sms_allow_demo_code') ? '1' : '0',
+            'email_notify_enabled' => $request->boolean('email_notify_enabled') ? '1' : '0',
         ]);
 
         // 短信密钥类字段：仅在非空时覆盖（避免每次保存清空已有密钥）
