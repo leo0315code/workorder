@@ -111,6 +111,14 @@
         function loadRecentPanel(scope) {
             var panel = document.getElementById('recent-panel');
             if (! panel) return;
+
+            // 1) 即时切换 tab 高亮（不等待服务端返回）
+            panel.querySelectorAll('[data-scope]').forEach(function (b) {
+                var active = b.getAttribute('data-scope') === scope;
+                b.className = active
+                    ? 'inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-medium'
+                    : 'inline-flex items-center gap-1.5 rounded-md px-3 py-1 transition cursor-pointer text-gray-500 dark:text-gray-400';
+            });
             fetch('{{ url('dashboard/recent') }}?scope=' + encodeURIComponent(scope), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(function (r) { if (! r.ok) throw new Error('fail'); return r.text(); })
                 .then(function (html) {
