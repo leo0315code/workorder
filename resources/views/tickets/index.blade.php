@@ -1,0 +1,204 @@
+@extends('layouts.app')
+
+@section('page_title', '工单列表')
+
+@section('content')
+    @php $isAgent = auth()->user()->isAgent(); @endphp
+
+    <div x-data="ticketList()">
+        {{-- 筛选 --}}
+        <form method="GET" action="{{ route('tickets.index') }}" class="mb-5">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="relative">
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="搜索编号 / 主题 / 描述"
+                           class="w-64 rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <select name="status" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                    <option value="">全部状态</option>
+                    @foreach ($statuses as $k => $label)
+                        <option value="{{ $k }}" @selected(request('status') === $k)>{{ $label }}</option>
+                    @endforeach
+                </select>
+
+                <select name="priority" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                    <option value="">全部优先级</option>
+                    @foreach ($priorities as $k => $label)
+                        <option value="{{ $k }}" @selected(request('priority') === $k)>{{ $label }}</option>
+                    @endforeach
+                </select>
+
+                <select name="category" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                    <option value="">全部分类</option>
+                    @foreach ($categories as $c)
+                        <option value="{{ $c->id }}" @selected((string) request('category') === (string) $c->id)>{{ $c->name }}</option>
+                    @endforeach
+                </select>
+
+                @if ($isAgent)
+                    <select name="assignee" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                        <option value="">全部负责人</option>
+                        @foreach ($agents as $a)
+                            <option value="{{ $a->id }}" @selected((string) request('assignee') === (string) $a->id)>{{ $a->name }}</option>
+                        @endforeach
+                    </select>
+
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <input type="checkbox" name="mine" value="1" @checked(request()->boolean('mine')) class="rounded border-gray-300 dark:border-gray-700">
+                        只看指派给我
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <input type="checkbox" name="unassigned" value="1" @checked(request()->boolean('unassigned')) class="rounded border-gray-300 dark:border-gray-700">
+                        未指派
+                    </label>
+                @endif
+
+                <button type="submit" class="rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2 text-sm font-medium text-white dark:text-gray-900 hover:bg-gray-700">筛选</button>
+                <a href="{{ route('tickets.index') }}" class="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">重置</a>
+            </div>
+        </form>
+
+        {{-- 工具条 --}}
+        <div class="mb-4 flex flex-wrap items-center gap-3">
+            @if ($isAgent)
+                <a href="{{ route('tickets.export', request()->query()) }}"
+                   class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                    导出 CSV（当前筛选）
+                </a>
+            @endif
+
+            <template x-if="isAgent && selected.length > 0">
+                <form method="POST" action="{{ route('tickets.batch') }}" class="flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2">
+                    @csrf
+                    <template x-for="id in selected" :key="id">
+                        <input type="hidden" name="ticket_ids[]" :value="id">
+                    </template>
+                    <span class="text-sm font-medium text-indigo-700 dark:text-indigo-300" x-text="'已选 ' + selected.length + ' 个'"></span>
+                    <select name="action" class="rounded-lg border-indigo-300 dark:border-indigo-500/40 dark:bg-gray-900 text-sm" @change="batchAction = $event.target.value">
+                        <option value="close">批量关闭</option>
+                        <option value="assign">批量指派</option>
+                    </select>
+                    <select name="assignee_id" x-show="batchAction === 'assign'" class="rounded-lg border-indigo-300 dark:border-indigo-500/40 dark:bg-gray-900 text-sm">
+                        <option value="">选择客服…</option>
+                        @foreach ($agents as $a)
+                            <option value="{{ $a->id }}">{{ $a->name }}</option>
+                        @endforeach
+                    </select>
+                    <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white" onclick="return confirm('确认执行批量操作？');">执行</button>
+                    <button type="button" @click="selected = []" class="text-sm text-indigo-500 hover:underline">取消</button>
+                </form>
+            </template>
+        </div>
+
+        {{-- 实时更新提示 --}}
+        <div @ticket:event.window="onLiveEvent($event.detail)" class="mb-4">
+            <div x-show="dirty" x-transition
+                 class="flex items-center justify-between rounded-lg border border-indigo-200 bg-indigo-50 dark:border-indigo-500/30 dark:bg-indigo-500/10 px-4 py-3 text-sm text-indigo-700 dark:text-indigo-300">
+                <span>有新工单/更新，点击刷新查看</span>
+                <button @click="location.reload()" class="font-medium underline">刷新</button>
+            </div>
+        </div>
+
+        {{-- 列表 --}}
+        <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/60">
+                            @if ($isAgent)
+                                <th class="py-3 pl-4 pr-2 w-10">
+                                    <input type="checkbox" @change="toggleAll($event.target.checked)" :checked="allSelected"
+                                           class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                                </th>
+                            @endif
+                            <th class="py-3 px-4">编号</th>
+                            <th class="py-3 px-4">主题</th>
+                            @if ($isAgent)<th class="py-3 px-4">客户</th>@endif
+                            <th class="py-3 px-4">分类</th>
+                            <th class="py-3 px-4">产品</th>
+                            <th class="py-3 px-4">状态</th>
+                            <th class="py-3 px-4">优先级</th>
+                            @if ($isAgent)<th class="py-3 px-4">负责人</th>@endif
+                            <th class="py-3 px-4">更新时间</th>
+                            <th class="py-3 px-4 text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($tickets as $t)
+                            <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                                @if ($isAgent)
+                                    <td class="py-3 pl-4 pr-2">
+                                        <input type="checkbox" value="{{ $t->id }}" x-model="selected"
+                                               class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                                    </td>
+                                @endif
+                                <td class="py-3 px-4 font-mono text-xs text-indigo-600 dark:text-indigo-400">{{ $t->no }}</td>
+                                <td class="py-3 px-4 max-w-[240px]">
+                                    <a href="{{ route('tickets.show', $t) }}" class="font-medium text-gray-800 dark:text-gray-200 hover:underline line-clamp-1">{{ $t->subject }}</a>
+                                </td>
+                                @if ($isAgent)
+                                    <td class="py-3 px-4 text-gray-600 dark:text-gray-400">{{ $t->user?->name ?? '-' }}</td>
+                                @endif
+                                <td class="py-3 px-4 text-gray-500 dark:text-gray-400">{{ $t->category?->name ?? '-' }}</td>
+                                <td class="py-3 px-4 text-gray-500 dark:text-gray-400">{{ $t->product?->name ?? '-' }}</td>
+                                <td class="py-3 px-4"><x-ticket-status :status="$t->status" /></td>
+                                <td class="py-3 px-4"><x-ticket-priority :priority="$t->priority" /></td>
+                                @if ($isAgent)
+                                    <td class="py-3 px-4 text-gray-600 dark:text-gray-300">
+                                        @if ($t->assignee)
+                                            {{ $t->assignee->name }}
+                                        @else
+                                            <span class="text-red-500">未指派</span>
+                                        @endif
+                                    </td>
+                                @endif
+                                <td class="py-3 px-4 text-gray-400 whitespace-nowrap">{{ $t->updated_at?->format('m-d H:i') }}</td>
+                                <td class="py-3 px-4 text-right">
+                                    <a href="{{ route('tickets.show', $t) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">查看</a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="11" class="py-12 text-center text-gray-400">
+                                    暂无工单
+                                    @if (! $isAgent)
+                                        ，<a href="{{ route('tickets.create') }}" class="text-indigo-600 hover:underline">去创建</a>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-800">
+                {{ $tickets->links() }}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function ticketList() {
+            return {
+                isAgent: @json($isAgent),
+                selected: [],
+                batchAction: 'close',
+                dirty: false,
+                get allSelected() {
+                    const ids = @json($tickets->pluck('id')->all());
+                    return ids.length > 0 && ids.every((id) => this.selected.includes(id));
+                },
+                toggleAll(checked) {
+                    const ids = @json($tickets->pluck('id')->all());
+                    this.selected = checked ? [...new Set([...this.selected, ...ids])] : this.selected.filter((id) => !ids.includes(id));
+                },
+                onLiveEvent(msg) {
+                    if (['new_ticket', 'status_changed', 'reply'].includes(msg.type)) {
+                        this.dirty = true;
+                    }
+                },
+            };
+        }
+    </script>
+@endsection

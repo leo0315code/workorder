@@ -35,4 +35,31 @@ return [
         ],
     ],
 
+    // 短信验证码：demo（本地演示，验证码写日志并返回）| aliyun | tencent
+    'sms' => [
+        'driver' => env('SMS_DRIVER', 'demo'),
+        'allow_demo_code' => env('SMS_ALLOW_DEMO_CODE', true),
+        'aliyun' => [
+            'access_key_id' => env('ALIYUN_SMS_ACCESS_KEY_ID'),
+            'access_key_secret' => env('ALIYUN_SMS_ACCESS_KEY_SECRET'),
+            'sign_name' => env('ALIYUN_SMS_SIGN_NAME'),
+            'template_code' => env('ALIYUN_SMS_TEMPLATE_CODE'),
+        ],
+        'tencent' => [
+            'secret_id' => env('TENCENT_SMS_SECRET_ID'),
+            'secret_key' => env('TENCENT_SMS_SECRET_KEY'),
+            'sdk_app_id' => env('TENCENT_SMS_SDK_APP_ID'),
+            'sign_name' => env('TENCENT_SMS_SIGN_NAME'),
+            'template_id' => env('TENCENT_SMS_TEMPLATE_ID'),
+        ],
+    ],
+
+    // 微信扫码登录（开放平台网站应用）；留空则走演示模式
+    'wechat' => [
+        'appid' => env('WECHAT_APPID'),
+        'secret' => env('WECHAT_SECRET'),
+        // 注意：不要在配置文件中调用 url()（控制台加载时无 request），运行时再解析
+        'redirect_url' => env('WECHAT_REDIRECT_URL'),
+    ],
+
 ];
