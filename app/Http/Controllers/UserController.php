@@ -51,6 +51,31 @@ class UserController extends Controller
     }
 
     /**
+     * 设置客服模块权限（菜单显示 + 后端守卫）
+     */
+    public function updatePermissions(Request $request, User $user): RedirectResponse
+    {
+        // 不能修改自己的权限
+        if ($user->id === $request->user()->id) {
+            return back()->with('error', '不能修改自己的权限');
+        }
+
+        if ($user->role === 'customer') {
+            return back()->with('error', '客户账号无后台模块权限');
+        }
+
+        $valid = implode(',', array_keys(User::AGENT_MODULES));
+        $data = $request->validate([
+            'modules' => ['nullable', 'array'],
+            'modules.*' => ['in:'.$valid],
+        ]);
+
+        $user->update(['permissions' => $request->input('modules', [])]);
+
+        return back()->with('success', '用户 '.$user->name.' 的模块权限已更新');
+    }
+
+    /**
      * 管理员手动置为离线/恢复在线（离线客服不参与自动分配；可选断开其连接）
      */
     public function toggleOffline(Request $request, User $user): RedirectResponse

@@ -54,4 +54,34 @@ class PermissionTest extends TestCase
             ->get(route('admin.settings'))
             ->assertOk();
     }
+
+    public function test_agent_without_module_permission_is_forbidden(): void
+    {
+        // 只读客服：仅 customers/reports
+        $agent = User::factory()->create([
+            'role' => 'agent',
+            'permissions' => ['customers', 'reports'],
+        ]);
+
+        $this->actingAs($agent)
+            ->get(route('admin.customers.index'))
+            ->assertOk();
+
+        $this->actingAs($agent)
+            ->get(route('admin.categories.index'))
+            ->assertForbidden();
+
+        $this->actingAs($agent)
+            ->get(route('tickets.export'))
+            ->assertForbidden();
+    }
+
+    public function test_agent_with_null_permissions_gets_default_all(): void
+    {
+        $agent = User::factory()->create(['role' => 'agent', 'permissions' => null]);
+
+        $this->actingAs($agent)
+            ->get(route('admin.categories.index'))
+            ->assertOk();
+    }
 }

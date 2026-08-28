@@ -31,12 +31,24 @@
                 if ($user && $user->isAgent()) {
                     $nav[] = ['label' => '仪表盘', 'route' => 'dashboard', 'icon' => 'dashboard', 'active' => request()->routeIs('dashboard')];
                     $nav[] = ['label' => '工单', 'route' => 'tickets.index', 'icon' => 'ticket', 'active' => request()->routeIs('tickets.*') && ! request()->routeIs('tickets.create')];
-                    $nav[] = ['label' => '客户档案', 'route' => 'admin.customers.index', 'icon' => 'customer', 'active' => request()->routeIs('admin.customers.*')];
-                    $nav[] = ['label' => '产品管理', 'route' => 'admin.products.index', 'icon' => 'product', 'active' => request()->routeIs('admin.products.*')];
-                    $nav[] = ['label' => '分类管理', 'route' => 'admin.categories.index', 'icon' => 'category', 'active' => request()->routeIs('admin.categories.*')];
-                    $nav[] = ['label' => '快捷回复', 'route' => 'admin.quick-replies.index', 'icon' => 'reply', 'active' => request()->routeIs('admin.quick-replies.*')];
-                    $nav[] = ['label' => '工单模板', 'route' => 'admin.ticket-templates.index', 'icon' => 'ticket', 'active' => request()->routeIs('admin.ticket-templates.*')];
-                    $nav[] = ['label' => '数据报表', 'route' => 'admin.reports', 'icon' => 'chart', 'active' => request()->routeIs('admin.reports')];
+                    if ($user->canAccessModule('customers')) {
+                        $nav[] = ['label' => '客户档案', 'route' => 'admin.customers.index', 'icon' => 'customer', 'active' => request()->routeIs('admin.customers.*')];
+                    }
+                    if ($user->canAccessModule('products')) {
+                        $nav[] = ['label' => '产品管理', 'route' => 'admin.products.index', 'icon' => 'product', 'active' => request()->routeIs('admin.products.*')];
+                    }
+                    if ($user->canAccessModule('categories')) {
+                        $nav[] = ['label' => '分类管理', 'route' => 'admin.categories.index', 'icon' => 'category', 'active' => request()->routeIs('admin.categories.*')];
+                    }
+                    if ($user->canAccessModule('quick-replies')) {
+                        $nav[] = ['label' => '快捷回复', 'route' => 'admin.quick-replies.index', 'icon' => 'reply', 'active' => request()->routeIs('admin.quick-replies.*')];
+                    }
+                    if ($user->canAccessModule('templates')) {
+                        $nav[] = ['label' => '工单模板', 'route' => 'admin.ticket-templates.index', 'icon' => 'ticket', 'active' => request()->routeIs('admin.ticket-templates.*')];
+                    }
+                    if ($user->canAccessModule('reports')) {
+                        $nav[] = ['label' => '数据报表', 'route' => 'admin.reports', 'icon' => 'chart', 'active' => request()->routeIs('admin.reports')];
+                    }
                     if ($user->isAdmin()) {
                         $nav[] = ['label' => '用户管理', 'route' => 'admin.users.index', 'icon' => 'user', 'active' => request()->routeIs('admin.users.*')];
                         $nav[] = ['label' => '系统设置', 'route' => 'admin.settings', 'icon' => 'gear', 'active' => request()->routeIs('admin.settings')];

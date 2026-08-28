@@ -35,6 +35,7 @@ class User extends Authenticatable
         'wechat_nickname',
         'wechat_avatar',
         'manual_offline',
+        'permissions',
     ];
 
     protected $hidden = [
@@ -46,7 +47,46 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'manual_offline' => 'boolean',
+        'permissions' => 'array',
     ];
+
+    /**
+     * 客服可授权的后台模块（业务菜单 + 高级操作）
+     */
+    public const AGENT_MODULES = [
+        'customers' => '客户档案',
+        'products' => '产品管理',
+        'categories' => '分类管理',
+        'quick-replies' => '快捷回复',
+        'templates' => '工单模板',
+        'reports' => '数据报表',
+        'export' => '工单导出',
+        'batch' => '批量操作',
+    ];
+
+    /**
+     * 未配置权限（null）时的默认全量模块（兼容存量客服）
+     */
+    public function defaultPermissions(): array
+    {
+        return array_keys(self::AGENT_MODULES);
+    }
+
+    /**
+     * 是否可访问指定模块（菜单显示 + 后端守卫共用）
+     */
+    public function canAccessModule(string $module): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if ($this->permissions === null) {
+            return in_array($module, $this->defaultPermissions(), true);
+        }
+
+        return in_array($module, $this->permissions, true);
+    }
 
     public function isAdmin(): bool
     {

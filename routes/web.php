@@ -29,8 +29,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified', 'role:agent'])->group(function () {
-    Route::get('tickets/export', [TicketController::class, 'export'])->name('tickets.export');
-    Route::post('tickets/batch', [TicketController::class, 'batch'])->name('tickets.batch');
+    Route::middleware('module:export')->group(function () {
+        Route::get('tickets/export', [TicketController::class, 'export'])->name('tickets.export');
+    });
+    Route::middleware('module:batch')->group(function () {
+        Route::post('tickets/batch', [TicketController::class, 'batch'])->name('tickets.batch');
+    });
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -55,25 +59,38 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 });
 
-// ---- 客户档案 / 产品 / 分类 / 报表 / 快捷回复（客服及以上）----
+// ---- 后台业务模块（客服及以上，按模块权限守卫）----
 // 前缀可配置（config('app.admin_url')，默认 console），避免使用易被攻击的 /admin
 Route::middleware(['auth', 'verified', 'role:agent'])->prefix(config('app.admin_url'))->name('admin.')->group(function () {
-    // export/import 必须声明在 resource 之前，避免被 {customer} 匹配
-    Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');
-    Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
-    Route::resource('customers', CustomerController::class);
-    Route::resource('products', ProductController::class)->only(['index', 'store', 'update', 'destroy']);
-    Route::resource('categories', CategoryController::class)->except(['show', 'edit']);
-    Route::resource('ticket-templates', TicketTemplateController::class)->except(['show', 'edit']);
-    Route::get('reports', ReportController::class)->name('reports');
-    Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
-    Route::resource('quick-replies', QuickReplyController::class)->except(['show', 'edit']);
+    Route::middleware('module:customers')->group(function () {
+        // export/import 必须声明在 resource 之前，避免被 {customer} 匹配
+        Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');
+        Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
+        Route::resource('customers', CustomerController::class);
+    });
+    Route::middleware('module:products')->group(function () {
+        Route::resource('products', ProductController::class)->only(['index', 'store', 'update', 'destroy']);
+    });
+    Route::middleware('module:categories')->group(function () {
+        Route::resource('categories', CategoryController::class)->except(['show', 'edit']);
+    });
+    Route::middleware('module:templates')->group(function () {
+        Route::resource('ticket-templates', TicketTemplateController::class)->except(['show', 'edit']);
+    });
+    Route::middleware('module:reports')->group(function () {
+        Route::get('reports', ReportController::class)->name('reports');
+        Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+    });
+    Route::middleware('module:quick-replies')->group(function () {
+        Route::resource('quick-replies', QuickReplyController::class)->except(['show', 'edit']);
+    });
 });
 
 // ---- 用户管理 / 系统设置（仅管理员） ----
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix(config('app.admin_url'))->name('admin.')->group(function () {
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
+    Route::patch('users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('users.update-permissions');
     Route::post('users/{user}/offline', [UserController::class, 'toggleOffline'])->name('users.toggle-offline');
     Route::get('settings', [SettingController::class, 'index'])->name('settings');
     Route::post('settings', [SettingController::class, 'save'])->name('settings.save');
