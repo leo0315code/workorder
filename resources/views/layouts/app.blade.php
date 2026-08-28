@@ -139,15 +139,16 @@
                                             <div class="py-10 text-center text-sm text-gray-400">暂无通知</div>
                                         </template>
                                         <template x-for="n in items" :key="n.id">
-                                            <a :href="n.link || '{{ route('notifications.index') }}'" target="_self" data-bell-item
-                                               @mousedown.prevent="openNotification(n)"
-                                               @click.prevent="openNotification(n)"
-                                               class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer">
+                                            {{-- 静态 href 兜底：相对路径，跟当前域名走，Alpine 加载后被 :href 覆盖 --}}
+                                            <a href="/notifications"
+                                               :href="n.link || '/notifications'" target="_self" data-bell-item
+                                               class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer"
+                                               @mousedown="if(!n.is_read) markRead(n.id)">
                                                 <div class="flex items-start gap-2">
                                                     <span class="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" :class="n.is_read ? 'bg-gray-200 dark:bg-gray-700' : 'bg-indigo-500'"></span>
-                                                    <div class="min-w-0">
+                                                    <div class="min-w-0 flex-1">
                                                         <p class="text-sm text-gray-800 dark:text-gray-200" x-text="n.title"></p>
-                                                        <p class="text-xs text-gray-400 mt-0.5 truncate" x-text="n.body || ''"></p>
+                                                        <p class="text-xs text-gray-400 mt-0.5 break-all" x-text="n.body || ''"></p>
                                                     </div>
                                                 </div>
                                             </a>
