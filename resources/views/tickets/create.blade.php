@@ -19,8 +19,21 @@
 
     <div class="max-w-3xl">
         <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data"
-              x-data="{ files: [] }">
+              x-data="ticketForm({{ json_encode($templates->map(fn ($t) => $t->only(['id', 'name', 'subject', 'description', 'category_id', 'product_id', 'priority']))->values()) }})">
             @csrf
+
+            @if ($isAgent && $templates->isNotEmpty())
+                <div class="mb-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+                    <label class="block text-xs font-medium text-gray-400 mb-2">套用工单模板</label>
+                    <select x-model="templateId" @change="applyTemplate()"
+                            class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                        <option value="">选择模板快速填充…</option>
+                        @foreach ($templates as $t)
+                            <option value="{{ $t->id }}">{{ $t->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
 
             <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 space-y-5">
                 <div>
@@ -116,4 +129,24 @@
             </div>
         </form>
     </div>
+
+    <script>
+        function ticketForm(templates) {
+            return {
+                files: [],
+                templateId: '',
+                templates: templates || [],
+                applyTemplate() {
+                    const t = this.templates.find((x) => String(x.id) === String(this.templateId));
+                    if (!t) return;
+                    const f = this.$el;
+                    f.elements['subject'].value = t.subject || '';
+                    f.elements['description'].value = t.description || '';
+                    if (t.category_id) f.elements['category_id'].value = t.category_id;
+                    if (t.product_id) f.elements['product_id'].value = t.product_id;
+                    f.elements['priority'].value = t.priority || 'normal';
+                },
+            };
+        }
+    </script>
 @endsection

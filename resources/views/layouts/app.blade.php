@@ -35,6 +35,7 @@
                     $nav[] = ['label' => '产品管理', 'route' => 'admin.products.index', 'icon' => 'product', 'active' => request()->routeIs('admin.products.*')];
                     $nav[] = ['label' => '分类管理', 'route' => 'admin.categories.index', 'icon' => 'category', 'active' => request()->routeIs('admin.categories.*')];
                     $nav[] = ['label' => '快捷回复', 'route' => 'admin.quick-replies.index', 'icon' => 'reply', 'active' => request()->routeIs('admin.quick-replies.*')];
+                    $nav[] = ['label' => '工单模板', 'route' => 'admin.ticket-templates.index', 'icon' => 'ticket', 'active' => request()->routeIs('admin.ticket-templates.*')];
                     $nav[] = ['label' => '数据报表', 'route' => 'admin.reports', 'icon' => 'chart', 'active' => request()->routeIs('admin.reports')];
                     if ($user->isAdmin()) {
                         $nav[] = ['label' => '用户管理', 'route' => 'admin.users.index', 'icon' => 'user', 'active' => request()->routeIs('admin.users.*')];

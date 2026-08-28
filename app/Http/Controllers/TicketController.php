@@ -12,6 +12,7 @@ use App\Models\Ticket;
 use App\Models\TicketLog;
 use App\Models\TicketRating;
 use App\Models\TicketReply;
+use App\Models\TicketTemplate;
 use App\Models\User;
 use App\Services\AutoAssignService;
 use App\Services\NotificationService;
@@ -146,8 +147,9 @@ class TicketController extends Controller
         $customers = $user->isAgent() ? Customer::orderBy('company')->get() : collect();
         $agents = $user->isAgent() ? User::whereIn('role', ['agent', 'admin'])->orderBy('name')->get() : collect();
         $onlineAgentIds = AutoAssignService::onlineUids() ?: [];
+        $templates = $user->isAgent() ? TicketTemplate::where('is_active', true)->orderBy('sort')->orderBy('name')->get() : collect();
 
-        return view('tickets.create', compact('categories', 'products', 'priorities', 'customers', 'agents', 'onlineAgentIds'));
+        return view('tickets.create', compact('categories', 'products', 'priorities', 'customers', 'agents', 'onlineAgentIds', 'templates'));
     }
 
     public function store(Request $request): RedirectResponse

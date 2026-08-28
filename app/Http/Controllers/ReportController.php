@@ -14,6 +14,78 @@ use Illuminate\View\View;
 
 class ReportController extends Controller
 {
+    /**
+     * 导出当前时间范围报表为 CSV（UTF-8 BOM，直开 Excel）
+     */
+    public function export(Request $request)
+    {
+        $days = (int) $request->input('days', 30);
+        $days = in_array($days, [7, 30, 90]) ? $days : 30;
+        $start = now()->subDays($days - 1)->startOfDay();
+
+        $tickets = Ticket::where('created_at', '>=', $start);
+        $total = (clone $tickets)->count();
+        $resolved = (clone $tickets)->whereIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])->count();
+        $open = (clone $tickets)->whereIn('status', [Ticket::STATUS_OPEN, Ticket::STATUS_PENDING, Ticket::STATUS_IN_PROGRESS])->count();
+        $replies = TicketReply::where('created_at', '>=', $start)->where('type', TicketReply::TYPE_REPLY)->count();
+
+        $byStatus = (clone $tickets)->selectRaw('status, COUNT(*) as c')->groupBy('status')->pluck('c', 'status');
+        $byPriority = (clone $tickets)->selectRaw('priority, COUNT(*) as c')->groupBy('priority')->pluck('c', 'priority');
+
+        $daily = (clone $tickets)->selectRaw('DATE(created_at) as d, COUNT(*) as c')->groupBy('d')->orderBy('d')->get();
+
+        $agentRows = User::whereIn('role', ['agent', 'admin'])
+            ->withCount(['assignedTickets' => fn ($q) => $q->where('created_at', '>=', $start)])
+            ->withCount(['replies' => fn ($q) => $q->where('created_at', '>=', $start)->where('type', TicketReply::TYPE_REPLY)])
+            ->get()
+            ->filter(fn ($u) => $u->assigned_tickets_count > 0 || $u->replies_count > 0);
+
+        $rating = (clone \App\Models\TicketRating::where('created_at', '>=', $start));
+        $ratingCount = (clone $rating)->count();
+        $ratingAvg = $ratingCount ? round((float) (clone $rating)->avg('rating'), 2) : null;
+
+        $rows = [];
+        $rows[] = ['项目', '数值'];
+        $rows[] = ['统计范围', "近 {$days} 天"];
+        $rows[] = ['新增工单', $total];
+        $rows[] = ['待处理', $open];
+        $rows[] = ['已解决/关闭', $resolved];
+        $rows[] = ['回复数', $replies];
+        $rows[] = ['满意度评价数', $ratingCount];
+        $rows[] = ['平均满意度', $ratingAvg ?? '暂无'];
+        $rows[] = [];
+        $rows[] = ['状态', '数量'];
+        foreach (\App\Http\Controllers\TicketController::STATUS_NAMES as $k => $label) {
+            $rows[] = [$label, $byStatus[$k] ?? 0];
+        }
+        $rows[] = [];
+        $rows[] = ['优先级', '数量'];
+        foreach (\App\Http\Controllers\TicketController::PRIORITY_NAMES as $k => $label) {
+            $rows[] = [$label, $byPriority[$k] ?? 0];
+        }
+        $rows[] = [];
+        $rows[] = ['日期', '新增工单'];
+        foreach ($daily as $d) {
+            $rows[] = [$d->d, $d->c];
+        }
+        $rows[] = [];
+        $rows[] = ['客服', '处理工单', '回复数'];
+        foreach ($agentRows as $a) {
+            $rows[] = [$a->name, $a->assigned_tickets_count, $a->replies_count];
+        }
+
+        $filename = '工单报表-近'.$days.'天-'.now()->format('Ymd-Hi').'.csv';
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM，Excel 直开不乱码
+            foreach ($rows as $row) {
+                fputcsv($out, $row);
+            }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
     public function __invoke(Request $request): View
     {
         $days = (int) $request->input('days', 30);

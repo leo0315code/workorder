@@ -9,9 +9,13 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <x-stat-card label="工单总数" :value="$total" icon="ticket" color="indigo" />
         @if ($isAgent)
-            <x-stat-card label="待处理" :value="$open" icon="clock" color="amber" />
+            <a href="{{ route('tickets.index', ['status' => 'open']) }}" class="block">
+                <x-stat-card label="待处理" :value="$open" icon="clock" color="amber" />
+            </a>
             <x-stat-card label="今日已解决" :value="$resolvedToday" icon="check" color="green" />
-            <x-stat-card label="SLA 超时" :value="$overdue" icon="alert" color="red" />
+            <a href="{{ route('tickets.index', ['overdue' => 1]) }}" class="block">
+                <x-stat-card label="SLA 超时" :value="$overdue" icon="alert" color="red" />
+            </a>
         @else
             <x-stat-card label="处理中" :value="$open" icon="clock" color="amber" />
             <x-stat-card label="已解决/关闭" :value="$resolved" icon="check" color="green" />
@@ -21,8 +25,12 @@
 
     @if ($isAgent)
         <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <x-stat-card label="指派给我(未完成)" :value="$myOpen" icon="user" color="sky" />
-            <x-stat-card label="未指派" :value="$unassigned" icon="alert" color="orange" />
+            <a href="{{ route('tickets.index', ['mine' => 1]) }}" class="block">
+                <x-stat-card label="指派给我(未完成)" :value="$myOpen" icon="user" color="sky" />
+            </a>
+            <a href="{{ route('tickets.index', ['unassigned' => 1]) }}" class="block">
+                <x-stat-card label="待认领" :value="$unassigned" icon="alert" color="orange" />
+            </a>
             <div class="col-span-2 flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4">
                 <span class="inline-flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400">
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> 实时推送已接入（GatewayWorker）

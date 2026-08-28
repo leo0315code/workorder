@@ -10,6 +10,7 @@ use App\Http\Controllers\QuickReplyController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TicketTemplateController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -63,7 +64,9 @@ Route::middleware(['auth', 'verified', 'role:agent'])->prefix(config('app.admin_
     Route::resource('customers', CustomerController::class);
     Route::resource('products', ProductController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('categories', CategoryController::class)->except(['show', 'edit']);
+    Route::resource('ticket-templates', TicketTemplateController::class)->except(['show', 'edit']);
     Route::get('reports', ReportController::class)->name('reports');
+    Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::resource('quick-replies', QuickReplyController::class)->except(['show', 'edit']);
 });
 
