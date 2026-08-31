@@ -2,9 +2,57 @@
 
 @section('page_title', '仪表盘')
 
-@php $isAgent = auth()->user()->isAgent(); @endphp
+@php
+    $isAgent = auth()->user()->isAgent();
+    $user = auth()->user();
+    // 问候语（按小时）与中文日期
+    $hour = (int) now()->format('H');
+    $greeting = $hour < 6 ? '夜深了' : ($hour < 12 ? '早上好' : ($hour < 18 ? '下午好' : '晚上好'));
+    $weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    $dateText = now()->format('Y年n月j日').' 星期'.$weekdays[now()->dayOfWeek];
+@endphp
 
 @section('content')
+    {{-- 欢迎横幅 --}}
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 shadow-lg shadow-indigo-500/25 px-6 py-6 mb-6">
+        {{-- 装饰圆 --}}
+        <div class="pointer-events-none absolute -top-16 -right-10 w-56 h-56 rounded-full bg-white/10 blur-2xl"></div>
+        <div class="pointer-events-none absolute -bottom-20 right-1/3 w-44 h-44 rounded-full bg-white/5 blur-xl"></div>
+
+        <div class="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <p class="text-sm text-indigo-200">{{ $dateText }}</p>
+                <h1 class="mt-1 text-2xl font-bold text-white">{{ $greeting }}，{{ $user->name }}</h1>
+                <p class="mt-1 text-sm text-indigo-100/90">
+                    @if ($isAgent)
+                        有 {{ $open }} 个工单待处理，{{ $overdue }} 个已超时，记得优先处理哦
+                    @else
+                        随时提交工单，我们会第一时间响应
+                    @endif
+                </p>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+                @if ($isAgent)
+                    <a href="{{ route('tickets.create') }}"
+                       class="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm hover:bg-indigo-50 transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                        新建工单
+                    </a>
+                    <a href="{{ route('tickets.index', ['status' => 'open']) }}"
+                       class="inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-white/25 hover:bg-white/20 transition">
+                        待处理列表
+                    </a>
+                @else
+                    <a href="{{ route('tickets.create') }}"
+                       class="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm hover:bg-indigo-50 transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                        提交工单
+                    </a>
+                @endif
+            </div>
+        </div>
+    </div>
+
     {{-- 统计卡片 --}}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <x-stat-card label="工单总数" :value="$total" icon="ticket" color="indigo" />
