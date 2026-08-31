@@ -115,13 +115,18 @@ class ReportController extends Controller
                     ->where('created_at', '>=', $start)
                     ->count();
                 // 平均首次响应时长：该客服在工单上的首条回复时间 - 工单创建时间
+                // TIMESTAMPDIFF 是 MySQL 专用函数，SQLite 测试环境用 julianday 换算分钟数
+                $driver = DB::connection()->getDriverName();
+                $diffExpr = $driver === 'sqlite'
+                    ? '(julianday(r.created_at) - julianday(t.created_at)) * 1440'
+                    : 'TIMESTAMPDIFF(MINUTE, t.created_at, r.created_at)';
                 $avgFirstResponse = DB::table('ticket_replies as r')
                     ->join('tickets as t', 't.id', '=', 'r.ticket_id')
                     ->where('r.user_id', $agent->id)
                     ->where('r.type', TicketReply::TYPE_REPLY)
                     ->where('r.created_at', '>=', $start)
                     ->whereRaw('r.created_at > t.created_at')
-                    ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, t.created_at, r.created_at)) as avg')
+                    ->selectRaw("AVG({$diffExpr}) as avg")
                     ->value('avg');
 
                 return [

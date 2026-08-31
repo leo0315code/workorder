@@ -28,7 +28,7 @@ class CategoryController extends Controller
 
         Category::create($data + ['slug' => Str::slug($data['name']).'-'.Str::random(4)]);
 
-        return redirect()->route('categories.index')->with('success', '分类已创建');
+        return redirect()->route('admin.categories.index')->with('success', '分类已创建');
     }
 
     public function update(Request $request, Category $category): RedirectResponse
@@ -41,13 +41,13 @@ class CategoryController extends Controller
 
         $category->update($data + ['is_active' => $request->boolean('is_active', $category->is_active)]);
 
-        return redirect()->route('categories.index')->with('success', '分类已更新');
+        return redirect()->route('admin.categories.index')->with('success', '分类已更新');
     }
 
     public function destroy(Category $category): RedirectResponse
     {
         $category->delete();
 
-        return redirect()->route('categories.index')->with('success', '分类已删除');
+        return redirect()->route('admin.categories.index')->with('success', '分类已删除');
     }
 }

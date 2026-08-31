@@ -29,18 +29,18 @@ class TicketTemplateController extends Controller
         return redirect()->route('admin.ticket-templates.index')->with('success', '工单模板已创建');
     }
 
-    public function update(Request $request, TicketTemplate $template): RedirectResponse
+    public function update(Request $request, TicketTemplate $ticketTemplate): RedirectResponse
     {
         $data = $this->validateData($request);
 
-        $template->update($data + ['is_active' => $request->boolean('is_active')]);
+        $ticketTemplate->update($data + ['is_active' => $request->boolean('is_active')]);
 
         return redirect()->route('admin.ticket-templates.index')->with('success', '工单模板已更新');
     }
 
-    public function destroy(TicketTemplate $template): RedirectResponse
+    public function destroy(TicketTemplate $ticketTemplate): RedirectResponse
     {
-        $template->delete();
+        $ticketTemplate->delete();
 
         return redirect()->route('admin.ticket-templates.index')->with('success', '工单模板已删除');
     }
