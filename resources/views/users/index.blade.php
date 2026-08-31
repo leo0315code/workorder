@@ -62,11 +62,13 @@
                     </div>
 
                     <div>
-                        <label for="email" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">邮箱 <span class="text-red-500">*</span></label>
-                        <input type="email" id="email" name="email" value="{{ old('email') }}" required
+                        <label for="email" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">邮箱</label>
+                        <input type="email" id="email" name="email" value="{{ old('email') }}"
                                class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         @error('email')<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                     </div>
+
+                    <p class="-mt-1 text-xs text-gray-400">邮箱可留空；邮箱与手机号至少填一个，只有手机号的用户可通过短信验证码登录。</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -152,7 +154,7 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="py-3 px-4 text-gray-500 dark:text-gray-400">{{ $u->email }}</td>
+                            <td class="py-3 px-4 text-gray-500 dark:text-gray-400">{{ $u->email ?: '-' }}</td>
                             <td class="py-3 px-4 text-gray-500 dark:text-gray-400">{{ $u->phone ?: '-' }}</td>
                             <td class="py-3 px-4 text-gray-600 dark:text-gray-300">{{ $u->tickets_count }}</td>
                             <td class="py-3 px-4 text-gray-600 dark:text-gray-300">{{ $u->assigned_tickets_count }}</td>

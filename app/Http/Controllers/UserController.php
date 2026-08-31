@@ -10,6 +10,7 @@ use App\Services\WebSocketService;
 use GatewayClient\Gateway;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class UserController extends Controller
@@ -42,9 +43,15 @@ class UserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // 空字符串统一转 null，避免 '' 触发 unique 冲突
+        $request->merge([
+            'email' => $request->input('email') ?: null,
+            'phone' => $request->input('phone') ?: null,
+        ]);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:50'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'regex:/^1[3-9]\d{9}$/', 'unique:users,phone'],
             'role' => ['required', 'in:customer,agent,admin'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -53,6 +60,13 @@ class UserController extends Controller
             'phone.regex' => '手机号格式不正确，应为 11 位大陆手机号',
             'password.confirmed' => '两次输入的密码不一致',
         ]);
+
+        // 邮箱与手机号至少留一个，否则用户无法登录
+        if (blank($data['email'] ?? null) && blank($data['phone'] ?? null)) {
+            throw ValidationException::withMessages([
+                'email' => '邮箱与手机号至少填写一个（手机号可用于短信验证码登录）',
+            ]);
+        }
 
         // 客户账号不分配客服角色
         $agentRoleId = $data['role'] === 'customer' ? null : ($data['agent_role_id'] ?? null);
@@ -67,8 +81,10 @@ class UserController extends Controller
         ]);
 
         // 后台创建的账号直接置为已验证（无法走邮件验证链接）；email_verified_at 不在 $fillable 内，需显式赋值
-        $user->email_verified_at = now();
-        $user->save();
+        if ($user->email !== null) {
+            $user->email_verified_at = now();
+            $user->save();
+        }
 
         return redirect()->route('admin.users.index')
             ->with('success', '用户 '.$user->name.' 已创建');

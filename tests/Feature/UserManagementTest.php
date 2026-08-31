@@ -88,6 +88,50 @@ class UserManagementTest extends TestCase
         $this->assertNull($user->agent_role_id);
     }
 
+    public function test_admin_can_create_user_with_phone_only(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.users.store'), [
+                'name' => '只有手机号的客户',
+                'email' => null,
+                'phone' => '13900139000',
+                'role' => 'customer',
+                'password' => 'secret123',
+                'password_confirmation' => 'secret123',
+            ])
+            ->assertRedirect(route('admin.users.index'))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        $user = User::where('phone', '13900139000')->firstOrFail();
+
+        $this->assertNull($user->email);
+        $this->assertSame('customer', $user->role);
+        $this->assertTrue(Hash::check('secret123', $user->password));
+    }
+
+    public function test_blank_email_and_phone_is_rejected(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.users.store'), $this->payload(['email' => '', 'phone' => '']))
+            ->assertSessionHasErrors('email');
+
+        $this->assertDatabaseMissing('users', ['name' => '新客服小李']);
+    }
+
+    public function test_multiple_users_may_have_null_email(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.users.store'), $this->payload(['email' => '', 'phone' => '13900139001']))
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.users.store'), $this->payload(['name' => '另一个', 'email' => '', 'phone' => '13900139002']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(2, User::whereNull('email')->count());
+    }
+
     public function test_email_must_be_unique(): void
     {
         User::factory()->create(['email' => 'newagent@example.com']);
