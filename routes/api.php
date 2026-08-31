@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\KbApiController;
 use App\Http\Controllers\Api\NotificationApiController;
 use App\Http\Controllers\Api\ReferenceApiController;
 use App\Http\Controllers\Api\TicketApiController;
@@ -33,6 +34,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // 基础数据
     Route::get('/products', [ReferenceApiController::class, 'products']);
     Route::get('/customers', [ReferenceApiController::class, 'customers']);
+    Route::get('/tags', [ReferenceApiController::class, 'tags']);
+
+    // 知识库（App 端浏览已发布文章）
+    Route::get('/kb/categories', [KbApiController::class, 'categories']);
+    Route::get('/kb/articles', [KbApiController::class, 'index']);
+    Route::get('/kb/articles/{article}', [KbApiController::class, 'show']);
 
     // 通知
     Route::get('/notifications', [NotificationApiController::class, 'index']);

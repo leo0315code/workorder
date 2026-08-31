@@ -211,6 +211,11 @@ class TicketController extends Controller
 
         session()->flash('success', '工单 '.$ticket->no.' 已提交');
 
+        // 重复工单识别：近 24h 同主题未关闭 → 友好提示（不阻止）
+        if ($duplicate = $this->service->duplicateOf($ticket->subject, $user->id, $ticket->id)) {
+            session()->flash('warning', '检测到您近 24 小时内提交过相似工单（'.$duplicate->no.'），如属同一问题可直接在原工单继续沟通。');
+        }
+
         return redirect()->route('tickets.show', $ticket);
     }
 

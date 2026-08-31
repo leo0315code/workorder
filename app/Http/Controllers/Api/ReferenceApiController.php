@@ -28,6 +28,18 @@ class ReferenceApiController extends Controller
     }
 
     /**
+     * 标签列表（登录即可；工单按标签筛选/展示用）
+     */
+    public function tags(): JsonResponse
+    {
+        $tags = \App\Models\Tag::orderBy('name')
+            ->get(['id', 'name', 'color'])
+            ->map(fn ($t) => ['id' => $t->id, 'name' => $t->name, 'color' => $t->color]);
+
+        return response()->json(['items' => $tags]);
+    }
+
+    /**
      * 客户列表（仅客服/管理员，创建/指派工单时选客户）
      */
     public function customers(Request $request): JsonResponse

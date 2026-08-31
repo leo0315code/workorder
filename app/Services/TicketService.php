@@ -84,6 +84,21 @@ class TicketService
     }
 
     /**
+     * 重复工单识别：同一用户在近 24h 内是否有主题完全相同且未关闭的工单
+     * （排除自身，用于"您可能重复提交"的友好提示，不阻止创建）
+     */
+    public function duplicateOf(string $subject, int $userId, ?int $excludeId = null): ?Ticket
+    {
+        return Ticket::where('user_id', $userId)
+            ->where('subject', trim($subject))
+            ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
+            ->where('created_at', '>=', now()->subHours(24))
+            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
+            ->orderByDesc('created_at')
+            ->first();
+    }
+
+    /**
      * 工单编号：TK-YYYYMMDD-0001（按当天数量递增，并发下可能重复，量级可接受）
      */
     public function nextNo(): string

@@ -26,7 +26,7 @@ class TicketApiController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Ticket::with(['user:id,name', 'category:id,name', 'assignee:id,name']);
+        $query = Ticket::with(['user:id,name', 'category:id,name', 'assignee:id,name', 'tags']);
 
         // 客户只看自己的
         if (! $request->user()->isAgent()) {
@@ -39,6 +39,11 @@ class TicketApiController extends Controller
             $query->whereIn('status', [Ticket::STATUS_OPEN, Ticket::STATUS_PENDING, Ticket::STATUS_IN_PROGRESS]);
         } elseif ($status === 'resolved') {
             $query->whereIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]);
+        }
+
+        // 按标签筛选
+        if ($request->filled('tag_id')) {
+            $query->whereHas('tags', fn ($q) => $q->where('tags.id', $request->integer('tag_id')));
         }
 
         $tickets = $query->orderByDesc('updated_at')->paginate(15);
@@ -57,7 +62,7 @@ class TicketApiController extends Controller
     {
         abort_unless($this->canView($request->user(), $ticket), 403, '无权查看该工单');
 
-        $ticket->load(['user:id,name', 'category:id,name', 'product:id,name,sku', 'assignee:id,name']);
+        $ticket->load(['user:id,name', 'category:id,name', 'product:id,name,sku', 'assignee:id,name', 'tags']);
 
         $replies = $ticket->replies()
             ->with('user:id,name,role')
@@ -139,9 +144,15 @@ class TicketApiController extends Controller
             );
         }
 
+        // 重复工单识别：近 24h 同主题未关闭 → 附加 duplicate 提示（不阻止）
+        $duplicate = (new \App\Services\TicketService())->duplicateOf($ticket->subject, $user->id, $ticket->id);
+
         return response()->json([
             'message' => '工单已提交',
             'ticket' => $this->payload($ticket),
+            'duplicate' => $duplicate
+                ? ['ticket_id' => $duplicate->id, 'no' => $duplicate->no, 'subject' => $duplicate->subject]
+                : null,
         ], 201);
     }
 
@@ -210,6 +221,9 @@ class TicketApiController extends Controller
     protected function payload(Ticket $t): array
     {
         return [
+            'tags' => $t->relationLoaded('tags')
+                ? $t->tags->map(fn ($tag) => ['id' => $tag->id, 'name' => $tag->name, 'color' => $tag->color])->values()
+                : [],
             'id' => $t->id,
             'no' => $t->no,
             'subject' => $t->subject,
