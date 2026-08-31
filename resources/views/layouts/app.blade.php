@@ -132,11 +132,11 @@
                             </button>
 
                             {{-- 通知下拉：与铃铛同属外层 flex 容器，absolute 不再被压缩到 40px --}}
-                            <div x-show="open" x-transition @click.outside="open = false"
+                            <div :class="open ? 'fixed shadow-xl' : 'hidden'"
                                  :style="open
-                                     ? 'position:fixed; top:60px; right:16px; width:352px; min-width:352px; max-width:calc(100vw - 1rem); box-sizing:border-box; z-index:60;'
-                                     : 'display:none !important;'"
-                                 class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl">
+                                     ? 'top:60px; right:16px; width:352px; min-width:352px; max-width:calc(100vw - 1rem); box-sizing:border-box; z-index:60;'
+                                     : ''"
+                                 class="z-50 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
                                 <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                                     <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">通知</span>
                                     <button @click="markAllRead()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">全部已读</button>
@@ -196,7 +196,6 @@
                                 </form>
                             @endauth
                         </div>
-                    </div>
                 </header>
 
                 {{-- Flash 消息 --}}
