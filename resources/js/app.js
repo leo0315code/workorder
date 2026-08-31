@@ -1,93 +1,25 @@
+/**
+ * 前端入口（Vite 打包）
+ *
+ * 职责：引入 Alpine 与各全局组件/工具，统一挂载到 window 后启动。
+ * 所有模块均为带 hash 的构建产物，改动后浏览器自动加载新文件，无需手动清缓存。
+ *
+ * 注意：
+ * - <head> 内仍保留一小段同步主题脚本（防首屏暗色闪烁 FOUC），不在此打包
+ * - 服务端动态值（路由/WS 配置）由布局注入 window.__app，模块只读配置不硬编码
+ */
 import Alpine from 'alpinejs';
 
+import { TicketRealtime, initRealtime } from './realtime';
+import './components/global-search';
+import './components/notification-bell';
+import './scroll-restore';
+
 window.Alpine = Alpine;
-
-/**
- * 实时连接（GatewayWorker）
- * - 连接成功走 WebSocket 推送
- * - 连接失败/鉴权失败自动降级为轮询（由页面组件监听 ticket:fallback 事件）
- */
-class TicketRealtime {
-    constructor(config) {
-        this.config = config;
-        this.ws = null;
-        this.connected = false;
-        this.reconnectTimer = null;
-        this.fallbackStarted = false;
-        this.connect();
-    }
-
-    connect() {
-        const { wsUrl, uid, token, rooms } = this.config;
-
-        let socket;
-        try {
-            socket = new WebSocket(wsUrl);
-        } catch (e) {
-            this.startFallback();
-            return;
-        }
-        this.ws = socket;
-
-        socket.onopen = () => {
-            socket.send(JSON.stringify({ type: 'auth', uid, token, rooms }));
-        };
-
-        socket.onmessage = (e) => {
-            let msg;
-            try {
-                msg = JSON.parse(e.data);
-            } catch (err) {
-                return;
-            }
-            if (msg.type === 'auth_ok') {
-                this.connected = true;
-                this.emit('ticket:status', { connected: true });
-            } else if (msg.type === 'auth_fail') {
-                this.emit('ticket:status', { connected: false });
-                try { socket.close(); } catch (err) { /* noop */ }
-                this.startFallback();
-            } else if (msg.type === 'ping') {
-                socket.send(JSON.stringify({ type: 'pong' }));
-            } else {
-                this.emit('ticket:event', msg);
-            }
-        };
-
-        socket.onerror = () => {};
-
-        socket.onclose = () => {
-            this.connected = false;
-            this.emit('ticket:status', { connected: false });
-            this.scheduleReconnect();
-        };
-
-        // 4 秒内未鉴权成功 → 降级轮询
-        setTimeout(() => {
-            if (!this.connected) this.startFallback();
-        }, 4000);
-    }
-
-    scheduleReconnect() {
-        clearTimeout(this.reconnectTimer);
-        this.reconnectTimer = setTimeout(() => this.connect(), 5000);
-    }
-
-    startFallback() {
-        if (this.fallbackStarted) return;
-        this.fallbackStarted = true;
-        this.emit('ticket:fallback', {});
-    }
-
-    emit(name, detail) {
-        window.dispatchEvent(new CustomEvent(name, { detail }));
-    }
-
-    static init(el, config) {
-        return new TicketRealtime(config);
-    }
-}
-
+// 工单列表/详情页 Alpine 组件内会 new TicketRealtime(config)，必须挂在全局
 window.TicketRealtime = TicketRealtime;
+
+// 全局实时连接（仅登录用户；布局注入 window.__app.ws）
+initRealtime();
 
 Alpine.start();

@@ -262,112 +262,6 @@
             </div>
         </div>
 
-        {{-- 全局搜索（v=2026-08-31-1） --}}
-        <script>
-            function globalSearch() {
-                return {
-                    q: '',
-                    items: [],
-                    open: false,
-                    suggest() {
-                        if (this.q.trim().length < 1) {
-                            this.items = [];
-                            this.open = false;
-                            return;
-                        }
-                        fetch('/search/suggest?q=' + encodeURIComponent(this.q), {
-                                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                                cache: 'no-store',
-                            })
-                            .then((r) => (r.ok ? r.json() : { items: [] }))
-                            .then((d) => {
-                                this.items = d.items || [];
-                                this.open = this.items.length > 0;
-                            })
-                            .catch(() => { this.items = []; });
-                    },
-                    go() {
-                        if (this.q.trim() === '') return;
-                        window.location.href = '/search?q=' + encodeURIComponent(this.q.trim());
-                    },
-                };
-            }
-        </script>
-
-        {{-- 通知铃铛组件（v=2026-08-28-2 formatTime + break-words） --}}
-        <script>
-            function notificationBell() {
-                return {
-                    open: false,
-                    unread: 0,
-                    items: [],
-                    formatTime(s) {
-                        if (! s) return '';
-                        const d = new Date(s.replace(/-/g, '/'));
-                        if (isNaN(d)) return '';
-                        const diff = Math.floor((Date.now() - d.getTime()) / 1000);
-                        if (diff < 60) return '刚刚';
-                        if (diff < 3600) return Math.floor(diff/60) + ' 分钟前';
-                        if (diff < 86400) return Math.floor(diff/3600) + ' 小时前';
-                        if (diff < 86400 * 7) return Math.floor(diff/86400) + ' 天前';
-                        const m = String(d.getMonth() + 1).padStart(2, '0');
-                        const day = String(d.getDate()).padStart(2, '0');
-                        return m + '-' + day;
-                    },
-                    init() {
-                        this.refresh();
-                    },
-                    refresh() {
-                        fetch('{{ route('notifications.unread-count') }}')
-                            .then((r) => r.json())
-                            .then((d) => { this.unread = d.count || 0; })
-                            .catch(() => {});
-                    },
-                    onEvent(msg) {
-                        // 实时推送的新通知
-                        if (msg.type === 'notification') {
-                            this.unread += 1;
-                            fetch('{{ route('notifications.latest') }}')
-                                .then((r) => r.json())
-                                .then((d) => { this.items = d.items || []; })
-                                .catch(() => {});
-                        }
-                    },
-                    toggle() {
-                        this.open = !this.open;
-                        if (this.open && this.items.length === 0) {
-                            fetch('{{ route('notifications.latest') }}')
-                                .then((r) => r.json())
-                                .then((d) => { this.items = d.items || []; })
-                                .catch(() => {});
-                        }
-                    },
-                    markAllRead() {
-                        fetch('{{ route('notifications.read-all') }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } })
-                            .then(() => {
-                                this.unread = 0;
-                                this.items = this.items.map((n) => ({ ...n, is_read: true }));
-                            });
-                    },
-                    markRead(id) {
-                        fetch('{{ url('notifications') }}/' + id + '/read', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } });
-                        this.unread = Math.max(0, this.unread - 1);
-                        this.items = this.items.map((n) => (n.id === id ? { ...n, is_read: true } : n));
-                    },
-                    openNotification(n) {
-                        // 先关下拉，再异步标已读，再导航（避免点击穿透/外点击关闭吞掉事件）
-                        const href = n.link || '{{ route('notifications.index') }}';
-                        this.open = false;
-                        if (! n.is_read) {
-                            this.markRead(n.id);
-                        }
-                        // 用 rAF 保证下拉收起后再跳转，避免视觉抖动
-                        requestAnimationFrame(() => { window.location.href = href; });
-                    },
-                };
-            }
-        </script>
-
         {{-- 移动端浮动「新建工单」（仅客户，小屏常驻，提升转化） --}}
         @auth
             @if (! auth()->user()->isAgent() && ! request()->routeIs('tickets.create'))
@@ -378,54 +272,27 @@
             @endif
         @endauth
 
-        {{-- 表单提交后恢复滚动位置（仅表单提交记录，避免全局 load 闪动） --}}
+        {{-- 服务端动态配置注入（路由/WS 参数，供 resources/js 模块读取） --}}
+        @php
+            $__appConfig = [
+                'routes' => [
+                    'searchSuggest' => route('search.suggest', ['q' => '__Q__']),
+                    'notificationsUnread' => route('notifications.unread-count'),
+                    'notificationsLatest' => route('notifications.latest'),
+                    'notificationsReadAll' => route('notifications.read-all'),
+                    'notificationsRead' => route('notifications.read', ['notification' => '__ID__']),
+                    'notificationsIndex' => route('notifications.index'),
+                ],
+                'ws' => auth()->check() ? [
+                    'wsUrl' => \App\Services\WebSocketService::frontendWsUrl(),
+                    'uid' => (int) auth()->id(),
+                    'token' => \App\Services\WebSocketService::signature((int) auth()->id(), ['ticket.all']),
+                    'rooms' => ['ticket.all'],
+                ] : null,
+            ];
+        @endphp
         <script>
-            (function () {
-                if ('scrollRestoration' in history) history.scrollRestoration = 'auto';
-                // 只在用户主动提交表单（POST/PATCH/DELETE）时记录位置
-                document.addEventListener('submit', function (e) {
-                    var m = ((e.target.method || 'get').toLowerCase());
-                    if (m !== 'get') {
-                        sessionStorage.setItem('wb-scroll-pos', String(window.scrollY));
-                    }
-                }, true);
-                window.addEventListener('load', function () {
-                    var y = sessionStorage.getItem('wb-scroll-pos');
-                    if (y === null) return; // 没有表单提交则不干预，避免闪动
-                    sessionStorage.removeItem('wb-scroll-pos');
-                    requestAnimationFrame(function () {
-                        window.scrollTo(0, parseInt(y, 10) || 0);
-                    });
-                });
-            })();
+            window.__app = @json($__appConfig);
         </script>
-
-        {{-- 通知点击兜底：即使旧版 JS 缓存未更新，点击 <a> 也能跳转 --}}
-        <script>
-            (function () {
-                // 拦截通知下拉内 <a> 的 click，统一调用最新 openNotification（无则直接导航）
-                document.addEventListener('click', function (e) {
-                    var link = e.target.closest('[data-bell-item]');
-                    if (! link) return;
-                    // 最新版本组件已 preventDefault，这里只是兜底；不阻止默认行为，让浏览器跳
-                }, true); // capture 阶段，先于外点击监听
-            })();
-        </script>
-
-        {{-- 全局实时连接：保持在线状态（供自动分配判断）+ 铃铛/列表实时 --}}
-        @auth
-            <script>
-                (function () {
-                    try {
-                        window.__ticketRT = new TicketRealtime({
-                            wsUrl: '{{ \App\Services\WebSocketService::frontendWsUrl() }}',
-                            uid: {{ (int) auth()->id() }},
-                            token: '{{ \App\Services\WebSocketService::signature((int) auth()->id(), ['ticket.all']) }}',
-                            rooms: ['ticket.all'],
-                        });
-                    } catch (e) { /* 实时不可用则仅轮询兜底 */ }
-                })();
-            </script>
-        @endauth
     </body>
 </html>
