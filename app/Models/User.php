@@ -36,6 +36,8 @@ class User extends Authenticatable
         'wechat_avatar',
         'manual_offline',
         'permissions',
+        // agent_role_id 曾缺失导致「用户管理→分配客服角色」静默失效（update 不报错但不落库），
+        // 加入 fillable 后 updateAgentRole() 才能正常写入，勿移除
         'agent_role_id',
     ];
 
