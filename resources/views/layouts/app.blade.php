@@ -27,36 +27,29 @@
             @php
                 $user = auth()->user();
                 // 管理端（agent/admin）显示完整后台菜单；客户仅门户菜单
-                $nav = [];
-                if ($user && $user->isAgent()) {
-                    $nav[] = ['label' => '仪表盘', 'route' => 'dashboard', 'icon' => 'dashboard', 'active' => request()->routeIs('dashboard')];
-                    $nav[] = ['label' => '工单', 'route' => 'tickets.index', 'icon' => 'ticket', 'active' => request()->routeIs('tickets.*') && ! request()->routeIs('tickets.create')];
-                    if ($user->canAccessModule('customers')) {
-                        $nav[] = ['label' => '客户档案', 'route' => 'admin.customers.index', 'icon' => 'customer', 'active' => request()->routeIs('admin.customers.*')];
-                    }
-                    if ($user->canAccessModule('products')) {
-                        $nav[] = ['label' => '产品管理', 'route' => 'admin.products.index', 'icon' => 'product', 'active' => request()->routeIs('admin.products.*')];
-                    }
-                    if ($user->canAccessModule('categories')) {
-                        $nav[] = ['label' => '分类管理', 'route' => 'admin.categories.index', 'icon' => 'category', 'active' => request()->routeIs('admin.categories.*')];
-                    }
-                    if ($user->canAccessModule('quick-replies')) {
-                        $nav[] = ['label' => '快捷回复', 'route' => 'admin.quick-replies.index', 'icon' => 'reply', 'active' => request()->routeIs('admin.quick-replies.*')];
-                    }
-                    if ($user->canAccessModule('templates')) {
-                        $nav[] = ['label' => '工单模板', 'route' => 'admin.ticket-templates.index', 'icon' => 'ticket', 'active' => request()->routeIs('admin.ticket-templates.*')];
-                    }
-                    if ($user->canAccessModule('reports')) {
-                        $nav[] = ['label' => '数据报表', 'route' => 'admin.reports', 'icon' => 'chart', 'active' => request()->routeIs('admin.reports')];
-                    }
-                    if ($user->isAdmin()) {
-                        $nav[] = ['label' => '用户管理', 'route' => 'admin.users.index', 'icon' => 'user', 'active' => request()->routeIs('admin.users.*')];
-                        $nav[] = ['label' => '角色管理', 'route' => 'admin.agent-roles.index', 'icon' => 'shield', 'active' => request()->routeIs('admin.agent-roles.*')];
-                        $nav[] = ['label' => '系统设置', 'route' => 'admin.settings', 'icon' => 'gear', 'active' => request()->routeIs('admin.settings')];
-                    }
-                } else {
-                    $nav[] = ['label' => '仪表盘', 'route' => 'dashboard', 'icon' => 'dashboard', 'active' => request()->routeIs('dashboard')];
-                    $nav[] = ['label' => '我的工单', 'route' => 'tickets.index', 'icon' => 'ticket', 'active' => request()->routeIs('tickets.*') && ! request()->routeIs('tickets.create')];
+                // 菜单项统一以数据驱动：label/route/icon/active 一次配好，遍历按权限过滤
+                $navItems = $user && $user->isAgent() ? [
+                    ['label' => '仪表盘',     'route' => 'dashboard',                     'icon' => 'dashboard', 'active' => request()->routeIs('dashboard')],
+                    ['label' => '工单',       'route' => 'tickets.index',                'icon' => 'ticket',    'active' => request()->routeIs('tickets.*') && ! request()->routeIs('tickets.create')],
+                    ['module' => 'customers',  'label' => '客户档案', 'route' => 'admin.customers.index',        'icon' => 'customer',  'active' => request()->routeIs('admin.customers.*')],
+                    ['module' => 'products',   'label' => '产品管理', 'route' => 'admin.products.index',         'icon' => 'product',   'active' => request()->routeIs('admin.products.*')],
+                    ['module' => 'categories', 'label' => '分类管理', 'route' => 'admin.categories.index',       'icon' => 'category',  'active' => request()->routeIs('admin.categories.*')],
+                    ['module' => 'quick-replies', 'label' => '快捷回复', 'route' => 'admin.quick-replies.index', 'icon' => 'reply', 'active' => request()->routeIs('admin.quick-replies.*')],
+                    ['module' => 'templates',  'label' => '工单模板', 'route' => 'admin.ticket-templates.index', 'icon' => 'ticket', 'active' => request()->routeIs('admin.ticket-templates.*')],
+                    ['module' => 'reports',    'label' => '数据报表', 'route' => 'admin.reports',              'icon' => 'chart',     'active' => request()->routeIs('admin.reports')],
+                ] : [
+                    ['label' => '仪表盘',     'route' => 'dashboard',      'icon' => 'dashboard', 'active' => request()->routeIs('dashboard')],
+                    ['label' => '我的工单',   'route' => 'tickets.index', 'icon' => 'ticket',    'active' => request()->routeIs('tickets.*') && ! request()->routeIs('tickets.create')],
+                ];
+                // 仅登录用户显示后台模块项；客户不被后台菜单骚扰
+                $nav = array_values(array_filter($navItems, fn ($it) => $user && (! isset($it['module']) || $user->canAccessModule($it['module']))));
+                // 管理员专属（用户/角色/设置）追加在末尾
+                if ($user && $user->isAdmin()) {
+                    $nav = array_merge($nav, [
+                        ['label' => '用户管理', 'route' => 'admin.users.index',     'icon' => 'user',   'active' => request()->routeIs('admin.users.*')],
+                        ['label' => '角色管理', 'route' => 'admin.agent-roles.index', 'icon' => 'shield', 'active' => request()->routeIs('admin.agent-roles.*')],
+                        ['label' => '系统设置', 'route' => 'admin.settings',        'icon' => 'gear',   'active' => request()->routeIs('admin.settings')],
+                    ]);
                 }
             @endphp
 
