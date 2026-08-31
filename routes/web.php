@@ -4,6 +4,7 @@ use App\Http\Controllers\AgentRoleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\KbController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
@@ -97,6 +98,19 @@ Route::middleware(['auth', 'verified', 'role:agent'])->prefix(config('app.admin_
     Route::middleware('module:quick-replies')->group(function () {
         Route::resource('quick-replies', QuickReplyController::class)->except(['show', 'edit']);
     });
+    // 知识库（基础能力，所有客服可用；分类/文章 CRUD）
+    Route::get('kb', [KbController::class, 'index'])->name('kb.index');
+    Route::post('kb', [KbController::class, 'store'])->name('kb.store');
+    Route::patch('kb/{article}', [KbController::class, 'update'])->name('kb.update');
+    Route::delete('kb/{article}', [KbController::class, 'destroy'])->name('kb.destroy');
+    Route::post('kb/categories', [KbController::class, 'storeCategory'])->name('kb.categories.store');
+    Route::patch('kb/categories/{category}', [KbController::class, 'updateCategory'])->name('kb.categories.update');
+    Route::delete('kb/categories/{category}', [KbController::class, 'destroyCategory'])->name('kb.categories.destroy');
+});
+
+// ---- 知识库阅读页（所有登录用户可读已发布文章）----
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('kb/{article}', [KbController::class, 'show'])->whereNumber('article')->name('kb.show');
 });
 
 // ---- 用户管理 / 系统设置（仅管理员） ----

@@ -28,6 +28,7 @@ class MenuSeeder extends Seeder
             ['audience' => 'agent', 'label' => '产品管理', 'route_name' => 'admin.products.index',       'icon' => 'product',   'section' => '业务数据', 'sort' => 20, 'module' => 'products'],
             ['audience' => 'agent', 'label' => '分类管理', 'route_name' => 'admin.categories.index',     'icon' => 'category',  'section' => '业务数据', 'sort' => 30, 'module' => 'categories'],
             ['audience' => 'agent', 'label' => '快捷回复', 'route_name' => 'admin.quick-replies.index',  'icon' => 'reply',     'section' => '客服工具', 'sort' => 40, 'module' => 'quick-replies'],
+            ['audience' => 'agent', 'label' => '知识库',   'route_name' => 'admin.kb.index',              'icon' => 'chat',      'section' => '客服工具', 'sort' => 45],
             ['audience' => 'agent', 'label' => '工单模板', 'route_name' => 'admin.ticket-templates.index', 'icon' => 'ticket',  'section' => '客服工具', 'sort' => 50, 'module' => 'templates'],
             ['audience' => 'agent', 'label' => '数据报表', 'route_name' => 'admin.reports',              'icon' => 'chart',     'section' => '运营',     'sort' => 60, 'module' => 'reports'],
 
