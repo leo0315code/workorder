@@ -163,6 +163,11 @@ class TicketApiController extends Controller
             'type' => TicketReply::TYPE_REPLY,
         ]);
 
+        // 客户回复已解决/关闭工单 → 重新打开（与 Web 端行为一致）
+        if (! $user->isAgent() && in_array($ticket->status, [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])) {
+            $ticket->update(['status' => Ticket::STATUS_OPEN, 'closed_at' => null]);
+        }
+
         // 客服回复 → 通知客户；客户回复 → 通知负责人/全体客服
         if ($user->isAgent()) {
             NotificationService::notifyUser($ticket->user_id, '工单有新回复', $ticket->no.' · '.$ticket->subject, route('tickets.show', $ticket));

@@ -241,4 +241,82 @@ class ApiTest extends TestCase
         $otherNotif = UserNotification::where('user_id', $other->id)->firstOrFail();
         $this->postJson("/api/notifications/{$otherNotif->id}/read")->assertForbidden();
     }
+
+    // -------------------------------------------------------------------------
+    // 边界：SLA / 自动分配 / 通知 / 回复重开
+    // -------------------------------------------------------------------------
+
+    public function test_api_create_sets_sla_by_priority(): void
+    {
+        $user = $this->makeUser();
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/tickets', [
+            'subject' => '紧急工单 SLA 验证',
+            'description' => '描述',
+            'priority' => 'urgent',
+        ])->assertCreated();
+
+        $ticket = Ticket::where('subject', '紧急工单 SLA 验证')->firstOrFail();
+        $this->assertNotNull($ticket->sla_due_at);
+        // urgent 默认 8 小时，允许 2 分钟误差
+        $this->assertTrue($ticket->sla_due_at->between(now()->addHours(7)->addMinutes(58), now()->addHours(8)->addMinutes(2)));
+    }
+
+    public function test_api_agent_can_specify_assignee(): void
+    {
+        $agent = $this->makeUser('agent');
+        $target = $this->makeUser('agent');
+        Sanctum::actingAs($agent);
+
+        $this->postJson('/api/tickets', [
+            'subject' => '客服指定负责人',
+            'description' => '描述',
+            'priority' => 'normal',
+            'assignee_id' => $target->id,
+        ])->assertCreated();
+
+        $ticket = Ticket::where('subject', '客服指定负责人')->firstOrFail();
+        $this->assertSame($target->id, $ticket->assignee_id);
+
+        // 指定负责人后通知该客服
+        $this->assertTrue(
+            UserNotification::where('user_id', $target->id)->where('title', 'like', '%指派%')->exists()
+        );
+    }
+
+    public function test_api_customer_cannot_specify_assignee(): void
+    {
+        $agent = $this->makeUser('agent');
+        $user = $this->makeUser();
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/tickets', [
+            'subject' => '客户不可指定负责人',
+            'description' => '描述',
+            'priority' => 'normal',
+            'assignee_id' => $agent->id,
+        ])->assertCreated();
+
+        // 客户传的 assignee_id 被忽略（自动分配仅在有在线客服时生效）
+        $ticket = Ticket::where('subject', '客户不可指定负责人')->firstOrFail();
+        $this->assertNull($ticket->assignee_id);
+    }
+
+    public function test_api_customer_reply_reopens_resolved_ticket(): void
+    {
+        $customer = $this->makeUser();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $customer->id,
+            'status' => Ticket::STATUS_RESOLVED,
+            'closed_at' => now()->subHour(),
+        ]);
+
+        Sanctum::actingAs($customer);
+
+        $this->postJson("/api/tickets/{$ticket->id}/replies", ['content' => '问题还在'])->assertCreated();
+
+        $this->assertSame(Ticket::STATUS_OPEN, $ticket->fresh()->status);
+        $this->assertNull($ticket->fresh()->closed_at);
+    }
 }
