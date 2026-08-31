@@ -386,6 +386,8 @@ class TicketController extends Controller
         $link = route('tickets.show', $ticket);
         if (Auth::user()->isAgent()) {
             NotificationService::notifyUser($ticket->user_id, '你的工单有新回复', $ticket->no.' · '.$ticket->subject, $link);
+            // @提及同事（客服回复时）
+            $this->notifyMentions($request->input('content'), $ticket);
         } elseif ($ticket->assignee_id) {
             NotificationService::notifyUser($ticket->assignee_id, '工单有新回复，请处理', $ticket->no.' · '.$ticket->subject, $link);
         } else {
@@ -418,6 +420,9 @@ class TicketController extends Controller
             'content' => $request->input('content'),
             'type' => TicketReply::TYPE_NOTE,
         ]);
+
+        // @提及同事（内部备注）
+        $this->notifyMentions($request->input('content'), $ticket);
 
         $this->logAction($ticket, 'noted', null, null, null, '添加内部备注');
 
@@ -590,6 +595,40 @@ class TicketController extends Controller
             ]);
         } catch (\Throwable $e) {
             // 日志失败不影响主流程
+        }
+    }
+
+    /**
+     * @提及：解析内容中的 @客服姓名，逐一通知被提及者（排除自己），并 WS 推送
+     * 匹配中文名（2-8 字）或英文名/昵称（2-20 字符）
+     */
+    protected function notifyMentions(string $content, Ticket $ticket): void
+    {
+        $me = Auth::id();
+        preg_match_all('/@([\x{4e00}-\x{9fa5}]{2,8}|[A-Za-z][A-Za-z0-9_]{1,19})/u', $content, $m);
+
+        $names = array_unique(array_map('trim', $m[1] ?? []));
+        if (! $names) {
+            return;
+        }
+
+        $mentioned = User::whereIn('role', ['agent', 'admin'])
+            ->whereIn('name', $names)
+            ->where('id', '!=', $me)
+            ->get();
+
+        foreach ($mentioned as $user) {
+            NotificationService::notifyUser(
+                $user->id,
+                '有人 @ 了你',
+                $ticket->no.' · '.$ticket->subject,
+                route('tickets.show', $ticket)
+            );
+            WebSocketService::pushToUid($user->id, [
+                'type' => 'mention',
+                'ticket_id' => $ticket->id,
+                'message' => '有人 @ 了你：'.$ticket->no,
+            ]);
         }
     }
 

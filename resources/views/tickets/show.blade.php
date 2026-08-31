@@ -239,7 +239,7 @@
                             </select>
                         </div>
                     @endif
-                    <textarea name="content" x-model="content" required rows="4" maxlength="10000" placeholder="输入回复内容…"
+                    <textarea name="content" x-model="content" required rows="4" maxlength="10000" placeholder="输入回复内容…（@客服姓名 可提及同事）"
                               class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                     @error('content')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                     <div class="mt-3">
@@ -268,7 +268,7 @@
                     <h3 class="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-4">内部备注（客户不可见）</h3>
                     <form method="POST" action="{{ route('tickets.note', $ticket) }}">
                         @csrf
-                        <textarea name="content" rows="3" maxlength="10000" placeholder="仅客服可见的备注…"
+                        <textarea name="content" rows="3" maxlength="10000" placeholder="仅客服可见的备注…（@客服姓名 可提及同事）"
                                   class="w-full rounded-lg border-amber-300 dark:border-amber-500/40 dark:bg-gray-900 text-sm shadow-sm focus:ring-amber-500 focus:border-amber-500"></textarea>
                         <div class="mt-3 flex justify-end">
                             <button type="submit" class="rounded-lg bg-amber-600 px-5 py-2 text-sm font-medium text-white hover:bg-amber-500">添加备注</button>
