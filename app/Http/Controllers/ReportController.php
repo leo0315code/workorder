@@ -5,62 +5,53 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
-use App\Models\TicketReply;
-use App\Models\User;
-use Carbon\CarbonPeriod;
+use App\Services\ReportService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ReportController extends Controller
 {
+    public function __construct(protected ReportService $reports)
+    {
+    }
+
     /**
      * 导出当前时间范围报表为 CSV（UTF-8 BOM，直开 Excel）
+     * 口径与页面完全一致（共用 ReportService）
      */
     public function export(Request $request)
     {
-        $days = (int) $request->input('days', 30);
-        $days = in_array($days, [7, 30, 90]) ? $days : 30;
-        $start = now()->subDays($days - 1)->startOfDay();
+        $days = $this->reports->normalizeDays($request->input('days', 30));
+        $start = $this->reports->startOf($days);
 
-        $tickets = Ticket::where('created_at', '>=', $start);
-        $total = (clone $tickets)->count();
-        $resolved = (clone $tickets)->whereIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])->count();
-        $open = (clone $tickets)->whereIn('status', [Ticket::STATUS_OPEN, Ticket::STATUS_PENDING, Ticket::STATUS_IN_PROGRESS])->count();
-        $replies = TicketReply::where('created_at', '>=', $start)->where('type', TicketReply::TYPE_REPLY)->count();
-
-        $byStatus = (clone $tickets)->selectRaw('status, COUNT(*) as c')->groupBy('status')->pluck('c', 'status');
-        $byPriority = (clone $tickets)->selectRaw('priority, COUNT(*) as c')->groupBy('priority')->pluck('c', 'priority');
-
-        $daily = (clone $tickets)->selectRaw('DATE(created_at) as d, COUNT(*) as c')->groupBy('d')->orderBy('d')->get();
-
-        $agentRows = User::whereIn('role', ['agent', 'admin'])
-            ->withCount(['assignedTickets' => fn ($q) => $q->where('created_at', '>=', $start)])
-            ->withCount(['replies' => fn ($q) => $q->where('created_at', '>=', $start)->where('type', TicketReply::TYPE_REPLY)])
-            ->get()
-            ->filter(fn ($u) => $u->assigned_tickets_count > 0 || $u->replies_count > 0);
-
-        $rating = (clone \App\Models\TicketRating::where('created_at', '>=', $start));
-        $ratingCount = (clone $rating)->count();
-        $ratingAvg = $ratingCount ? round((float) (clone $rating)->avg('rating'), 2) : null;
+        $summary = $this->reports->summary($start);
+        $byStatus = $this->reports->byStatus($start);
+        $byPriority = $this->reports->byPriority($start);
+        $daily = Ticket::where('created_at', '>=', $start)
+            ->selectRaw('DATE(created_at) as d, COUNT(*) as c')
+            ->groupBy('d')
+            ->orderBy('d')
+            ->get();
+        $agents = $this->reports->agents($start);
+        $ratingStats = $this->reports->ratingStats($start);
 
         $rows = [];
         $rows[] = ['项目', '数值'];
         $rows[] = ['统计范围', "近 {$days} 天"];
-        $rows[] = ['新增工单', $total];
-        $rows[] = ['待处理', $open];
-        $rows[] = ['已解决/关闭', $resolved];
-        $rows[] = ['回复数', $replies];
-        $rows[] = ['满意度评价数', $ratingCount];
-        $rows[] = ['平均满意度', $ratingAvg ?? '暂无'];
+        $rows[] = ['新增工单', $summary['total']];
+        $rows[] = ['待处理', $summary['open']];
+        $rows[] = ['已解决/关闭', $summary['resolved']];
+        $rows[] = ['回复数', $summary['replies']];
+        $rows[] = ['满意度评价数', $ratingStats['count']];
+        $rows[] = ['平均满意度', $ratingStats['avg'] ?? '暂无'];
         $rows[] = [];
         $rows[] = ['状态', '数量'];
-        foreach (\App\Http\Controllers\TicketController::STATUS_NAMES as $k => $label) {
+        foreach (TicketController::STATUS_NAMES as $k => $label) {
             $rows[] = [$label, $byStatus[$k] ?? 0];
         }
         $rows[] = [];
         $rows[] = ['优先级', '数量'];
-        foreach (\App\Http\Controllers\TicketController::PRIORITY_NAMES as $k => $label) {
+        foreach (TicketController::PRIORITY_NAMES as $k => $label) {
             $rows[] = [$label, $byPriority[$k] ?? 0];
         }
         $rows[] = [];
@@ -69,9 +60,16 @@ class ReportController extends Controller
             $rows[] = [$d->d, $d->c];
         }
         $rows[] = [];
-        $rows[] = ['客服', '处理工单', '回复数'];
-        foreach ($agentRows as $a) {
-            $rows[] = [$a->name, $a->assigned_tickets_count, $a->replies_count];
+        $rows[] = ['客服', '处理工单', '回复数', '平均首次响应(小时)', '平均解决时长(小时)', 'SLA 超时'];
+        foreach ($agents as $a) {
+            $rows[] = [
+                $a['name'],
+                $a['handled'],
+                $a['replies'],
+                $a['avg_first_response_hours'] ?? '',
+                $a['avg_resolve_hours'] ?? '',
+                $a['overdue'],
+            ];
         }
 
         $filename = '工单报表-近'.$days.'天-'.now()->format('Ymd-Hi').'.csv';
@@ -88,114 +86,17 @@ class ReportController extends Controller
 
     public function __invoke(Request $request): View
     {
-        $days = (int) $request->input('days', 30);
-        $days = in_array($days, [7, 30, 90]) ? $days : 30;
-        $start = now()->subDays($days - 1)->startOfDay();
+        $days = $this->reports->normalizeDays($request->input('days', 30));
+        $start = $this->reports->startOf($days);
 
-        // 每日新增工单趋势
-        $daily = Ticket::where('created_at', '>=', $start)
-            ->selectRaw('DATE(created_at) as d, COUNT(*) as c')
-            ->groupBy('d')
-            ->pluck('c', 'd');
+        [$dates, $dailySeries] = $this->reports->dailySeries($start);
 
-        $dates = [];
-        $dailySeries = [];
-        foreach (CarbonPeriod::create($start, now()->endOfDay())->toArray() as $date) {
-            $key = $date->format('Y-m-d');
-            $dates[] = $date->format('m-d');
-            $dailySeries[] = (int) ($daily[$key] ?? 0);
-        }
-
-        // 客服处理排行
-        $agents = User::whereIn('role', ['agent', 'admin'])
-            ->withCount(['assignedTickets' => fn ($q) => $q->where('created_at', '>=', $start)])
-            ->get()
-            ->map(function ($agent) use ($start) {
-                $replies = TicketReply::where('user_id', $agent->id)
-                    ->where('created_at', '>=', $start)
-                    ->count();
-                // 平均首次响应时长：该客服在工单上的首条回复时间 - 工单创建时间
-                // TIMESTAMPDIFF 是 MySQL 专用函数，SQLite 测试环境用 julianday 换算分钟数
-                $driver = DB::connection()->getDriverName();
-                $diffExpr = $driver === 'sqlite'
-                    ? '(julianday(r.created_at) - julianday(t.created_at)) * 1440'
-                    : 'TIMESTAMPDIFF(MINUTE, t.created_at, r.created_at)';
-                $avgFirstResponse = DB::table('ticket_replies as r')
-                    ->join('tickets as t', 't.id', '=', 'r.ticket_id')
-                    ->where('r.user_id', $agent->id)
-                    ->where('r.type', TicketReply::TYPE_REPLY)
-                    ->where('r.created_at', '>=', $start)
-                    ->whereRaw('r.created_at > t.created_at')
-                    ->selectRaw("AVG({$diffExpr}) as avg")
-                    ->value('avg');
-
-                // 平均解决时长：该客服指派的已关闭工单（关闭时间 - 创建时间）
-                $resolveExpr = $driver === 'sqlite'
-                    ? '(julianday(t.closed_at) - julianday(t.created_at)) * 1440'
-                    : 'TIMESTAMPDIFF(MINUTE, t.created_at, t.closed_at)';
-                $avgResolve = DB::table('tickets as t')
-                    ->where('t.assignee_id', $agent->id)
-                    ->where('t.status', Ticket::STATUS_CLOSED)
-                    ->whereNotNull('t.closed_at')
-                    ->where('t.created_at', '>=', $start)
-                    ->selectRaw("AVG({$resolveExpr}) as avg")
-                    ->value('avg');
-
-                // SLA 超时数：该客服指派、未解决且已过 SLA 时限
-                $overdueCount = Ticket::where('assignee_id', $agent->id)
-                    ->where('created_at', '>=', $start)
-                    ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
-                    ->where('sla_due_at', '<', now())
-                    ->count();
-
-                return [
-                    'id' => $agent->id,
-                    'name' => $agent->name,
-                    'handled' => $agent->assigned_tickets_count,
-                    'replies' => $replies,
-                    'avg_first_response_hours' => $avgFirstResponse === null
-                        ? null
-                        : round((float) $avgFirstResponse / 60, 1),
-                    'avg_resolve_hours' => $avgResolve === null
-                        ? null
-                        : round((float) $avgResolve / 60, 1),
-                    'overdue' => $overdueCount,
-                ];
-            })
-            ->sortByDesc('replies')
-            ->values();
-
-        // 分布
-        $byStatus = Ticket::where('created_at', '>=', $start)
-            ->selectRaw('status, COUNT(*) as c')->groupBy('status')->pluck('c', 'status');
-        $byPriority = Ticket::where('created_at', '>=', $start)
-            ->selectRaw('priority, COUNT(*) as c')->groupBy('priority')->pluck('c', 'priority');
-        $byCategory = Ticket::where('created_at', '>=', $start)
-            ->with('category')->get()->groupBy(fn ($t) => $t->category?->name ?? '未分类')
-            ->map(fn ($g) => $g->count());
-
-        $summary = [
-            'total' => Ticket::where('created_at', '>=', $start)->count(),
-            'resolved' => Ticket::where('created_at', '>=', $start)->whereIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])->count(),
-            'open' => Ticket::where('created_at', '>=', $start)->whereIn('status', [Ticket::STATUS_OPEN, Ticket::STATUS_PENDING, Ticket::STATUS_IN_PROGRESS])->count(),
-            'replies' => TicketReply::where('created_at', '>=', $start)->where('type', TicketReply::TYPE_REPLY)->count(),
-        ];
-
-        // 满意度：平均分 + 满意率（4 星及以上）
-        $ratingQuery = \App\Models\TicketRating::where('created_at', '>=', $start);
-        $ratingStats = [
-            'count' => (clone $ratingQuery)->count(),
-            'avg' => (clone $ratingQuery)->avg('rating'),
-            'positive' => (clone $ratingQuery)->where('rating', '>=', 4)->count(),
-            'solved' => (clone $ratingQuery)->where('is_solved', 1)->count(),
-        ];
-        $ratingStats['avg'] = $ratingStats['avg'] === null ? null : round((float) $ratingStats['avg'], 2);
-        $ratingStats['positive_rate'] = $ratingStats['count'] > 0
-            ? round($ratingStats['positive'] / $ratingStats['count'] * 100, 1)
-            : 0;
-        $ratingStats['solved_rate'] = $ratingStats['count'] > 0
-            ? round($ratingStats['solved'] / $ratingStats['count'] * 100, 1)
-            : 0;
+        $agents = $this->reports->agents($start);
+        $byStatus = $this->reports->byStatus($start);
+        $byPriority = $this->reports->byPriority($start);
+        $byCategory = $this->reports->byCategory($start);
+        $summary = $this->reports->summary($start);
+        $ratingStats = $this->reports->ratingStats($start);
 
         return view('reports.index', compact('days', 'dates', 'dailySeries', 'agents', 'byStatus', 'byPriority', 'byCategory', 'summary', 'ratingStats'));
     }
