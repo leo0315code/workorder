@@ -37,6 +37,43 @@ class UserController extends Controller
         return view('users.index', compact('users', 'onlineUids', 'agentRoles'));
     }
 
+    /**
+     * 管理员后台新增用户（不发送邮件，直接标记为已验证，可立即登录）
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:50'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['nullable', 'regex:/^1[3-9]\d{9}$/', 'unique:users,phone'],
+            'role' => ['required', 'in:customer,agent,admin'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'agent_role_id' => ['nullable', 'exists:agent_roles,id'],
+        ], [
+            'phone.regex' => '手机号格式不正确，应为 11 位大陆手机号',
+            'password.confirmed' => '两次输入的密码不一致',
+        ]);
+
+        // 客户账号不分配客服角色
+        $agentRoleId = $data['role'] === 'customer' ? null : ($data['agent_role_id'] ?? null);
+
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?: null,
+            'role' => $data['role'],
+            'password' => $data['password'],
+            'agent_role_id' => $agentRoleId,
+        ]);
+
+        // 后台创建的账号直接置为已验证（无法走邮件验证链接）；email_verified_at 不在 $fillable 内，需显式赋值
+        $user->email_verified_at = now();
+        $user->save();
+
+        return redirect()->route('admin.users.index')
+            ->with('success', '用户 '.$user->name.' 已创建');
+    }
+
     public function updateRole(Request $request, User $user): RedirectResponse
     {
         $request->validate(['role' => ['required', 'in:customer,agent,admin']]);

@@ -36,6 +36,7 @@ class User extends Authenticatable
         'wechat_avatar',
         'manual_offline',
         'permissions',
+        'agent_role_id',
     ];
 
     protected $hidden = [

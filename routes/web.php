@@ -101,6 +101,7 @@ Route::middleware(['auth', 'verified', 'role:agent'])->prefix(config('app.admin_
 // ---- 用户管理 / 系统设置（仅管理员） ----
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix(config('app.admin_url'))->name('admin.')->group(function () {
     Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::post('users', [UserController::class, 'store'])->name('users.store');
     Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
     Route::patch('users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('users.update-permissions');
     Route::patch('users/{user}/agent-role', [UserController::class, 'updateAgentRole'])->name('users.update-agent-role');
