@@ -175,8 +175,9 @@ class TicketController extends Controller
         $agents = $user->isAgent() ? User::whereIn('role', ['agent', 'admin'])->orderBy('name')->get() : collect();
         $onlineAgentIds = AutoAssignService::onlineUids() ?: [];
         $templates = $user->isAgent() ? TicketTemplate::where('is_active', true)->orderBy('sort')->orderBy('name')->get() : collect();
+        $fieldDefs = \App\Models\TicketFieldDef::where('is_active', true)->orderBy('sort')->orderBy('id')->get();
 
-        return view('tickets.create', compact('categories', 'products', 'priorities', 'customers', 'agents', 'onlineAgentIds', 'templates'));
+        return view('tickets.create', compact('categories', 'products', 'priorities', 'customers', 'agents', 'onlineAgentIds', 'templates', 'fieldDefs'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -196,6 +197,12 @@ class TicketController extends Controller
                 'max:'.self::ATTACHMENT_MAX_KB,
             ],
         ]);
+
+        // 自定义字段必填校验（字段定义是动态的，单独校验）
+        $fieldErrors = $this->validateFieldValues($request);
+        if ($fieldErrors) {
+            return back()->withInput()->withErrors($fieldErrors);
+        }
 
         $user = Auth::user();
         $isAgent = $user->isAgent();
@@ -230,6 +237,9 @@ class TicketController extends Controller
 
         $this->storeAttachments($request, $ticket);
 
+        // 自定义字段（定义见「工单字段」管理页；必填在表单校验前统一拦截）
+        $this->storeFieldValues($request, $ticket);
+
         // 操作日志
         $this->logAction($ticket, 'created', null, null, null,
             $isAgent ? '客服代客户创建' : '客户提交'.($assigneeId ? '（自动分配）' : ''));
@@ -261,7 +271,7 @@ class TicketController extends Controller
     {
         $this->authorizeView($ticket);
 
-        $ticket->load(['user', 'customer', 'category', 'product', 'assignee', 'attachments', 'rating', 'tags']);
+        $ticket->load(['user', 'customer', 'category', 'product', 'assignee', 'attachments', 'rating', 'tags', 'fieldValues.fieldDef']);
 
         // 内部备注仅客服可见
         $ticket->load(['replies' => function ($q) {
@@ -595,6 +605,43 @@ class TicketController extends Controller
             ]);
         } catch (\Throwable $e) {
             // 日志失败不影响主流程
+        }
+    }
+
+    /**
+     * 自定义字段必填校验：返回 [field_key => message] 错误数组（空=通过）
+     */
+    protected function validateFieldValues(Request $request): array
+    {
+        $errors = [];
+        $defs = \App\Models\TicketFieldDef::where('is_active', true)->where('is_required', true)->get();
+
+        foreach ($defs as $def) {
+            $value = trim((string) $request->input('field_'.$def->key));
+            if ($value === '') {
+                $errors['field_'.$def->key] = $def->label.'为必填项';
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * 保存自定义字段值（ticket_id + field_def_id 唯一，upsert）
+     */
+    protected function storeFieldValues(Request $request, Ticket $ticket): void
+    {
+        $defs = \App\Models\TicketFieldDef::where('is_active', true)->get();
+
+        foreach ($defs as $def) {
+            $value = trim((string) $request->input('field_'.$def->key));
+            if ($value === '') {
+                continue;
+            }
+            \App\Models\TicketFieldValue::updateOrCreate(
+                ['ticket_id' => $ticket->id, 'field_def_id' => $def->id],
+                ['value' => $value]
+            );
         }
     }
 

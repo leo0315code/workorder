@@ -122,6 +122,20 @@
 
                 <div class="mt-4 prose prose-sm max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ $ticket->description }}</div>
 
+                {{-- 自定义字段值 --}}
+                @if ($ticket->fieldValues->isNotEmpty())
+                    <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3">
+                        @foreach ($ticket->fieldValues as $fv)
+                            @if ($fv->fieldDef)
+                                <div>
+                                    <p class="text-xs text-gray-400">{{ $fv->fieldDef->label }}</p>
+                                    <p class="mt-0.5 text-sm text-gray-800 dark:text-gray-200">{{ $fv->value }}</p>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                @endif
+
                 @if ($ticket->attachments->isNotEmpty())
                     <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                         <p class="text-xs font-medium text-gray-400 mb-2">附件（{{ $ticket->attachments->count() }}）</p>

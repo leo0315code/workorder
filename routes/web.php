@@ -6,6 +6,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KbController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\TicketFieldDefController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -131,6 +132,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix(config('app.admin_
     Route::patch('menus/{menu}', [MenuController::class, 'update'])->name('menus.update');
     Route::post('menus/{menu}/field', [MenuController::class, 'updateField'])->name('menus.update-field');
     Route::delete('menus/{menu}', [MenuController::class, 'destroy'])->name('menus.destroy');
+    Route::get('field-defs', [TicketFieldDefController::class, 'index'])->name('field-defs.index');
+    Route::post('field-defs', [TicketFieldDefController::class, 'store'])->name('field-defs.store');
+    Route::patch('field-defs/{def}', [TicketFieldDefController::class, 'update'])->name('field-defs.update');
+    Route::delete('field-defs/{def}', [TicketFieldDefController::class, 'destroy'])->name('field-defs.destroy');
 });
 
 Route::middleware('auth')->group(function () {

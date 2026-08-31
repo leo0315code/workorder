@@ -37,6 +37,7 @@ class MenuSeeder extends Seeder
             ['audience' => 'agent', 'label' => '角色管理', 'route_name' => 'admin.agent-roles.index', 'icon' => 'shield', 'section' => '系统管理', 'sort' => 80, 'admin_only' => true],
             ['audience' => 'agent', 'label' => '系统设置', 'route_name' => 'admin.settings',          'icon' => 'gear',   'section' => '系统管理', 'sort' => 90, 'admin_only' => true],
             ['audience' => 'agent', 'label' => '菜单管理', 'route_name' => 'admin.menus.index',       'icon' => 'list',   'section' => '系统管理', 'sort' => 100, 'admin_only' => true],
+            ['audience' => 'agent', 'label' => '工单字段', 'route_name' => 'admin.field-defs.index', 'icon' => 'list',   'section' => '系统管理', 'sort' => 105, 'admin_only' => true],
 
             // ---- 客户端（customer）----
             ['audience' => 'customer', 'label' => '仪表盘',   'route_name' => 'dashboard',      'icon' => 'dashboard', 'section' => '概览', 'sort' => 1],

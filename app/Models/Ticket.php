@@ -97,6 +97,11 @@ class Ticket extends Model
         return $this->belongsToMany(Tag::class, 'ticket_tag')->withTimestamps();
     }
 
+    public function fieldValues(): HasMany
+    {
+        return $this->hasMany(TicketFieldValue::class);
+    }
+
     public function scopeOpen($query)
     {
         return $query->whereNotIn('status', [self::STATUS_CLOSED, self::STATUS_RESOLVED]);

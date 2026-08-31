@@ -109,6 +109,42 @@
                     @error('description')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                 </div>
 
+                {{-- 自定义字段（管理员在「工单字段」配置） --}}
+                @if ($fieldDefs->isNotEmpty())
+                    <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40 p-4 space-y-4">
+                        <p class="text-xs font-medium text-gray-400">补充信息</p>
+                        @foreach ($fieldDefs as $def)
+                            @php
+                                $fieldName = 'field_'.$def->key;
+                                $fieldValue = old($fieldName);
+                                $required = $def->is_required ? ' <span class="text-red-500">*</span>' : '';
+                            @endphp
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{!! $def->label.$required !!}</label>
+                                @if ($def->type === 'text')
+                                    <input type="text" name="{{ $fieldName }}" value="{{ $fieldValue }}" maxlength="500"
+                                           class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                @elseif ($def->type === 'number')
+                                    <input type="number" name="{{ $fieldName }}" value="{{ $fieldValue }}" maxlength="500"
+                                           class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                @elseif ($def->type === 'date')
+                                    <input type="date" name="{{ $fieldName }}" value="{{ $fieldValue }}"
+                                           class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                @elseif ($def->type === 'select')
+                                    <select name="{{ $fieldName }}"
+                                            class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                        <option value="">请选择…</option>
+                                        @foreach ($def->options ?? [] as $opt)
+                                            <option value="{{ $opt }}" @selected($fieldValue === $opt)>{{ $opt }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
+                                @error($fieldName)<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">附件（最多 5 个，每个 ≤10MB）</label>
                     <input type="file" name="attachments[]" multiple
