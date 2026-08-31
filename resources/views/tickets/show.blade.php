@@ -5,6 +5,21 @@
 @php $isAgent = auth()->user()->isAgent(); @endphp
 
 @section('content')
+    {{-- 页头：面包屑 + 状态徽标 --}}
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <nav class="flex items-center gap-1.5 text-sm text-gray-400 dark:text-gray-500">
+            <a href="{{ route('dashboard') }}" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition">仪表盘</a>
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+            <a href="{{ route('tickets.index') }}" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition">工单列表</a>
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+            <span class="font-mono text-indigo-600 dark:text-indigo-400 font-medium">{{ $ticket->no }}</span>
+        </nav>
+        <div class="flex items-center gap-2">
+            <x-ticket-status :status="$ticket->status" />
+            <x-ticket-priority :priority="$ticket->priority" />
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
         {{-- 左侧：描述 + 时间线 + 回复 --}}

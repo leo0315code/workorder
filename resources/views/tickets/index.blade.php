@@ -23,7 +23,7 @@
 
             {{-- 筛选区：移动端折叠，桌面始终显示 --}}
             <div :class="open ? 'block' : 'hidden md:block'">
-            <div class="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm md:border-0 md:bg-transparent md:p-0 md:shadow-none">
+            <div class="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
                 <div class="relative">
                     <input type="text" name="q" value="{{ request('q') }}" placeholder="搜索编号 / 主题 / 描述"
                            class="w-64 rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -86,6 +86,11 @@
 
         {{-- 工具条 --}}
         <div class="mb-4 flex flex-wrap items-center gap-3">
+            <a href="{{ route('tickets.create') }}"
+               class="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/35 transition">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                新建工单
+            </a>
             @if ($isAgent)
                 <a href="{{ route('tickets.export', request()->query()) }}"
                    class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
