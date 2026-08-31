@@ -4,10 +4,41 @@
 
 @section('content')
     @php
-        // @json() 内不能写带嵌套括号的表达式（会截断），先在这里组好数组
-        $__menuRows = $menus->map(fn ($m) => $m->only(['id', 'label', 'route_name', 'audience', 'admin_only', 'icon', 'module', 'sort', 'is_active']))->values();
+        // 服务端预展平：分组标题 + 普通行交替，单层 <tr> 循环即可
+        $__menuRows = $menus->map(fn ($m) => $m->only(['id', 'label', 'route_name', 'audience', 'admin_only', 'icon', 'module', 'section', 'sort', 'is_active']))->values();
+        $__flatRows = [];
+        $__prevSection = null;
+        foreach ($__menuRows as $__row) {
+            $__sec = $__row['section'] ?? '';
+            if ($__sec !== '' && $__sec !== $__prevSection) {
+                $__flatRows[] = ['is_group_header' => true, 'section' => $__sec, 'count' => $__menuRows->where('section', $__sec)->count()];
+            }
+            $__prevSection = $__sec;
+            $__flatRows[] = ['is_group_header' => false] + $__row;
+        }
+        $__csrf = csrf_token();
     @endphp
-    <div x-data="menuManager()">
+
+    <div x-data="{
+        open: false,
+        editing: null,
+        form: { label: '', route_name: '', audience: 'agent', admin_only: false, icon: 'ticket', module: '', section: '', sort: 0, is_active: true },
+        openCreate() {
+            this.editing = null;
+            this.form = { label: '', route_name: '', audience: 'agent', admin_only: false, icon: 'ticket', module: '', section: '', sort: 0, is_active: true };
+            this.open = true;
+        },
+        openEdit(r) {
+            this.editing = r;
+            this.form = {
+                label: r.label, route_name: r.route_name || '', audience: r.audience,
+                admin_only: !!r.admin_only, icon: r.icon, module: r.module || '', section: r.section || '',
+                sort: r.sort, is_active: !!r.is_active,
+            };
+            this.open = true;
+        },
+    }" x-cloak>
+
         {{-- 工具栏 --}}
         <div class="mb-4 flex items-center justify-between gap-3">
             <div>
@@ -22,7 +53,7 @@
             </button>
         </div>
 
-        {{-- 列表 --}}
+        {{-- 列表（服务端渲染，避免 Alpine 解析大 JSON 失败）--}}
         <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
             <table class="w-full text-sm">
                 <thead>
@@ -39,76 +70,112 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <template x-for="m in menus" :key="m.id">
-                        <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                            <td class="py-3 px-4 text-gray-400 font-mono text-xs" x-text="m.sort"></td>
-                            {{-- 所属端：内联下拉（自动提交）--}}
-                            <td class="py-3 px-4">
-                                <form method="POST" :action="'/console/menus/' + m.id + '/field'" class="inline">
-                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="field" value="audience">
-                                    <select name="value" onchange="this.form.submit()"
-                                            class="rounded-md pl-2 pr-6 py-0.5 text-xs font-medium ring-1 ring-inset appearance-none cursor-pointer
-                                                   m.audience === 'agent' ? 'bg-indigo-50 text-indigo-700 ring-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-500/30' : 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30'">
-                                        <option value="agent" :selected="m.audience === 'agent'">客服端</option>
-                                        <option value="customer" :selected="m.audience === 'customer'">客户端</option>
-                                    </select>
-                                </form>
-                            </td>
-                            <td class="py-3 px-4 font-medium text-gray-800 dark:text-gray-200" x-text="m.label"></td>
-                            <td class="py-3 px-4">
-                                <span x-show="m.section" class="rounded-md bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-200" x-text="m.section"></span>
-                                <span x-show="!m.section" class="text-xs text-gray-400">—</span>
-                            </td>
-                            <td class="py-3 px-4 font-mono text-xs text-gray-500 dark:text-gray-400" x-text="m.route_name || '-'"></td>
-                            <td class="py-3 px-4">
-                                <span x-show="!m.module" class="text-xs text-gray-400">—</span>
-                                <span x-show="m.module" class="rounded-md bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-500/30" x-text="m.module"></span>
-                            </td>
-                            {{-- 仅管理员：内联下拉（是/否）--}}
-                            <td class="py-3 px-4">
-                                <form method="POST" :action="'/console/menus/' + m.id + '/field'" class="inline">
-                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="field" value="admin_only">
-                                    <select name="value" onchange="this.form.submit()"
-                                            class="rounded-md pl-2 pr-6 py-0.5 text-xs font-medium ring-1 ring-inset appearance-none cursor-pointer
-                                                   m.admin_only ? 'bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/30' : 'bg-gray-100 text-gray-500 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700'">
-                                        <option value="1" :selected="m.admin_only">是</option>
-                                        <option value="0" :selected="!m.admin_only">否</option>
-                                    </select>
-                                </form>
-                            </td>
-                            {{-- 状态：内联下拉（启用/停用）--}}
-                            <td class="py-3 px-4">
-                                <form method="POST" :action="'/console/menus/' + m.id + '/field'" class="inline">
-                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="field" value="is_active">
-                                    <select name="value" onchange="this.form.submit()"
-                                            class="rounded-md pl-2 pr-6 py-0.5 text-xs font-medium ring-1 ring-inset appearance-none cursor-pointer
-                                                   m.is_active ? 'bg-green-50 text-green-700 ring-green-200 dark:bg-green-500/10 dark:text-green-300 dark:ring-green-500/30' : 'bg-gray-100 text-gray-500 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700'">
-                                        <option value="1" :selected="m.is_active">启用</option>
-                                        <option value="0" :selected="!m.is_active">停用</option>
-                                    </select>
-                                </form>
-                            </td>
-                            <td class="py-3 px-4 whitespace-nowrap">
-                                <button type="button" @click="openEdit(m)"
-                                        class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs mr-3">编辑</button>
-                                <form method="POST" :action="'/console/menus/' + m.id" class="inline" onsubmit="return confirm('确定删除该菜单？');">
-                                    <input type="hidden" name="_method" value="DELETE">
-                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="text-red-500 hover:underline text-xs">删除</button>
-                                </form>
-                            </td>
-                        </tr>
-                    </template>
+                    @forelse ($__flatRows as $__r)
+                        @if ($__r['is_group_header'] ?? false)
+                            <tr class="bg-gray-50/60 dark:bg-gray-900/40">
+                                <td colspan="9" class="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    {{ $__r['section'] }}<span class="text-gray-400 font-normal"> · {{ $__r['count'] }} 项</span>
+                                </td>
+                            </tr>
+                        @else
+                            @php
+                                $__id = $__r['id'];
+                                $__updateUrl = route('admin.menus.update-field', ['menu' => $__id]);
+                                $__delUrl = route('admin.menus.destroy', ['menu' => $__id]);
+                                $__editUrl = route('admin.menus.update', ['menu' => $__id]);
+                            @endphp
+                            <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                                <td class="py-3 px-4 text-gray-400 font-mono text-xs">{{ $__r['sort'] }}</td>
+
+                                {{-- 所属端：内联下拉 --}}
+                                <td class="py-3 px-4">
+                                    <form method="POST" action="{{ $__updateUrl }}" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="field" value="audience">
+                                        <select name="value" onchange="this.form.submit()"
+                                                class="rounded-md pl-2 pr-6 py-0.5 text-xs font-medium ring-1 ring-inset appearance-none cursor-pointer
+                                                       {{ ($__r['audience'] ?? '') === 'agent'
+                                                            ? 'bg-indigo-50 text-indigo-700 ring-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-500/30'
+                                                            : 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30' }}">
+                                            <option value="agent" @selected(($__r['audience'] ?? '') === 'agent')>客服端</option>
+                                            <option value="customer" @selected(($__r['audience'] ?? '') === 'customer')>客户端</option>
+                                        </select>
+                                    </form>
+                                </td>
+
+                                <td class="py-3 px-4 font-medium text-gray-800 dark:text-gray-200">{{ $__r['label'] }}</td>
+
+                                <td class="py-3 px-4">
+                                    @if (! empty($__r['section']))
+                                        <span class="rounded-md bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-200">{{ $__r['section'] }}</span>
+                                    @else
+                                        <span class="text-xs text-gray-400">—</span>
+                                    @endif
+                                </td>
+
+                                <td class="py-3 px-4 font-mono text-xs text-gray-500 dark:text-gray-400 truncate">{{ $__r['route_name'] ?: '—' }}</td>
+
+                                <td class="py-3 px-4">
+                                    @if (! empty($__r['module']))
+                                        <span class="rounded-md bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-500/30">{{ $__r['module'] }}</span>
+                                    @else
+                                        <span class="text-xs text-gray-400">—</span>
+                                    @endif
+                                </td>
+
+                                {{-- 仅管理员：内联下拉 --}}
+                                <td class="py-3 px-4">
+                                    <form method="POST" action="{{ $__updateUrl }}" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="field" value="admin_only">
+                                        <select name="value" onchange="this.form.submit()"
+                                                class="rounded-md pl-2 pr-6 py-0.5 text-xs font-medium ring-1 ring-inset appearance-none cursor-pointer
+                                                       {{ $__r['admin_only']
+                                                            ? 'bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/30'
+                                                            : 'bg-gray-100 text-gray-500 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700' }}">
+                                            <option value="1" @selected($__r['admin_only'])>是</option>
+                                            <option value="0" @selected(! $__r['admin_only'])>否</option>
+                                        </select>
+                                    </form>
+                                </td>
+
+                                {{-- 状态：内联下拉 --}}
+                                <td class="py-3 px-4">
+                                    <form method="POST" action="{{ $__updateUrl }}" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="field" value="is_active">
+                                        <select name="value" onchange="this.form.submit()"
+                                                class="rounded-md pl-2 pr-6 py-0.5 text-xs font-medium ring-1 ring-inset appearance-none cursor-pointer
+                                                       {{ $__r['is_active']
+                                                            ? 'bg-green-50 text-green-700 ring-green-200 dark:bg-green-500/10 dark:text-green-300 dark:ring-green-500/30'
+                                                            : 'bg-gray-100 text-gray-500 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700' }}">
+                                            <option value="1" @selected($__r['is_active'])>启用</option>
+                                            <option value="0" @selected(! $__r['is_active'])>停用</option>
+                                        </select>
+                                    </form>
+                                </td>
+
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <button type="button"
+                                            @click="openEdit(@js($__r))"
+                                            class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs mr-3">编辑</button>
+                                    <form method="POST" action="{{ $__delUrl }}" class="inline" onsubmit="return confirm('确定删除该菜单？');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-500 hover:underline text-xs">删除</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endif
+                    @empty
+                        <tr><td colspan="9" class="py-12 text-center text-gray-400 text-sm">暂无菜单</td></tr>
+                    @endforelse
                 </tbody>
             </table>
-            <p x-show="menus.length === 0" class="py-12 text-center text-gray-400 text-sm">暂无菜单</p>
         </div>
 
-        {{-- 新增/编辑弹窗 --}}
-        <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-16 bg-gray-900/50" @click.self="open = false">
+        {{-- 新增/编辑弹窗（Alpine 仅控制开/关）--}}
+        <div x-show="open" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-16 bg-gray-900/50" @click.self="open = false">
             <div class="w-full max-w-lg rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                     <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200" x-text="editing ? '编辑菜单' : '新增菜单'"></h3>
@@ -144,7 +211,7 @@
                         <p class="mt-1 text-xs text-gray-400">必须指向已注册的路由，否则侧栏自动隐藏该菜单</p>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">图标</label>
                             <select name="icon" x-model="form.icon"
@@ -214,32 +281,4 @@
             </div>
         </div>
     </div>
-
-    @push('scripts')
-        <script>
-            function menuManager() {
-                return {
-                    open: false,
-                    editing: null,
-                    menus: @json($__menuRows),
-                    form: { label: '', route_name: '', audience: 'agent', admin_only: false, icon: 'ticket', module: '', section: '', sort: 0, is_active: true },
-
-                    openCreate() {
-                        this.editing = null;
-                        this.form = { label: '', route_name: '', audience: 'agent', admin_only: false, icon: 'ticket', module: '', section: '', sort: 0, is_active: true };
-                        this.open = true;
-                    },
-                    openEdit(m) {
-                        this.editing = m;
-                        this.form = {
-                            label: m.label, route_name: m.route_name || '', audience: m.audience,
-                            admin_only: !!m.admin_only, icon: m.icon, module: m.module || '', section: m.section || '',
-                            sort: m.sort, is_active: !!m.is_active,
-                        };
-                        this.open = true;
-                    },
-                };
-            }
-        </script>
-    @endpush
 @endsection
