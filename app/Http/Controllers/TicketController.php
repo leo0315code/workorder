@@ -9,7 +9,6 @@ use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Ticket;
-use App\Models\TicketLog;
 use App\Models\TicketRating;
 use App\Models\TicketReply;
 use App\Models\TicketTemplate;
@@ -17,15 +16,18 @@ use App\Models\User;
 use App\Services\AutoAssignService;
 use App\Services\NotificationService;
 use App\Services\SettingService;
+use App\Services\TicketService;
 use App\Services\WebSocketService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class TicketController extends Controller
 {
+    public function __construct(protected TicketService $service)
+    {
+    }
     /** 附件存放盘：必须是私有盘，绝不能是 public（否则 /storage 可未登录直连下载） */
     public const ATTACHMENT_DISK = 'local';
 
@@ -57,7 +59,7 @@ class TicketController extends Controller
 
     public function index(Request $request): View
     {
-        $tickets = $this->filterQuery($request)->orderByDesc('updated_at')->paginate(15)->withQueryString();
+        $tickets = $this->service->filterQuery($request)->orderByDesc('updated_at')->paginate(15)->withQueryString();
         $activeFilterCount = count(array_filter([
             $request->input('q'), $request->input('status'), $request->input('priority'),
             $request->input('category'), $request->input('assignee'), $request->input('tag'),
@@ -99,7 +101,7 @@ class TicketController extends Controller
             return response()->json(['count' => 0]);
         }
 
-        $count = $this->filterQuery($request)
+        $count = $this->service->filterQuery($request)
             ->where('updated_at', '>', $since)
             ->count();
 
@@ -109,61 +111,6 @@ class TicketController extends Controller
     /**
      * 按当前筛选条件构建查询（列表 / 导出共用）
      */
-    protected function filterQuery(Request $request)
-    {
-        $user = Auth::user();
-
-        $query = Ticket::query()->with(['user', 'category', 'product', 'assignee']);
-
-        // 客户只能看自己的
-        if (! $user->isAgent()) {
-            $query->where('user_id', $user->id);
-        } else {
-            // 客服：可按“指派给我”过滤
-            if ($request->boolean('mine')) {
-                $query->where('assignee_id', $user->id);
-            }
-            if ($request->filled('assignee')) {
-                $query->where('assignee_id', $request->integer('assignee'));
-            }
-            if ($request->boolean('unassigned')) {
-                $query->whereNull('assignee_id');
-            }
-            if ($request->boolean('overdue')) {
-                $query->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
-                    ->where('sla_due_at', '<', now());
-            }
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
-        }
-        if ($request->filled('priority')) {
-            $query->where('priority', $request->input('priority'));
-        }
-        if ($request->filled('category')) {
-            $query->where('category_id', $request->integer('category'));
-        }
-        if ($request->filled('product')) {
-            $query->where('product_id', $request->integer('product'));
-        }
-        if ($request->filled('q')) {
-            $q = trim($request->input('q'));
-            $query->where(function ($w) use ($q) {
-                $w->where('no', 'like', "%{$q}%")
-                    ->orWhere('subject', 'like', "%{$q}%")
-                    ->orWhere('description', 'like', "%{$q}%");
-            });
-        }
-
-        // 按标签筛选（客服工具；客户仅能筛到自己工单上的标签）
-        if ($request->filled('tag')) {
-            $query->whereHas('tags', fn ($q) => $q->where('tags.id', $request->integer('tag')));
-        }
-
-        return $query;
-    }
-
     public function create(): View
     {
         $categories = Category::where('is_active', true)->orderBy('name')->get();
@@ -199,7 +146,7 @@ class TicketController extends Controller
         ]);
 
         // 自定义字段必填校验（字段定义是动态的，单独校验）
-        $fieldErrors = $this->validateFieldValues($request);
+        $fieldErrors = $this->service->validateFieldValues($request);
         if ($fieldErrors) {
             return back()->withInput()->withErrors($fieldErrors);
         }
@@ -222,7 +169,7 @@ class TicketController extends Controller
         $slaHours = SettingService::slaHours();
 
         $ticket = Ticket::create([
-            'no' => $this->nextNo(),
+            'no' => $this->service->nextNo(),
             'user_id' => $user->id,
             'customer_id' => $isAgent && $request->filled('customer_id') ? $request->integer('customer_id') : null,
             'category_id' => $request->filled('category_id') ? $request->integer('category_id') : null,
@@ -235,19 +182,19 @@ class TicketController extends Controller
             'sla_due_at' => now()->addHours($slaHours[$request->input('priority')]),
         ]);
 
-        $this->storeAttachments($request, $ticket);
+        $this->service->storeAttachments($request, $ticket);
 
         // 自定义字段（定义见「工单字段」管理页；必填在表单校验前统一拦截）
-        $this->storeFieldValues($request, $ticket);
+        $this->service->storeFieldValues($request, $ticket);
 
         // 操作日志
-        $this->logAction($ticket, 'created', null, null, null,
+        $this->service->logAction($ticket, 'created', null, null, null,
             $isAgent ? '客服代客户创建' : '客户提交'.($assigneeId ? '（自动分配）' : ''));
 
         // 实时推送：新工单
         WebSocketService::pushToRoom('ticket.all', [
             'type' => 'new_ticket',
-            'ticket' => $this->ticketPayload($ticket),
+            'ticket' => $this->service->ticketPayload($ticket),
         ]);
 
         // 站内通知：指派给指定客服，否则通知全体客服
@@ -255,7 +202,7 @@ class TicketController extends Controller
             NotificationService::notifyUser($ticket->assignee_id, '新工单已指派给你', $ticket->no.' · '.$ticket->subject, route('tickets.show', $ticket));
             WebSocketService::pushToUid($ticket->assignee_id, [
                 'type' => 'new_ticket',
-                'ticket' => $this->ticketPayload($ticket),
+                'ticket' => $this->service->ticketPayload($ticket),
             ]);
         } else {
             $agentIds = User::whereIn('role', ['agent', 'admin'])->pluck('id')->all();
@@ -269,7 +216,7 @@ class TicketController extends Controller
 
     public function show(Ticket $ticket): View
     {
-        $this->authorizeView($ticket);
+        $this->service->authorizeView($ticket);
 
         $ticket->load(['user', 'customer', 'category', 'product', 'assignee', 'attachments', 'rating', 'tags', 'fieldValues.fieldDef']);
 
@@ -319,7 +266,7 @@ class TicketController extends Controller
      */
     public function syncTags(Request $request, Ticket $ticket): RedirectResponse
     {
-        $this->authorizeView($ticket);
+        $this->service->authorizeView($ticket);
         abort_unless(Auth::user()->isAgent(), 403, '无权操作标签');
 
         $request->validate([
@@ -356,7 +303,7 @@ class TicketController extends Controller
 
     public function reply(Request $request, Ticket $ticket): RedirectResponse
     {
-        $this->authorizeView($ticket);
+        $this->service->authorizeView($ticket);
 
         $request->validate([
             'content' => ['required', 'string', 'max:10000'],
@@ -376,7 +323,7 @@ class TicketController extends Controller
         ]);
 
         // 回复附件（挂到工单附件区统一展示）
-        $this->storeAttachments($request, $ticket);
+        $this->service->storeAttachments($request, $ticket);
 
         $reopened = in_array($ticket->status, [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]);
 
@@ -389,7 +336,7 @@ class TicketController extends Controller
         ]);
 
         // 操作日志
-        $this->logAction($ticket, $reopened ? 'reopened' : 'replied', null, null, null,
+        $this->service->logAction($ticket, $reopened ? 'reopened' : 'replied', null, null, null,
             Auth::user()->isAgent() ? '客服回复' : '客户补充说明');
 
         // 通知对方
@@ -397,7 +344,7 @@ class TicketController extends Controller
         if (Auth::user()->isAgent()) {
             NotificationService::notifyUser($ticket->user_id, '你的工单有新回复', $ticket->no.' · '.$ticket->subject, $link);
             // @提及同事（客服回复时）
-            $this->notifyMentions($request->input('content'), $ticket);
+            $this->service->notifyMentions($request->input('content'), $ticket);
         } elseif ($ticket->assignee_id) {
             NotificationService::notifyUser($ticket->assignee_id, '工单有新回复，请处理', $ticket->no.' · '.$ticket->subject, $link);
         } else {
@@ -407,8 +354,8 @@ class TicketController extends Controller
 
         WebSocketService::pushToRoom('ticket.'.$ticket->id, [
             'type' => 'reply',
-            'reply' => $this->replyPayload($reply),
-            'ticket' => $this->ticketPayload($ticket->fresh(['user', 'category', 'product', 'assignee'])),
+            'reply' => $this->service->replyPayload($reply),
+            'ticket' => $this->service->ticketPayload($ticket->fresh(['user', 'category', 'product', 'assignee'])),
         ]);
 
         session()->flash('success', '回复成功');
@@ -418,7 +365,7 @@ class TicketController extends Controller
 
     public function note(Request $request, Ticket $ticket): RedirectResponse
     {
-        $this->authorizeStaff($ticket);
+        $this->service->authorizeStaff($ticket);
 
         $request->validate([
             'content' => ['required', 'string', 'max:10000'],
@@ -432,9 +379,9 @@ class TicketController extends Controller
         ]);
 
         // @提及同事（内部备注）
-        $this->notifyMentions($request->input('content'), $ticket);
+        $this->service->notifyMentions($request->input('content'), $ticket);
 
-        $this->logAction($ticket, 'noted', null, null, null, '添加内部备注');
+        $this->service->logAction($ticket, 'noted', null, null, null, '添加内部备注');
 
         session()->flash('success', '内部备注已添加');
 
@@ -443,7 +390,7 @@ class TicketController extends Controller
 
     public function update(Request $request, Ticket $ticket): RedirectResponse
     {
-        $this->authorizeStaff($ticket);
+        $this->service->authorizeStaff($ticket);
 
         $request->validate([
             'status' => ['nullable', 'in:open,pending,in_progress,resolved,closed'],
@@ -482,7 +429,7 @@ class TicketController extends Controller
         $ticket->update($data);
 
         foreach ($changes as $c) {
-            $this->logAction($ticket, 'change', $c['field'], $c['old'], $c['new']);
+            $this->service->logAction($ticket, 'change', $c['field'], $c['old'], $c['new']);
         }
 
         // 指派变更通知新负责人
@@ -496,7 +443,7 @@ class TicketController extends Controller
 
         WebSocketService::pushToRoom('ticket.'.$ticket->id, [
             'type' => 'status_changed',
-            'ticket' => $this->ticketPayload($ticket->fresh(['user', 'category', 'product', 'assignee'])),
+            'ticket' => $this->service->ticketPayload($ticket->fresh(['user', 'category', 'product', 'assignee'])),
         ]);
 
         session()->flash('success', '工单已更新');
@@ -509,7 +456,7 @@ class TicketController extends Controller
      */
     public function rate(Request $request, Ticket $ticket): RedirectResponse
     {
-        $this->authorizeView($ticket);
+        $this->service->authorizeView($ticket);
 
         // 仅工单提交人可评分
         if ($ticket->user_id !== Auth::id() || Auth::user()->isAgent()) {
@@ -536,7 +483,7 @@ class TicketController extends Controller
             ]
         );
 
-        $this->logAction($ticket, 'change', 'rating', null, $request->input('rating').' 星', '客户满意度评分');
+        $this->service->logAction($ticket, 'change', 'rating', null, $request->input('rating').' 星', '客户满意度评分');
 
         session()->flash('success', '感谢您的评价！');
 
@@ -548,7 +495,7 @@ class TicketController extends Controller
      */
     public function claim(Request $request, Ticket $ticket): RedirectResponse
     {
-        $this->authorizeStaff($ticket);
+        $this->service->authorizeStaff($ticket);
 
         if ($ticket->assignee_id !== null) {
             return back()->with('error', '该工单已有负责人，无法认领');
@@ -556,11 +503,11 @@ class TicketController extends Controller
 
         $ticket->update(['assignee_id' => Auth::id()]);
 
-        $this->logAction($ticket, 'change', 'assignee', '未指派', Auth::user()->name, '客服认领');
+        $this->service->logAction($ticket, 'change', 'assignee', '未指派', Auth::user()->name, '客服认领');
 
         WebSocketService::pushToRoom('ticket.'.$ticket->id, [
             'type' => 'status_changed',
-            'ticket' => $this->ticketPayload($ticket->fresh(['user', 'category', 'product', 'assignee'])),
+            'ticket' => $this->service->ticketPayload($ticket->fresh(['user', 'category', 'product', 'assignee'])),
         ]);
 
         session()->flash('success', '已认领工单 '.$ticket->no.'，请及时处理');
@@ -573,7 +520,7 @@ class TicketController extends Controller
      */
     public function pollReplies(Request $request, Ticket $ticket)
     {
-        $this->authorizeView($ticket);
+        $this->service->authorizeView($ticket);
 
         $after = (int) $request->query('after', 0);
 
@@ -584,111 +531,20 @@ class TicketController extends Controller
             ->get();
 
         return response()->json([
-            'ticket' => $this->ticketPayload($ticket),
-            'replies' => $replies->map(fn ($r) => $this->replyPayload($r)),
+            'ticket' => $this->service->ticketPayload($ticket),
+            'replies' => $replies->map(fn ($r) => $this->service->replyPayload($r)),
         ]);
     }
 
     // ---- helpers ----
 
-    protected function logAction(Ticket $ticket, string $action, ?string $field = null, ?string $old = null, ?string $new = null, ?string $note = null): void
-    {
-        try {
-            TicketLog::create([
-                'ticket_id' => $ticket->id,
-                'user_id' => Auth::id(),
-                'action' => $action,
-                'field' => $field,
-                'old_value' => $old,
-                'new_value' => $new,
-                'note' => $note,
-            ]);
-        } catch (\Throwable $e) {
-            // 日志失败不影响主流程
-        }
-    }
-
-    /**
-     * 自定义字段必填校验：返回 [field_key => message] 错误数组（空=通过）
-     */
-    protected function validateFieldValues(Request $request): array
-    {
-        $errors = [];
-        $defs = \App\Models\TicketFieldDef::where('is_active', true)->where('is_required', true)->get();
-
-        foreach ($defs as $def) {
-            $value = trim((string) $request->input('field_'.$def->key));
-            if ($value === '') {
-                $errors['field_'.$def->key] = $def->label.'为必填项';
-            }
-        }
-
-        return $errors;
-    }
-
-    /**
-     * 保存自定义字段值（ticket_id + field_def_id 唯一，upsert）
-     */
-    protected function storeFieldValues(Request $request, Ticket $ticket): void
-    {
-        $defs = \App\Models\TicketFieldDef::where('is_active', true)->get();
-
-        foreach ($defs as $def) {
-            $value = trim((string) $request->input('field_'.$def->key));
-            if ($value === '') {
-                continue;
-            }
-            \App\Models\TicketFieldValue::updateOrCreate(
-                ['ticket_id' => $ticket->id, 'field_def_id' => $def->id],
-                ['value' => $value]
-            );
-        }
-    }
-
-    /**
-     * @提及：解析内容中的 @客服姓名，逐一通知被提及者（排除自己），并 WS 推送
-     * 匹配中文名（2-8 字）或英文名/昵称（2-20 字符）
-     */
-    protected function notifyMentions(string $content, Ticket $ticket): void
-    {
-        $me = Auth::id();
-        preg_match_all('/@([\x{4e00}-\x{9fa5}]{2,8}|[A-Za-z][A-Za-z0-9_]{1,19})/u', $content, $m);
-
-        $names = array_unique(array_map('trim', $m[1] ?? []));
-        if (! $names) {
-            return;
-        }
-
-        $mentioned = User::whereIn('role', ['agent', 'admin'])
-            ->whereIn('name', $names)
-            ->where('id', '!=', $me)
-            ->get();
-
-        foreach ($mentioned as $user) {
-            NotificationService::notifyUser(
-                $user->id,
-                '有人 @ 了你',
-                $ticket->no.' · '.$ticket->subject,
-                route('tickets.show', $ticket)
-            );
-            WebSocketService::pushToUid($user->id, [
-                'type' => 'mention',
-                'ticket_id' => $ticket->id,
-                'message' => '有人 @ 了你：'.$ticket->no,
-            ]);
-        }
-    }
-
-    /**
-     * 导出当前筛选条件下的工单为 CSV（UTF-8 BOM，Excel 可直接打开）
-     */
     public function export(Request $request)
     {
         if (! Auth::user()->isAgent()) {
             abort(403);
         }
 
-        $query = $this->filterQuery($request)->with(['user', 'category', 'product', 'assignee']);
+        $query = $this->service->filterQuery($request)->with(['user', 'category', 'product', 'assignee']);
 
         $filename = 'tickets-'.now()->format('Ymd-His').'.csv';
 
@@ -726,7 +582,7 @@ class TicketController extends Controller
      */
     public function batch(Request $request): RedirectResponse
     {
-        $this->authorizeStaff(new Ticket);
+        $this->service->authorizeStaff(new Ticket);
 
         $request->validate([
             'action' => ['required', 'in:assign,close'],
@@ -742,11 +598,11 @@ class TicketController extends Controller
             if ($action === 'close') {
                 if (! in_array($ticket->status, [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])) {
                     $ticket->update(['status' => Ticket::STATUS_CLOSED, 'closed_at' => now()]);
-                    $this->logAction($ticket, 'change', 'status', self::STATUS_NAMES[$ticket->status], '已关闭', '批量关闭');
+                    $this->service->logAction($ticket, 'change', 'status', self::STATUS_NAMES[$ticket->status], '已关闭', '批量关闭');
                 }
             } elseif ($action === 'assign' && $request->filled('assignee_id')) {
                 $ticket->update(['assignee_id' => $request->integer('assignee_id')]);
-                $this->logAction($ticket, 'change', 'assignee', '原负责人', User::find($request->integer('assignee_id'))?->name, '批量指派');
+                $this->service->logAction($ticket, 'change', 'assignee', '原负责人', User::find($request->integer('assignee_id'))?->name, '批量指派');
             }
         }
 
@@ -755,102 +611,11 @@ class TicketController extends Controller
         return redirect()->back();
     }
 
-    protected function nextNo(): string
-    {
-        $prefix = 'TK-'.date('Ymd');
-        $count = Ticket::where('no', 'like', $prefix.'%')->count() + 1;
-
-        return sprintf('%s-%04d', $prefix, $count);
-    }
-
-    protected function storeAttachments(Request $request, Ticket $ticket): void
-    {
-        if (! $request->hasFile('attachments')) {
-            return;
-        }
-
-        foreach ($request->file('attachments') as $file) {
-            // 纵深防御：mimes 规则之外再按原始扩展名校验一次，拦掉形如 x.png.php 的双扩展名
-            $ext = strtolower((string) $file->getClientOriginalExtension());
-            if (! in_array($ext, self::ATTACHMENT_TYPES, true)) {
-                continue;
-            }
-
-            // 存到私有盘，禁止通过 /storage 直连下载（下载统一走 downloadAttachment 鉴权）
-            $path = $file->store('tickets/'.$ticket->id, self::ATTACHMENT_DISK);
-
-            Attachment::create([
-                'attachable_type' => Ticket::class,
-                'attachable_id' => $ticket->id,
-                'user_id' => Auth::id(),
-                'original_name' => $file->getClientOriginalName(),
-                'path' => $path,
-                'mime_type' => $file->getMimeType(),
-                'size' => $file->getSize(),
-            ]);
-        }
-    }
-
-    protected function authorizeView(Ticket $ticket): void
-    {
-        if (! Auth::user()->isAgent() && $ticket->user_id !== Auth::id()) {
-            abort(403);
-        }
-    }
-
-    protected function authorizeStaff(Ticket $ticket): void
-    {
-        if (! Auth::user()->isAgent()) {
-            abort(403);
-        }
-    }
-
-    protected function ticketPayload(Ticket $ticket): array
-    {
-        return [
-            'id' => $ticket->id,
-            'no' => $ticket->no,
-            'subject' => $ticket->subject,
-            'status' => $ticket->status,
-            'status_label' => self::STATUS_NAMES[$ticket->status] ?? $ticket->status,
-            'priority' => $ticket->priority,
-            'priority_label' => self::PRIORITY_NAMES[$ticket->priority] ?? $ticket->priority,
-            'updated_at' => optional($ticket->updated_at)->format('Y-m-d H:i:s'),
-        ];
-    }
-
-    protected function replyPayload(TicketReply $reply): array
-    {
-        return [
-            'id' => $reply->id,
-            'content' => $reply->content,
-            'type' => $reply->type,
-            'user' => ['id' => $reply->user?->id, 'name' => $reply->user?->name, 'role' => $reply->user?->role],
-            'created_at' => optional($reply->created_at)->format('Y-m-d H:i:s'),
-        ];
-    }
-
+    /**
+     * 附件下载（路由入口；鉴权与响应逻辑在 TicketService::download）
+     */
     public static function downloadAttachment(Attachment $attachment)
     {
-        // 越权校验：附件归属的工单须为当前用户可见
-        $ticket = $attachment->attachable_type === Ticket::class
-            ? Ticket::find($attachment->attachable_id)
-            : null;
-
-        abort_unless($ticket, 404);
-
-        $user = Auth::user();
-        if (! $user->isAgent() && $ticket->user_id !== $user->id) {
-            abort(403);
-        }
-
-        abort_if(! Storage::disk(self::ATTACHMENT_DISK)->exists($attachment->path), 404);
-
-        // 始终以附件形式下载，禁止浏览器按内容类型内联执行（防 html/svg 存储型 XSS）
-        return Storage::disk(self::ATTACHMENT_DISK)->download(
-            $attachment->path,
-            $attachment->original_name,
-            ['Content-Disposition' => 'attachment; filename="'.str_replace('"', '', $attachment->original_name).'"']
-        );
+        return TicketService::download($attachment);
     }
 }
