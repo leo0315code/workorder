@@ -1,86 +1,99 @@
 @if ($paginator->hasPages())
-    <nav role="navigation" aria-label="分页导航">
-
-        {{-- 移动端 --}}
-        <div class="flex gap-2 items-center justify-between sm:hidden">
-            @if ($paginator->onFirstPage())
-                <span class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 bg-gray-50 border border-gray-200 cursor-not-allowed leading-5 rounded-md dark:text-gray-500 dark:bg-gray-800 dark:border-gray-700">上一页</span>
-            @else
-                <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 leading-5 rounded-md hover:bg-gray-50 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-900">上一页</a>
-            @endif
-
-            @if ($paginator->hasMorePages())
-                <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 leading-5 rounded-md hover:bg-gray-50 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-900">下一页</a>
-            @else
-                <span class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 bg-gray-50 border border-gray-200 cursor-not-allowed leading-5 rounded-md dark:text-gray-500 dark:bg-gray-800 dark:border-gray-700">下一页</span>
-            @endif
+    <nav role="navigation" aria-label="分页导航" class="mt-6">
+        {{-- 移动端：上一页/下一页 + 当前页信息 --}}
+        <div class="flex items-center justify-between sm:hidden">
+            <p class="text-xs text-gray-400 dark:text-gray-500">
+                第 <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $paginator->currentPage() }}</span> / {{ $paginator->lastPage() }} 页 · 共 {{ $paginator->total() }} 条
+            </p>
+            <div class="flex items-center gap-2">
+                @if ($paginator->onFirstPage())
+                    <span class="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-300 dark:text-gray-600 cursor-not-allowed">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                        上一页
+                    </span>
+                @else
+                    <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:text-indigo-600 dark:hover:text-indigo-300 active:scale-95 transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                        上一页
+                    </a>
+                @endif
+                @if ($paginator->hasMorePages())
+                    <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:text-indigo-600 dark:hover:text-indigo-300 active:scale-95 transition">
+                        下一页
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    </a>
+                @else
+                    <span class="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-300 dark:text-gray-600 cursor-not-allowed">
+                        下一页
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    </span>
+                @endif
+            </div>
         </div>
 
         {{-- 桌面端 --}}
-        <div class="hidden sm:flex-1 sm:flex sm:gap-2 sm:items-center sm:justify-between">
-            <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+        <div class="hidden sm:flex sm:items-center sm:justify-between gap-4">
+            {{-- 信息 --}}
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                <span class="inline-flex items-center gap-1.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 px-3 py-1.5 shadow-sm">
+                    <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z" /></svg>
                     显示
                     @if ($paginator->firstItem())
-                        <span class="font-medium text-gray-700 dark:text-gray-200">{{ $paginator->firstItem() }}</span>
-                        -
-                        <span class="font-medium text-gray-700 dark:text-gray-200">{{ $paginator->lastItem() }}</span>
+                        <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $paginator->firstItem() }}-{{ $paginator->lastItem() }}</span>
                     @else
-                        {{ $paginator->count() }}
+                        <span class="font-semibold text-gray-800 dark:text-gray-200">0</span>
                     @endif
-                    条，共 <span class="font-medium text-gray-700 dark:text-gray-200">{{ $paginator->total() }}</span> 条
-                </p>
-            </div>
-
-            <div>
-                <span class="inline-flex shadow-sm rounded-md">
-                    {{-- 上一页 --}}
-                    @if ($paginator->onFirstPage())
-                        <span aria-disabled="true" aria-label="上一页">
-                            <span class="inline-flex items-center px-2.5 py-2 text-sm font-medium text-gray-400 bg-white border border-gray-200 cursor-not-allowed rounded-l-md leading-5 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500" aria-hidden="true">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                            </span>
-                        </span>
-                    @else
-                        <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="inline-flex items-center px-2.5 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-l-md leading-5 hover:text-indigo-600 focus:outline-none focus:ring ring-indigo-200 active:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900 dark:hover:text-indigo-300" aria-label="上一页">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                        </a>
-                    @endif
-
-                    {{-- 页码 --}}
-                    @foreach ($elements as $element)
-                        @if (is_string($element))
-                            <span aria-disabled="true">
-                                <span class="inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-500 bg-white border border-gray-200 cursor-default leading-5 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">{{ $element }}</span>
-                            </span>
-                        @endif
-
-                        @if (is_array($element))
-                            @foreach ($element as $page => $url)
-                                @if ($page == $paginator->currentPage())
-                                    <span aria-current="page">
-                                        <span class="inline-flex items-center px-4 py-2 -ml-px text-sm font-semibold text-white bg-indigo-600 border border-indigo-600 cursor-default leading-5">{{ $page }}</span>
-                                    </span>
-                                @else
-                                    <a href="{{ $url }}" class="inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-600 bg-white border border-gray-200 leading-5 hover:text-indigo-600 hover:bg-gray-50 focus:outline-none focus:ring ring-indigo-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900 dark:hover:text-indigo-300" aria-label="第 {{ $page }} 页">{{ $page }}</a>
-                                @endif
-                            @endforeach
-                        @endif
-                    @endforeach
-
-                    {{-- 下一页 --}}
-                    @if ($paginator->hasMorePages())
-                        <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="inline-flex items-center px-2.5 py-2 -ml-px text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-r-md leading-5 hover:text-indigo-600 focus:outline-none focus:ring ring-indigo-200 active:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900 dark:hover:text-indigo-300" aria-label="下一页">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                        </a>
-                    @else
-                        <span aria-disabled="true" aria-label="下一页">
-                            <span class="inline-flex items-center px-2.5 py-2 -ml-px text-sm font-medium text-gray-400 bg-white border border-gray-200 cursor-not-allowed rounded-r-md leading-5 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500" aria-hidden="true">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                            </span>
-                        </span>
-                    @endif
+                    <span class="text-gray-400">/</span>
+                    共 <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ $paginator->total() }}</span> 条
                 </span>
+            </p>
+
+            {{-- 页码 --}}
+            <div class="flex items-center gap-1.5">
+                {{-- 上一页 --}}
+                @if ($paginator->onFirstPage())
+                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed" aria-label="上一页">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                    </span>
+                @else
+                    <a href="{{ $paginator->previousPageUrl() }}" rel="prev" aria-label="上一页"
+                       class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:text-indigo-600 dark:hover:text-indigo-300 hover:shadow-sm active:scale-95 transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                    </a>
+                @endif
+
+                {{-- 页码 --}}
+                @foreach ($elements as $element)
+                    @if (is_string($element))
+                        <span class="inline-flex items-center justify-center w-9 h-9 text-sm text-gray-400 dark:text-gray-500" aria-disabled="true">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="19" cy="12" r="1.4" /></svg>
+                        </span>
+                    @endif
+
+                    @if (is_array($element))
+                        @foreach ($element as $page => $url)
+                            @if ($page == $paginator->currentPage())
+                                <span aria-current="page"
+                                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-indigo-600 text-white text-sm font-semibold shadow-md shadow-indigo-600/25 ring-1 ring-indigo-600">{{ $page }}</span>
+                            @else
+                                <a href="{{ $url }}" aria-label="第 {{ $page }} 页"
+                                   class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-medium text-gray-600 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:text-indigo-600 dark:hover:text-indigo-300 hover:shadow-sm active:scale-95 transition">{{ $page }}</a>
+                            @endif
+                        @endforeach
+                    @endif
+                @endforeach
+
+                {{-- 下一页 --}}
+                @if ($paginator->hasMorePages())
+                    <a href="{{ $paginator->nextPageUrl() }}" rel="next" aria-label="下一页"
+                       class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:text-indigo-600 dark:hover:text-indigo-300 hover:shadow-sm active:scale-95 transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    </a>
+                @else
+                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed" aria-label="下一页">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    </span>
+                @endif
             </div>
         </div>
     </nav>
