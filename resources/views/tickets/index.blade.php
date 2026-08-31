@@ -116,7 +116,7 @@
                             <option value="{{ $a->id }}">{{ $a->name }}{{ in_array($a->id, $onlineAgentIds, true) ? ' · 在线' : '' }}</option>
                         @endforeach
                     </select>
-                    <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="return confirm('确认执行批量操作？');">执行</button>
+                    <button type="submit" class="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/35 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="return confirm('确认执行批量操作？');">执行</button>
                     <button type="button" @click="selected = []" class="text-sm text-indigo-500 hover:underline">取消</button>
                 </form>
             </template>
