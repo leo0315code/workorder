@@ -8,6 +8,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
+/**
+ * SettingsTest：系统设置：仅管理员可保存/测试短信、短信测试接口校验与错误提示、不落库
+ */
 class SettingsTest extends TestCase
 {
     use RefreshDatabase;

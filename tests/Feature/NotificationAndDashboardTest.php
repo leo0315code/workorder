@@ -10,6 +10,9 @@ use App\Models\UserNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+/**
+ * NotificationAndDashboardTest：通知中心（归属隔离/已读越权/全部已读）与仪表盘（客户/客服/recent scope/禁缓存）、SLA due_at、CSAT、回复通知链路
+ */
 class NotificationAndDashboardTest extends TestCase
 {
     use RefreshDatabase;

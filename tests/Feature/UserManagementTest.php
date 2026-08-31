@@ -8,6 +8,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
+/**
+ * UserManagementTest：用户管理：新增用户（各角色/仅手机号/唯一性/密码强度/客服角色分配）、agent_role_id 可持久化回归、筛选 UI
+ */
 class UserManagementTest extends TestCase
 {
     use RefreshDatabase;

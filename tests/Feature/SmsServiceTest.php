@@ -10,6 +10,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
+/**
+ * SmsServiceTest：短信通道：demo/阿里云/腾讯云三驱动发送与错误处理、官方签名向量与 TC3 交叉验证、重发间隔、控制器错误透传
+ */
 class SmsServiceTest extends TestCase
 {
     use RefreshDatabase;

@@ -10,6 +10,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
+/**
+ * SupportScanDailyTest：每日巡检：调度注册（schedule:list 断言）、SLA 超时/待认领升级/售后临期过期通知、无任务幂等
+ */
 class SupportScanDailyTest extends TestCase
 {
     use RefreshDatabase;

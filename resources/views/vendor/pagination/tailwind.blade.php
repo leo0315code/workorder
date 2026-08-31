@@ -1,3 +1,9 @@
+{{--
+    分页器美化（覆盖 vendor/laravel/framework 默认样式）
+    位置：resources/views/vendor/pagination/tailwind.blade.php，与 Laravel 默认同名文件不同
+    结构：移动端=紧凑箭头+页码信息；桌面端=信息徽标+页码组（当前页高亮）+省略号圆点
+    注意：删除本文件会让所有列表分页退回 Laravel 默认样式
+--}}
 @if ($paginator->hasPages())
     <nav role="navigation" aria-label="分页导航" class="mt-6">
         {{-- 移动端：上一页/下一页 + 当前页信息 --}}

@@ -11,6 +11,9 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
+/**
+ * AttachmentSecurityTest：附件安全：下载越权（游客/他人 403）、所有者/客服可下载、强制 attachment、404、私有盘落盘、php 与双扩展名拒绝、白名单放行、public/storage 软链未注册
+ */
 class AttachmentSecurityTest extends TestCase
 {
     use RefreshDatabase;

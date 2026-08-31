@@ -9,6 +9,9 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+/**
+ * SearchTest：全局搜索：跨工单/客户/产品检索、客户权限隔离、下拉建议相对 URL、分页保留关键词
+ */
 class SearchTest extends TestCase
 {
     use RefreshDatabase;

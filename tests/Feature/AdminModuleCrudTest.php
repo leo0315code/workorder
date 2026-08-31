@@ -11,6 +11,9 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+/**
+ * AdminModuleCrudTest：后台模块 CRUD：分类/快捷回复/工单模板增删改查、报表页与 CSV 导出、模块权限隔离
+ */
 class AdminModuleCrudTest extends TestCase
 {
     use RefreshDatabase;
