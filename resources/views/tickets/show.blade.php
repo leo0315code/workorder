@@ -82,6 +82,44 @@
                     </div>
                 @endif
 
+                {{-- 标签（客服可管理；客户只读） --}}
+                <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-medium text-gray-400">标签</span>
+                        @forelse ($ticket->tags as $tag)
+                            <x-tag-badge :tag="$tag" />
+                        @empty
+                            <span class="text-xs text-gray-300 dark:text-gray-600">暂无</span>
+                        @endforelse
+
+                        @if ($isAgent)
+                            <details class="relative inline-block">
+                                <summary class="inline-flex items-center gap-1 rounded-md border border-dashed border-gray-300 dark:border-gray-600 px-2 py-0.5 text-xs text-gray-400 hover:text-indigo-500 hover:border-indigo-300 cursor-pointer list-none">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                    添加
+                                </summary>
+                                <form method="POST" action="{{ route('tickets.tags', $ticket) }}"
+                                      class="absolute right-0 top-full mt-2 z-30 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl p-3">
+                                    @csrf
+                                    <div class="space-y-1.5 max-h-40 overflow-y-auto">
+                                        @foreach ($allTags as $t)
+                                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md px-2 py-1">
+                                                <input type="checkbox" name="tag_ids[]" value="{{ $t->id }}"
+                                                       @checked($ticket->tags->contains('id', $t->id))
+                                                       class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ $t->name }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    <input type="text" name="tags[]" placeholder="输入新标签名后保存" maxlength="30"
+                                           class="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-indigo-500">
+                                    <button type="submit" class="mt-2 w-full rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 transition">保存标签</button>
+                                </form>
+                            </details>
+                        @endif
+                    </div>
+                </div>
+
                 <div class="mt-4 prose prose-sm max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ $ticket->description }}</div>
 
                 @if ($ticket->attachments->isNotEmpty())

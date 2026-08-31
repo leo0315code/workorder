@@ -60,7 +60,7 @@ class TicketController extends Controller
         $tickets = $this->filterQuery($request)->orderByDesc('updated_at')->paginate(15)->withQueryString();
         $activeFilterCount = count(array_filter([
             $request->input('q'), $request->input('status'), $request->input('priority'),
-            $request->input('category'), $request->input('assignee'),
+            $request->input('category'), $request->input('assignee'), $request->input('tag'),
             $request->boolean('mine') ? 1 : null,
             $request->boolean('unassigned') ? 1 : null,
             $request->boolean('overdue') ? 1 : null,
@@ -71,6 +71,7 @@ class TicketController extends Controller
         $agents = User::whereIn('role', ['agent', 'admin'])->orderBy('name')->get();
         $statuses = self::STATUS_NAMES;
         $priorities = self::PRIORITY_NAMES;
+        $allTags = \App\Models\Tag::orderBy('name')->get();
 
         // 列表页实时连接配置（订阅 ticket.all 房间）+ 轮询兜底基准时间
         $uid = (int) Auth::id();
@@ -84,7 +85,7 @@ class TicketController extends Controller
         ];
         $onlineAgentIds = AutoAssignService::onlineUids() ?: [];
 
-        return view('tickets.index', compact('tickets', 'categories', 'products', 'agents', 'statuses', 'priorities', 'wsConfig', 'onlineAgentIds', 'activeFilterCount'));
+        return view('tickets.index', compact('tickets', 'categories', 'products', 'agents', 'statuses', 'priorities', 'wsConfig', 'onlineAgentIds', 'activeFilterCount', 'allTags'));
     }
 
     /**
@@ -153,6 +154,11 @@ class TicketController extends Controller
                     ->orWhere('subject', 'like', "%{$q}%")
                     ->orWhere('description', 'like', "%{$q}%");
             });
+        }
+
+        // 按标签筛选（客服工具；客户仅能筛到自己工单上的标签）
+        if ($request->filled('tag')) {
+            $query->whereHas('tags', fn ($q) => $q->where('tags.id', $request->integer('tag')));
         }
 
         return $query;
@@ -255,7 +261,7 @@ class TicketController extends Controller
     {
         $this->authorizeView($ticket);
 
-        $ticket->load(['user', 'customer', 'category', 'product', 'assignee', 'attachments', 'rating']);
+        $ticket->load(['user', 'customer', 'category', 'product', 'assignee', 'attachments', 'rating', 'tags']);
 
         // 内部备注仅客服可见
         $ticket->load(['replies' => function ($q) {
@@ -276,6 +282,7 @@ class TicketController extends Controller
             ? User::whereIn('role', ['agent', 'admin'])->orderBy('name')->get()
             : collect();
         $onlineAgentIds = AutoAssignService::onlineUids() ?: [];
+        $allTags = $isAgent ? \App\Models\Tag::orderBy('name')->get() : collect();
 
         // WebSocket 鉴权参数
         $wsUid = Auth::id();
@@ -293,7 +300,48 @@ class TicketController extends Controller
             'isAgent' => $isAgent,
         ];
 
-        return view('tickets.show', compact('ticket', 'agents', 'roomConfig', 'quickReplies', 'onlineAgentIds'));
+        return view('tickets.show', compact('ticket', 'agents', 'roomConfig', 'quickReplies', 'onlineAgentIds', 'allTags'));
+    }
+
+    /**
+     * 同步工单标签（仅客服；全量覆盖）
+     * POST /tickets/{ticket}/tags  body: tag_ids[]（已有标签）+ tags[]（新标签名，自动创建）
+     */
+    public function syncTags(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $this->authorizeView($ticket);
+        abort_unless(Auth::user()->isAgent(), 403, '无权操作标签');
+
+        $request->validate([
+            'tag_ids' => ['nullable', 'array'],
+            'tag_ids.*' => ['integer'],
+            'tags' => ['nullable', 'array', 'max:5'],
+            'tags.*' => ['string', 'max:30'],
+        ]);
+
+        $ids = collect($request->input('tag_ids', []))
+            ->map(fn ($v) => (int) $v)
+            ->filter()
+            ->unique();
+
+        // 新标签名自动创建（name 唯一，存在则复用）
+        $newNames = collect($request->input('tags', []))
+            ->map(fn ($n) => trim((string) $n))
+            ->filter()
+            ->unique()
+            ->take(5);
+
+        foreach ($newNames as $name) {
+            $tag = \App\Models\Tag::firstOrCreate(
+                ['name' => $name],
+                ['color' => \App\Models\Tag::COLORS[$ids->count() % count(\App\Models\Tag::COLORS)]]
+            );
+            $ids->push($tag->id);
+        }
+
+        $ticket->tags()->sync($ids->unique());
+
+        return back()->with('success', '标签已更新');
     }
 
     public function reply(Request $request, Ticket $ticket): RedirectResponse

@@ -50,6 +50,13 @@
                     @endforeach
                 </select>
 
+                <select name="tag" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                    <option value="">全部标签</option>
+                    @foreach ($allTags as $t)
+                        <option value="{{ $t->id }}" @selected((string) request('tag') === (string) $t->id)>{{ $t->name }}</option>
+                    @endforeach
+                </select>
+
                 @if ($isAgent)
                     <a href="{{ route('tickets.index', array_merge(request()->query(), ['unassigned' => 1])) }}"
                        class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition

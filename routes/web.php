@@ -52,6 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
     Route::post('tickets/{ticket}/rate', [TicketController::class, 'rate'])->name('tickets.rate');
     Route::post('tickets/{ticket}/claim', [TicketController::class, 'claim'])->name('tickets.claim');
+    Route::post('tickets/{ticket}/tags', [TicketController::class, 'syncTags'])->name('tickets.tags');
     Route::get('tickets/{ticket}/replies', [TicketController::class, 'pollReplies'])->name('tickets.replies');
     Route::get('attachments/{attachment}/download', [TicketController::class, 'downloadAttachment'])
         ->whereNumber('attachment')
