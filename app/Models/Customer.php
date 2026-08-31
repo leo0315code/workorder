@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Customer：客户档案：company/contact_name 等基本资料 + product_id 关联产品，registered_at/after_sales_expired_at 用于保修追踪；expired/expiringSoon 访问器计算售后状态。
+ */
 class Customer extends Model
 {
     use HasFactory;

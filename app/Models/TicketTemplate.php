@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * TicketTemplate：工单模板：新建工单时可选用模板预填 subject/description，支持占位符（如 {客户姓名}）由前端替换。
+ */
 class TicketTemplate extends Model
 {
     use HasFactory;

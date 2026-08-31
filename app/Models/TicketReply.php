@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * TicketReply：工单回复。type=reply 为客户可见的对话消息，type=note 为仅内部可见的备注（isNote() 判断）。
+ */
 class TicketReply extends Model
 {
     use HasFactory;

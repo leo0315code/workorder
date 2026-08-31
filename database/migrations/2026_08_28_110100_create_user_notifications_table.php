@@ -4,6 +4,9 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * 站内通知表：is_read 标记已读；link 为应用内相对路径；按 user_id 建立索引供未读数高频查询。
+ */
 return new class extends Migration
 {
     public function up(): void

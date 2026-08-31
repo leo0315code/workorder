@@ -4,6 +4,9 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * 客户满意度（CSAT）表：rating 1-5 星，is_solved 是否解决问题，comment 评语。
+ */
 return new class extends Migration
 {
     public function up(): void

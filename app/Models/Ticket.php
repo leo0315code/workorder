@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ * Ticket：工单（核心模型）：STATUS_* 与 PRIORITY_* 常量贯穿全系统；sla_due_at 为 SLA 到期时间（每日巡检按此判超时）；含用户/负责人/分类/产品/回复/附件/评分等关联。
+ */
 class Ticket extends Model
 {
     use HasFactory;

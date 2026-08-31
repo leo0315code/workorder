@@ -1,3 +1,4 @@
+{-- 图标映射组件：name -> heroicons SVG path，缺省回退 ticket 图标 --}
 @props(['name' => '', 'class' => 'w-5 h-5'])
 
 @php

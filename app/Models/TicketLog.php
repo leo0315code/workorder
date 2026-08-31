@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * TicketLog：工单操作日志（时间线）。action 存机器可读动作，DESCRIPTIONS 为其中文文案；field/old_value/new_value 记录变更明细。
+ */
 class TicketLog extends Model
 {
     use HasFactory;

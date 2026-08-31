@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * TicketRating：客户满意度评分（CSAT）：rating 1-5 星 + is_solved 是否解决问题 + comment 评语，报表页据此计算满意率。
+ */
 class TicketRating extends Model
 {
     use HasFactory;

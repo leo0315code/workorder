@@ -1,3 +1,4 @@
+{-- 管理员后台登录页（独立入口，对应 config(app.admin_url) 前缀） --}
 <x-guest-layout>
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />

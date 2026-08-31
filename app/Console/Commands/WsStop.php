@@ -7,6 +7,12 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
 
+/**
+ * 停止 GatewayWorker 实时服务（ws:stop）
+ * - Windows：读取 storage/app/websocket.pid 逐条 taskkill
+ * - Unix：执行 websocket/start.php stop
+ * 与 WsStart 配套，均以 Artisan 命令封装，避免直接手写原始 PHP 脚本
+ */
 class WsStop extends Command
 {
     protected $signature = 'ws:stop';

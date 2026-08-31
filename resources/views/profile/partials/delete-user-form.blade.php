@@ -1,3 +1,4 @@
+{-- 个人资料-删除账号表单（当前页面已移除该区块，文件保留） --}
 <section class="space-y-6">
     <header>
         <h2 class="text-lg font-medium text-gray-900">

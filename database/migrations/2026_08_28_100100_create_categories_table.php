@@ -4,6 +4,9 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * 工单分类表：slug 自动生成用于内部引用；is_active 控制是否可选用。
+ */
 return new class extends Migration
 {
     public function up(): void

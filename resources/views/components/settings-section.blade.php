@@ -1,3 +1,4 @@
+{-- 设置页分区卡片（可横跨整行，colSpan 控制栅格） --}
 @props(['title' => '', 'icon' => 'gear', 'divider' => false, 'colSpan' => 1])
 
 @php

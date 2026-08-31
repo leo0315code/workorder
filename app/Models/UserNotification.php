@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * UserNotification：站内通知（表名 user_notifications）。link 为应用内相对路径（NotificationService::normalizeLink 处理，兼容任意域名）；scopeUnread() 过滤未读。
+ */
 class UserNotification extends Model
 {
     use HasFactory;

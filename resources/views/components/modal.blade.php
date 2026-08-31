@@ -1,3 +1,4 @@
+{-- Breeze 通用模态框组件（teleport + 键盘关闭） --}
 @props([
     'name',
     'show' => false,

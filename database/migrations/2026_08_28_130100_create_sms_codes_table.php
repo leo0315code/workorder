@@ -4,6 +4,9 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * 短信验证码表：expires_at 用于 5 分钟有效期，used_at 标记一次性使用，ip 记录发送来源。
+ */
 return new class extends Migration
 {
     public function up(): void

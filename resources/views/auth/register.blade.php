@@ -1,3 +1,4 @@
+{-- 用户注册页（默认注册为 customer 角色） --}
 <x-guest-layout>
     <form method="POST" action="{{ route('register') }}">
         @csrf

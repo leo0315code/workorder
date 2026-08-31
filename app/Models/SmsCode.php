@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * SmsCode：短信验证码记录。scopeValid() 校验「未使用 + 未过期」；演示模式允许万能码 123456（可在系统设置关闭）。
+ */
 class SmsCode extends Model
 {
     use HasFactory;

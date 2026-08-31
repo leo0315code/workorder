@@ -4,6 +4,9 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * 工单模板表：预填 subject/description，可绑定分类与产品，sort 控制顺序。
+ */
 return new class extends Migration
 {
     public function up(): void
