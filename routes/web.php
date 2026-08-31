@@ -9,6 +9,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuickReplyController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketTemplateController;
@@ -62,6 +63,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('notifications/latest', [NotificationController::class, 'latest'])->name('notifications.latest');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+});
+
+// ---- 全局搜索（所有登录用户；客户仅能搜自己的工单）----
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('search', [SearchController::class, 'index'])->name('search');
+    Route::get('search/suggest', [SearchController::class, 'suggest'])->name('search.suggest');
 });
 
 // ---- 后台业务模块（客服及以上，按模块权限守卫）----

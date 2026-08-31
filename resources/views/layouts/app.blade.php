@@ -114,11 +114,52 @@
                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
                         </button>
 
-                        <h1 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
+                        <h1 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate hidden sm:block">
                             @yield('page_title', \App\Services\SettingService::siteName())
                         </h1>
 
-                        <div class="ml-auto flex items-center gap-2 relative shrink-0"
+                        {{-- 全局搜索（带下拉建议） --}}
+                        <div class="ml-auto sm:ml-4 flex-1 sm:flex-initial sm:w-64 lg:w-80" x-data="globalSearch()">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-gray-400 pointer-events-none">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                                </span>
+                                <input type="search" x-model="q" @input.debounce.250ms="suggest()"
+                                       @keydown.enter="go()" @keydown.escape="items = []; open = false"
+                                       @focus="if (items.length) open = true" @click.outside="open = false"
+                                       placeholder="搜索工单 / 客户 / 产品…"
+                                       class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 pl-8 pr-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+
+                                {{-- 建议下拉 --}}
+                                <div x-show="open && items.length > 0" x-cloak x-transition
+                                     style="max-height: 340px; overflow-y: auto;"
+                                     class="absolute left-0 right-0 top-full mt-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl z-50">
+                                    <template x-for="(it, i) in items" :key="i">
+                                        <a :href="it.url"
+                                           class="flex items-center gap-2.5 px-3 py-2 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition">
+                                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-md shrink-0 text-[10px] font-semibold"
+                                                  :class="{
+                                                      'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300': it.type === 'ticket',
+                                                      'bg-sky-50 dark:bg-sky-500/20 text-sky-600 dark:text-sky-300': it.type === 'customer',
+                                                      'bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-300': it.type === 'product',
+                                                  }">
+                                                <span x-text="it.type === 'ticket' ? '单' : (it.type === 'customer' ? '客' : '品')"></span>
+                                            </span>
+                                            <span class="min-w-0 flex-1">
+                                                <span class="block text-sm text-gray-800 dark:text-gray-200 truncate" x-text="it.label"></span>
+                                                <span class="block text-xs text-gray-400 truncate" x-text="it.meta"></span>
+                                            </span>
+                                        </a>
+                                    </template>
+                                    <a :href="'/search?q=' + encodeURIComponent(q)"
+                                       class="block px-3 py-2 text-center text-xs font-medium text-indigo-600 dark:text-indigo-400 border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                        查看全部结果 →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 relative shrink-0"
                              x-data="notificationBell()"
                              @ticket:event.window="onEvent($event.detail)">
                             {{-- 站内通知铃铛（外层是 relative flex，下拉挂在同一容器内 absolute 不被 shrink 压缩）--}}
@@ -220,6 +261,38 @@
                 </main>
             </div>
         </div>
+
+        {{-- 全局搜索（v=2026-08-31-1） --}}
+        <script>
+            function globalSearch() {
+                return {
+                    q: '',
+                    items: [],
+                    open: false,
+                    suggest() {
+                        if (this.q.trim().length < 1) {
+                            this.items = [];
+                            this.open = false;
+                            return;
+                        }
+                        fetch('/search/suggest?q=' + encodeURIComponent(this.q), {
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                                cache: 'no-store',
+                            })
+                            .then((r) => (r.ok ? r.json() : { items: [] }))
+                            .then((d) => {
+                                this.items = d.items || [];
+                                this.open = this.items.length > 0;
+                            })
+                            .catch(() => { this.items = []; });
+                    },
+                    go() {
+                        if (this.q.trim() === '') return;
+                        window.location.href = '/search?q=' + encodeURIComponent(this.q.trim());
+                    },
+                };
+            }
+        </script>
 
         {{-- 通知铃铛组件（v=2026-08-28-2 formatTime + break-words） --}}
         <script>
