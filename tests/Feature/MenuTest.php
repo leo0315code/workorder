@@ -161,4 +161,52 @@ class MenuTest extends TestCase
         // 同组的 概览 出现在 运营 之前
         $this->assertLessThan(strpos($body, '运营'), strpos($body, '概览'));
     }
+
+    // -------------------------------------------------------------------------
+    // 单一字段快速更新（内联下拉）
+    // -------------------------------------------------------------------------
+
+    public function test_update_field_changes_audience(): void
+    {
+        $menu = $this->menu(['audience' => 'agent', 'label' => '切换测试']);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.menus.update-field', $menu), ['field' => 'audience', 'value' => 'customer'])
+            ->assertRedirect();
+
+        $this->assertSame('customer', $menu->fresh()->audience);
+    }
+
+    public function test_update_field_toggles_is_active(): void
+    {
+        $menu = $this->menu(['is_active' => true]);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.menus.update-field', $menu), ['field' => 'is_active', 'value' => '0'])
+            ->assertRedirect();
+
+        $this->assertFalse($menu->fresh()->is_active);
+    }
+
+    public function test_update_field_toggles_admin_only(): void
+    {
+        $menu = $this->menu(['admin_only' => false]);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.menus.update-field', $menu), ['field' => 'admin_only', 'value' => '1'])
+            ->assertRedirect();
+
+        $this->assertTrue($menu->fresh()->admin_only);
+    }
+
+    public function test_update_field_rejects_unauthorized_field(): void
+    {
+        $menu = $this->menu(['label' => '原始']);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.menus.update-field', $menu), ['field' => 'label', 'value' => '被劫持'])
+            ->assertSessionHasErrors('field');
+
+        $this->assertSame('原始', $menu->fresh()->label);
+    }
 }

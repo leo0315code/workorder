@@ -42,10 +42,18 @@
                     <template x-for="m in menus" :key="m.id">
                         <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/40">
                             <td class="py-3 px-4 text-gray-400 font-mono text-xs" x-text="m.sort"></td>
+                            {{-- 所属端：内联下拉（自动提交）--}}
                             <td class="py-3 px-4">
-                                <span class="rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset"
-                                      :class="m.audience === 'agent' ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-indigo-200 dark:ring-indigo-500/30' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ring-emerald-200 dark:ring-emerald-500/30'"
-                                      x-text="m.audience === 'agent' ? '客服端' : '客户端'"></span>
+                                <form method="POST" :action="'/console/menus/' + m.id + '/field'" class="inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="field" value="audience">
+                                    <select name="value" onchange="this.form.submit()"
+                                            class="rounded-md pl-2 pr-6 py-0.5 text-xs font-medium ring-1 ring-inset appearance-none cursor-pointer
+                                                   m.audience === 'agent' ? 'bg-indigo-50 text-indigo-700 ring-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-500/30' : 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30'">
+                                        <option value="agent" :selected="m.audience === 'agent'">客服端</option>
+                                        <option value="customer" :selected="m.audience === 'customer'">客户端</option>
+                                    </select>
+                                </form>
                             </td>
                             <td class="py-3 px-4 font-medium text-gray-800 dark:text-gray-200" x-text="m.label"></td>
                             <td class="py-3 px-4">
@@ -57,11 +65,31 @@
                                 <span x-show="!m.module" class="text-xs text-gray-400">—</span>
                                 <span x-show="m.module" class="rounded-md bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-500/30" x-text="m.module"></span>
                             </td>
-                            <td class="py-3 px-4 text-xs" x-text="m.admin_only ? '是' : '否'"></td>
+                            {{-- 仅管理员：内联下拉（是/否）--}}
                             <td class="py-3 px-4">
-                                <span class="rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset"
-                                      :class="m.is_active ? 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-300 ring-green-200 dark:ring-green-500/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 ring-gray-200 dark:ring-gray-700'"
-                                      x-text="m.is_active ? '启用' : '停用'"></span>
+                                <form method="POST" :action="'/console/menus/' + m.id + '/field'" class="inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="field" value="admin_only">
+                                    <select name="value" onchange="this.form.submit()"
+                                            class="rounded-md pl-2 pr-6 py-0.5 text-xs font-medium ring-1 ring-inset appearance-none cursor-pointer
+                                                   m.admin_only ? 'bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/30' : 'bg-gray-100 text-gray-500 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700'">
+                                        <option value="1" :selected="m.admin_only">是</option>
+                                        <option value="0" :selected="!m.admin_only">否</option>
+                                    </select>
+                                </form>
+                            </td>
+                            {{-- 状态：内联下拉（启用/停用）--}}
+                            <td class="py-3 px-4">
+                                <form method="POST" :action="'/console/menus/' + m.id + '/field'" class="inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="field" value="is_active">
+                                    <select name="value" onchange="this.form.submit()"
+                                            class="rounded-md pl-2 pr-6 py-0.5 text-xs font-medium ring-1 ring-inset appearance-none cursor-pointer
+                                                   m.is_active ? 'bg-green-50 text-green-700 ring-green-200 dark:bg-green-500/10 dark:text-green-300 dark:ring-green-500/30' : 'bg-gray-100 text-gray-500 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700'">
+                                        <option value="1" :selected="m.is_active">启用</option>
+                                        <option value="0" :selected="!m.is_active">停用</option>
+                                    </select>
+                                </form>
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap">
                                 <button type="button" @click="openEdit(m)"

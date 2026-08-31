@@ -114,6 +114,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix(config('app.admin_
     Route::get('menus', [MenuController::class, 'index'])->name('menus.index');
     Route::post('menus', [MenuController::class, 'store'])->name('menus.store');
     Route::patch('menus/{menu}', [MenuController::class, 'update'])->name('menus.update');
+    Route::post('menus/{menu}/field', [MenuController::class, 'updateField'])->name('menus.update-field');
     Route::delete('menus/{menu}', [MenuController::class, 'destroy'])->name('menus.destroy');
 });
 

@@ -51,6 +51,29 @@ class MenuController extends Controller
     }
 
     /**
+     * 单一字段快速更新（内联下拉/开关提交）
+     * 仅允许白名单字段，避免通过此接口改 label/route_name
+     */
+    public function updateField(Request $request, Menu $menu): RedirectResponse
+    {
+        $allowed = ['audience', 'admin_only', 'is_active'];
+
+        $data = $request->validate([
+            'field' => ['required', 'in:'.implode(',', $allowed)],
+            'value' => ['required'],
+        ]);
+
+        $value = $data['value'];
+        if (in_array($data['field'], ['admin_only', 'is_active'], true)) {
+            $value = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+        }
+
+        $menu->update([$data['field'] => $value]);
+
+        return back()->with('success', '已更新');
+    }
+
+    /**
      * 菜单字段校验（store / update 共用）
      */
     protected function validateData(Request $request): array
