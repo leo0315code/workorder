@@ -129,6 +129,25 @@ class ReportController extends Controller
                     ->selectRaw("AVG({$diffExpr}) as avg")
                     ->value('avg');
 
+                // 平均解决时长：该客服指派的已关闭工单（关闭时间 - 创建时间）
+                $resolveExpr = $driver === 'sqlite'
+                    ? '(julianday(t.closed_at) - julianday(t.created_at)) * 1440'
+                    : 'TIMESTAMPDIFF(MINUTE, t.created_at, t.closed_at)';
+                $avgResolve = DB::table('tickets as t')
+                    ->where('t.assignee_id', $agent->id)
+                    ->where('t.status', Ticket::STATUS_CLOSED)
+                    ->whereNotNull('t.closed_at')
+                    ->where('t.created_at', '>=', $start)
+                    ->selectRaw("AVG({$resolveExpr}) as avg")
+                    ->value('avg');
+
+                // SLA 超时数：该客服指派、未解决且已过 SLA 时限
+                $overdueCount = Ticket::where('assignee_id', $agent->id)
+                    ->where('created_at', '>=', $start)
+                    ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
+                    ->where('sla_due_at', '<', now())
+                    ->count();
+
                 return [
                     'id' => $agent->id,
                     'name' => $agent->name,
@@ -137,6 +156,10 @@ class ReportController extends Controller
                     'avg_first_response_hours' => $avgFirstResponse === null
                         ? null
                         : round((float) $avgFirstResponse / 60, 1),
+                    'avg_resolve_hours' => $avgResolve === null
+                        ? null
+                        : round((float) $avgResolve / 60, 1),
+                    'overdue' => $overdueCount,
                 ];
             })
             ->sortByDesc('replies')

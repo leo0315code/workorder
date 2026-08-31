@@ -98,7 +98,9 @@
                         <th class="py-2.5 pr-4">客服</th>
                         <th class="py-2.5 pr-4">处理工单数</th>
                         <th class="py-2.5 pr-4">回复数</th>
-                        <th class="py-2.5">平均首次响应时长</th>
+                        <th class="py-2.5 pr-4">平均首次响应</th>
+                        <th class="py-2.5 pr-4">平均解决时长</th>
+                        <th class="py-2.5">SLA 超时</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -114,8 +116,18 @@
                             </td>
                             <td class="py-3 pr-4 text-gray-600 dark:text-gray-300">{{ $a['handled'] }}</td>
                             <td class="py-3 pr-4 text-gray-600 dark:text-gray-300">{{ $a['replies'] }}</td>
-                            <td class="py-3 text-gray-600 dark:text-gray-300">
+                            <td class="py-3 pr-4 text-gray-600 dark:text-gray-300">
                                 {{ $a['avg_first_response_hours'] === null ? '-' : $a['avg_first_response_hours'].' 小时' }}
+                            </td>
+                            <td class="py-3 pr-4 text-gray-600 dark:text-gray-300">
+                                {{ $a['avg_resolve_hours'] === null ? '-' : $a['avg_resolve_hours'].' 小时' }}
+                            </td>
+                            <td class="py-3 text-gray-600 dark:text-gray-300">
+                                @if (($a['overdue'] ?? 0) > 0)
+                                    <span class="inline-flex rounded-md bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 text-[11px] font-medium text-red-600 dark:text-red-300 ring-1 ring-inset ring-red-200 dark:ring-red-500/30">{{ $a['overdue'] }}</span>
+                                @else
+                                    <span class="text-gray-300 dark:text-gray-600">0</span>
+                                @endif
                             </td>
                         </tr>
                     @empty
