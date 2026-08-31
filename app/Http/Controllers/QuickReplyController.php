@@ -9,6 +9,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * 快捷回复管理（模块权限：quick-replies）
+ *
+ * 快捷回复是客服在工单对话页可一键插入的常用话术；
+ * 隐式绑定注意：资源参数名是 {quick_reply}，方法参数须为 $quickReply 才能正确绑定。
+ */
 class QuickReplyController extends Controller
 {
     public function index(): View
@@ -25,6 +31,7 @@ class QuickReplyController extends Controller
             'content' => ['required', 'string', 'max:5000'],
         ]);
 
+        // 新建默认启用（无 is_active 开关表单）
         QuickReply::create($data + ['is_active' => true]);
 
         return redirect()->route('admin.quick-replies.index')->with('success', '快捷回复已创建');
@@ -37,6 +44,7 @@ class QuickReplyController extends Controller
             'content' => ['required', 'string', 'max:5000'],
         ]);
 
+        // is_active 未勾选时保持原值（checkbox 缺省 false，直接覆盖会误停用）
         $quickReply->update($data + ['is_active' => $request->boolean('is_active', $quickReply->is_active)]);
 
         return redirect()->route('admin.quick-replies.index')->with('success', '快捷回复已更新');

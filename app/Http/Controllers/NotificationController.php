@@ -10,6 +10,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * 站内通知（user_notifications 表）
+ *
+ * 所有查询/写入都按当前登录用户隔离（user_id = auth()->id()）；
+ * markRead 对他人通知返回 403。通知由 NotificationService::notifyUser/notifyUsers 产生，
+ * 并同步推送到 WebSocket（notificationBell 铃铛实时刷新）。
+ */
 class NotificationController extends Controller
 {
     public function index(): View

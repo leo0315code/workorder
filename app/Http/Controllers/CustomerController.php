@@ -13,6 +13,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
+/**
+ * 客户档案（模块权限：customers）
+ *
+ * 注意：本控制器所有重定向必须使用带 admin 前缀的路由名（admin.customers.*），
+ * 路由注册在 name('admin.') 分组内，写成 route('customers.index') 会抛
+ * RouteNotFoundException 导致 500（历史上因此修过一次）。
+ */
 class CustomerController extends Controller
 {
     public function index(Request $request): View
@@ -43,7 +50,7 @@ class CustomerController extends Controller
 
         Customer::create($data);
 
-        return redirect()->route('customers.index')->with('success', '客户档案已创建');
+        return redirect()->route('admin.customers.index')->with('success', '客户档案已创建');
     }
 
     public function edit(Customer $customer): View
@@ -58,14 +65,14 @@ class CustomerController extends Controller
     {
         $customer->update($this->validated($request));
 
-        return redirect()->route('customers.index')->with('success', '客户档案已更新');
+        return redirect()->route('admin.customers.index')->with('success', '客户档案已更新');
     }
 
     public function destroy(Customer $customer): RedirectResponse
     {
         $customer->delete();
 
-        return redirect()->route('customers.index')->with('success', '客户档案已删除');
+        return redirect()->route('admin.customers.index')->with('success', '客户档案已删除');
     }
 
     /**
@@ -268,7 +275,10 @@ class CustomerController extends Controller
         ]);
 
         // 若只填了登记时间，按所选产品保修期自动计算售后到期
-        if (! $data['after_sales_expired_at'] && $data['registered_at'] && $data['product_id']) {
+        // 注意：nullable 字段未提交时不在 $data 中，必须用 ?? null 访问，直接取键会 Undefined array key 500
+        if (blank($data['after_sales_expired_at'] ?? null)
+            && filled($data['registered_at'] ?? null)
+            && filled($data['product_id'] ?? null)) {
             $product = Product::find($data['product_id']);
             $data['after_sales_expired_at'] = \Illuminate\Support\Carbon::parse($data['registered_at'])
                 ->addDays((int) $product?->warranty_days);

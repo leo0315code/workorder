@@ -170,6 +170,55 @@ class AdminModuleCrudTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // 产品（回归：redirect 曾用漏前缀的 route('products.index')，保存/删除后 500）
+    // -------------------------------------------------------------------------
+
+    public function test_product_crud_redirects_to_admin_index(): void
+    {
+        $this->actingAs($this->agentWithModules(['products']));
+
+        $this->post(route('admin.products.store'), [
+            'name' => '工控主机 X1',
+            'sku' => '',
+            'warranty_days' => 365,
+            'is_active' => 1,
+        ])->assertRedirect(route('admin.products.index'));
+
+        $product = Product::where('name', '工控主机 X1')->firstOrFail();
+        // SKU 留空自动生成
+        $this->assertNotEmpty($product->sku);
+
+        $this->patch(route('admin.products.update', $product), ['name' => '工控主机 X1 Pro', 'warranty_days' => 730])
+            ->assertRedirect(route('admin.products.index'));
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'name' => '工控主机 X1 Pro', 'warranty_days' => 730]);
+
+        $this->delete(route('admin.products.destroy', $product))
+            ->assertRedirect(route('admin.products.index'));
+
+        $this->assertDatabaseMissing('products', ['id' => $product->id]);
+    }
+
+    // -------------------------------------------------------------------------
+    // 客户档案（回归：redirect 曾用漏前缀的 route('customers.index')，保存/删除后 500）
+    // -------------------------------------------------------------------------
+
+    public function test_customer_store_redirects_to_admin_index(): void
+    {
+        $this->actingAs($this->agentWithModules(['customers']))
+            ->post(route('admin.customers.store'), [
+                'company' => '某某医院',
+                'contact_name' => '王医生',
+                'phone' => '13900139001',
+                'email' => 'doctor@example.com',
+            ])
+            ->assertRedirect(route('admin.customers.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('customers', ['company' => '某某医院', 'contact_name' => '王医生']);
+    }
+
+    // -------------------------------------------------------------------------
     // 报表
     // -------------------------------------------------------------------------
 
