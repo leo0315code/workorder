@@ -4,6 +4,7 @@ use App\Http\Controllers\AgentRoleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -110,6 +111,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix(config('app.admin_
     Route::get('settings', [SettingController::class, 'index'])->name('settings');
     Route::post('settings', [SettingController::class, 'save'])->name('settings.save');
     Route::post('settings/sms-test', [SettingController::class, 'testSms'])->name('settings.sms-test');
+    Route::get('menus', [MenuController::class, 'index'])->name('menus.index');
+    Route::post('menus', [MenuController::class, 'store'])->name('menus.store');
+    Route::patch('menus/{menu}', [MenuController::class, 'update'])->name('menus.update');
+    Route::delete('menus/{menu}', [MenuController::class, 'destroy'])->name('menus.destroy');
 });
 
 Route::middleware('auth')->group(function () {

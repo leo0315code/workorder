@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // ---- 侧边栏菜单（DB 驱动，幂等）----
+        $this->call(MenuSeeder::class);
+
         // ---- 用户 ----
         $admin = User::updateOrCreate(
             ['email' => 'admin@example.com'],

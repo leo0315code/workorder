@@ -26,31 +26,9 @@
 
             @php
                 $user = auth()->user();
-                // 管理端（agent/admin）显示完整后台菜单；客户仅门户菜单
-                // 菜单项统一以数据驱动：label/route/icon/active 一次配好，遍历按权限过滤
-                $navItems = $user && $user->isAgent() ? [
-                    ['label' => '仪表盘',     'route' => 'dashboard',                     'icon' => 'dashboard', 'active' => request()->routeIs('dashboard')],
-                    ['label' => '工单',       'route' => 'tickets.index',                'icon' => 'ticket',    'active' => request()->routeIs('tickets.*') && ! request()->routeIs('tickets.create')],
-                    ['module' => 'customers',  'label' => '客户档案', 'route' => 'admin.customers.index',        'icon' => 'customer',  'active' => request()->routeIs('admin.customers.*')],
-                    ['module' => 'products',   'label' => '产品管理', 'route' => 'admin.products.index',         'icon' => 'product',   'active' => request()->routeIs('admin.products.*')],
-                    ['module' => 'categories', 'label' => '分类管理', 'route' => 'admin.categories.index',       'icon' => 'category',  'active' => request()->routeIs('admin.categories.*')],
-                    ['module' => 'quick-replies', 'label' => '快捷回复', 'route' => 'admin.quick-replies.index', 'icon' => 'reply', 'active' => request()->routeIs('admin.quick-replies.*')],
-                    ['module' => 'templates',  'label' => '工单模板', 'route' => 'admin.ticket-templates.index', 'icon' => 'ticket', 'active' => request()->routeIs('admin.ticket-templates.*')],
-                    ['module' => 'reports',    'label' => '数据报表', 'route' => 'admin.reports',              'icon' => 'chart',     'active' => request()->routeIs('admin.reports')],
-                ] : [
-                    ['label' => '仪表盘',     'route' => 'dashboard',      'icon' => 'dashboard', 'active' => request()->routeIs('dashboard')],
-                    ['label' => '我的工单',   'route' => 'tickets.index', 'icon' => 'ticket',    'active' => request()->routeIs('tickets.*') && ! request()->routeIs('tickets.create')],
-                ];
-                // 仅登录用户显示后台模块项；客户不被后台菜单骚扰
-                $nav = array_values(array_filter($navItems, fn ($it) => $user && (! isset($it['module']) || $user->canAccessModule($it['module']))));
-                // 管理员专属（用户/角色/设置）追加在末尾
-                if ($user && $user->isAdmin()) {
-                    $nav = array_merge($nav, [
-                        ['label' => '用户管理', 'route' => 'admin.users.index',     'icon' => 'user',   'active' => request()->routeIs('admin.users.*')],
-                        ['label' => '角色管理', 'route' => 'admin.agent-roles.index', 'icon' => 'shield', 'active' => request()->routeIs('admin.agent-roles.*')],
-                        ['label' => '系统设置', 'route' => 'admin.settings',        'icon' => 'gear',   'active' => request()->routeIs('admin.settings')],
-                    ]);
-                }
+                // 侧边栏菜单 DB 驱动：按 所属端 + 模块权限 + 启用 + 路由存在性 过滤
+                // 菜单条目在数据库 menus 表维护，后台「菜单管理」可增删改排序
+                $nav = \App\Services\MenuService::sidebarFor($user);
             @endphp
 
             {{-- 侧边栏 --}}
@@ -287,5 +265,8 @@
         <script>
             window.__app = @json($__appConfig);
         </script>
+
+        {{-- 页面级脚本插槽（@push('scripts')，供个别页面追加内联 JS） --}}
+        @stack('scripts')
     </body>
 </html>
