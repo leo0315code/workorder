@@ -73,8 +73,9 @@ return [
     |
     */
 
-    'links' => [
-        public_path('storage') => storage_path('app/public'),
-    ],
+    // 刻意留空：工单附件属于敏感数据，一律存私有盘，由
+    // TicketController::downloadAttachment() 鉴权后流式下载。
+    // 一旦在此处登记 public_path('storage')，附件就会被公网直连下载，鉴权完全失效。
+    'links' => [],
 
 ];

@@ -26,6 +26,20 @@ use Illuminate\View\View;
 
 class TicketController extends Controller
 {
+    /** 附件存放盘：必须是私有盘，绝不能是 public（否则 /storage 可未登录直连下载） */
+    public const ATTACHMENT_DISK = 'local';
+
+    /** 附件允许的类型（同时用于 mimes 校验与扩展名二次校验） */
+    public const ATTACHMENT_TYPES = [
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp',
+        'pdf', 'txt', 'csv', 'log',
+        'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+        'zip', 'rar', '7z',
+    ];
+
+    /** 单个附件大小上限（KB） */
+    public const ATTACHMENT_MAX_KB = 10240;
+
     public const STATUS_NAMES = [
         Ticket::STATUS_OPEN => '待处理',
         Ticket::STATUS_PENDING => '待客户',
@@ -170,7 +184,11 @@ class TicketController extends Controller
             'priority' => ['required', 'in:low,normal,high,urgent'],
             'assignee_id' => ['nullable', 'exists:users,id'],
             'attachments' => ['nullable', 'array', 'max:5'],
-            'attachments.*' => ['file', 'max:10240'], // 10MB
+            'attachments.*' => [
+                'file',
+                'mimes:'.implode(',', self::ATTACHMENT_TYPES),
+                'max:'.self::ATTACHMENT_MAX_KB,
+            ],
         ]);
 
         $user = Auth::user();
@@ -285,7 +303,11 @@ class TicketController extends Controller
         $request->validate([
             'content' => ['required', 'string', 'max:10000'],
             'attachments' => ['nullable', 'array', 'max:5'],
-            'attachments.*' => ['file', 'max:10240'], // 10MB
+            'attachments.*' => [
+                'file',
+                'mimes:'.implode(',', self::ATTACHMENT_TYPES),
+                'max:'.self::ATTACHMENT_MAX_KB,
+            ],
         ]);
 
         $reply = TicketReply::create([
@@ -614,7 +636,14 @@ class TicketController extends Controller
         }
 
         foreach ($request->file('attachments') as $file) {
-            $path = $file->store('tickets/'.$ticket->id, 'public');
+            // 纵深防御：mimes 规则之外再按原始扩展名校验一次，拦掉形如 x.png.php 的双扩展名
+            $ext = strtolower((string) $file->getClientOriginalExtension());
+            if (! in_array($ext, self::ATTACHMENT_TYPES, true)) {
+                continue;
+            }
+
+            // 存到私有盘，禁止通过 /storage 直连下载（下载统一走 downloadAttachment 鉴权）
+            $path = $file->store('tickets/'.$ticket->id, self::ATTACHMENT_DISK);
 
             Attachment::create([
                 'attachable_type' => Ticket::class,
@@ -681,8 +710,13 @@ class TicketController extends Controller
             abort(403);
         }
 
-        abort_if(! Storage::disk('public')->exists($attachment->path), 404);
+        abort_if(! Storage::disk(self::ATTACHMENT_DISK)->exists($attachment->path), 404);
 
-        return Storage::disk('public')->download($attachment->path, $attachment->original_name);
+        // 始终以附件形式下载，禁止浏览器按内容类型内联执行（防 html/svg 存储型 XSS）
+        return Storage::disk(self::ATTACHMENT_DISK)->download(
+            $attachment->path,
+            $attachment->original_name,
+            ['Content-Disposition' => 'attachment; filename="'.str_replace('"', '', $attachment->original_name).'"']
+        );
     }
 }
