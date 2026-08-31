@@ -35,6 +35,13 @@
 - nav-icon 补 `star`/`list` 图标（菜单管理侧栏图标原回退 ticket）
 - 后台 title 竖条、报表满意度卡统一 stat-card（新增 hint 属性）
 
+### 二·补 2026-08-31 追加（ae1c5b2 起）
+
+- API 扩展至 16 路由：知识库（分类/列表/详情，仅已发布）、标签列表、工单 tag 筛选/返回
+- 重复工单识别：同用户 24h 同主题未关闭 → Web 黄条提示 / API duplicate 字段（不阻止）
+- 路由分层重组、控制器拆分（TicketService/ReportService）、tickets 索引 + API 登录限流
+- 数据填充覆盖标签/字段/知识库（幂等）；测试 136 → 188
+
 ### 四、部署注意事项（本次变更必须执行）
 
 ```bash

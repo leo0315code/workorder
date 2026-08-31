@@ -172,9 +172,16 @@ curl -X POST https://your-domain/api/auth/logout \
 ```json
 {
   "message": "工单已提交",
-  "ticket": { "id": 13, "no": "TK-260831-0006", "subject": "电脑无法开机", "...": "同上结构" }
+  "ticket": { "id": 13, "no": "TK-260831-0006", "subject": "电脑无法开机", "...": "同上结构" },
+  "duplicate": {
+    "ticket_id": 12,
+    "no": "TK-260831-0005",
+    "subject": "电脑无法开机"
+  }
 }
 ```
+
+> `duplicate`：**重复工单识别**——同一用户近 24 小时内存在主题相同且未关闭的工单时返回其信息（不阻止创建），无重复时为 `null`。
 
 > **注意**：
 > - 客户在**非工作时间**提交会返回 422（工作时间在系统设置中配置，默认周一至周五 09:00-18:00）
@@ -220,7 +227,22 @@ curl -X POST https://your-domain/api/auth/logout \
 }
 ```
 
-### 4.2 客户列表（GET /customers）
+### 4.2 标签列表（GET /tags）
+
+登录即可调用（工单按标签筛选 / 展示用）。
+
+响应（200）：
+```json
+{
+  "items": [
+    { "id": 1, "name": "高优先级", "color": "rose" }
+  ]
+}
+```
+
+> 工单列表支持 `tag_id` 参数筛选；工单列表/详情的 `ticket` 对象含 `tags` 数组。
+
+### 4.3 客户列表（GET /customers）
 
 **仅客服 / 管理员**可调用，客户调用返回 403。
 
@@ -241,7 +263,56 @@ curl -X POST https://your-domain/api/auth/logout \
 
 ---
 
-## 5. 通知
+## 5. 知识库（App 端浏览）
+
+> 仅返回**已发布**文章；草稿对客户端不可见（详情返回 404）。
+
+### 5.1 分类列表（GET /kb/categories）
+
+响应（200）：
+```json
+{
+  "items": [
+    { "id": 1, "name": "常见故障", "article_count": 3 }
+  ]
+}
+```
+
+### 5.2 文章列表（GET /kb/articles）
+
+查询参数：`category_id`（按分类）、`q`（标题/内容关键词，URL 编码）、`page` / `per_page`。
+
+响应（200）：
+```json
+{
+  "items": [
+    { "id": 1, "title": "登录提示验证码错误怎么办", "category": "常见故障", "views": 24, "updated_at": "2026-08-31" }
+  ],
+  "pagination": { "current_page": 1, "last_page": 1, "total": 3 }
+}
+```
+
+### 5.3 文章详情（GET /kb/articles/{id}）
+
+返回 Markdown 原文（`content`），前端自行渲染；浏览数 +1。
+
+响应（200）：
+```json
+{
+  "article": {
+    "id": 1,
+    "title": "登录提示验证码错误怎么办",
+    "content": "# 登录提示验证码错误\n\n1. 清理浏览器缓存...",
+    "category": "常见故障",
+    "views": 25,
+    "updated_at": "2026-08-31 09:10:00"
+  }
+}
+```
+
+---
+
+## 6. 通知
 
 ### 5.1 我的通知（GET /notifications）
 
@@ -277,7 +348,7 @@ curl -X POST https://your-domain/api/auth/logout \
 
 ---
 
-## 6. 状态与优先级枚举
+## 7. 状态与优先级枚举
 
 | 字段 | 取值 | 含义 |
 |---|---|---|
@@ -290,7 +361,7 @@ curl -X POST https://your-domain/api/auth/logout \
 
 ---
 
-## 7. 常见问题
+## 8. 常见问题
 
 **Q：token 过期怎么办？**
 当前无过期时间（长期有效），登出后失效。如需短期 token 或刷新机制，可在 `AuthApiController::login` 中给 `createToken()` 传 `expiresAt`。
