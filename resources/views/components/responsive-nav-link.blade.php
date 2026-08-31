@@ -1,5 +1,5 @@
-{-- 响应式导航链接（移动端菜单用） --}
 @props(['active'])
+{{-- 响应式导航链接（移动端菜单用） --}}
 
 @php
 $classes = ($active ?? false)

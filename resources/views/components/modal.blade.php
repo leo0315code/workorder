@@ -1,5 +1,5 @@
-{-- Breeze 通用模态框组件（teleport + 键盘关闭） --}
 @props([
+{{-- Breeze 通用模态框组件（teleport + 键盘关闭） --}}
     'name',
     'show' => false,
     'maxWidth' => '2xl'

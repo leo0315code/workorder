@@ -1,4 +1,4 @@
-{-- 敏感操作前的二次密码确认页 --}
+{{-- 敏感操作前的二次密码确认页 --}
 <x-guest-layout>
     <div class="mb-4 text-sm text-gray-600">
         {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}

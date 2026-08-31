@@ -1,4 +1,4 @@
-{-- Breeze 默认导航布局（当前主布局为 layouts/app.blade.php，本文件保留备用） --}
+{{-- Breeze 默认导航布局（当前主布局为 layouts/app.blade.php，本文件保留备用） --}
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

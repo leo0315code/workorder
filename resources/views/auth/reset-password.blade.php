@@ -1,4 +1,4 @@
-{-- 重置密码页（token 由邮件链接携带） --}
+{{-- 重置密码页（token 由邮件链接携带） --}
 <x-guest-layout>
     <form method="POST" action="{{ route('password.store') }}">
         @csrf

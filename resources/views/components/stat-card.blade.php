@@ -1,5 +1,5 @@
-{-- 仪表盘统计卡（图标+数值+标签） --}
 @props(['label', 'value', 'icon' => 'ticket', 'color' => 'indigo'])
+{{-- 仪表盘统计卡（图标+数值+标签） --}}
 
 @php
     $colors = [
