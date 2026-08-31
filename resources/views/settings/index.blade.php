@@ -160,6 +160,22 @@
                                class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                 </div>
+                {{-- 发送测试短信：用 formaction 复用外层表单，避免嵌套 form --}}
+                <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-3">
+                    <div class="flex flex-col sm:flex-row sm:items-end gap-2.5">
+                        <div class="flex-1">
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">发送测试短信</label>
+                            <input type="text" name="sms_test_phone" inputmode="numeric" maxlength="11" placeholder="接收测试短信的手机号"
+                                   class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <button type="submit" formaction="{{ route('admin.settings.sms-test') }}"
+                                class="shrink-0 rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition">
+                            发送测试短信
+                        </button>
+                    </div>
+                    <p class="mt-2 text-xs text-gray-400">按当前驱动与密钥真实下发一条验证码，用于验证配置是否可用（不受 60 秒冷却限制，也不写入 sms_codes 表）</p>
+                </div>
+
                 <p class="text-xs text-gray-400 flex items-start gap-1.5">
                     <svg class="w-3.5 h-3.5 mt-0.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>
                     驱动与密钥保存在数据库（settings 表），优先于 .env；生产接入需在服务商控制台开通短信服务。

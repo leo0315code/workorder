@@ -108,6 +108,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix(config('app.admin_
     Route::post('users/{user}/offline', [UserController::class, 'toggleOffline'])->name('users.toggle-offline');
     Route::get('settings', [SettingController::class, 'index'])->name('settings');
     Route::post('settings', [SettingController::class, 'save'])->name('settings.save');
+    Route::post('settings/sms-test', [SettingController::class, 'testSms'])->name('settings.sms-test');
 });
 
 Route::middleware('auth')->group(function () {

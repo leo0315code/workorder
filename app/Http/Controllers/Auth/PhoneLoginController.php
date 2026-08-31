@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Exceptions\SmsSendException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\SmsService;
@@ -38,7 +39,12 @@ class PhoneLoginController extends Controller
         }
         RateLimiter::hit($key, 60);
 
-        $code = SmsService::sendCode($phone, $request->ip());
+        try {
+            $code = SmsService::sendCode($phone, $request->ip());
+        } catch (SmsSendException $e) {
+            // 真实通道失败时给用户可读提示，不暴露密钥/接口细节
+            return response()->json(['message' => $e->getMessage()], 502);
+        }
 
         // 演示模式：直接把验证码返回给前端，方便本地联调
         $payload = ['message' => '验证码已发送', 'expires_in' => 300];

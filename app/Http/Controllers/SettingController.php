@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\SmsSendException;
 use App\Services\SettingService;
 use App\Services\SmsService;
 use Illuminate\Http\RedirectResponse;
@@ -89,5 +90,35 @@ class SettingController extends Controller
         }
 
         return redirect()->route('admin.settings')->with('success', '系统设置已保存');
+    }
+
+    /**
+     * 发送一条测试短信，用于验证通道配置是否可用（不走 60 秒冷却，不落库）
+     */
+    public function testSms(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'sms_test_phone' => ['required', 'regex:/^1[3-9]\d{9}$/'],
+        ], [
+            'sms_test_phone.required' => '请先填写接收测试短信的手机号',
+            'sms_test_phone.regex' => '手机号格式不正确，应为 11 位大陆手机号',
+        ]);
+
+        $phone = $data['sms_test_phone'];
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        try {
+            SmsService::sendViaProvider($phone, $code);
+        } catch (SmsSendException $e) {
+            return redirect()->route('admin.settings')->with('error', '发送失败：'.$e->getMessage());
+        }
+
+        if (SmsService::driver() === 'demo') {
+            return redirect()->route('admin.settings')
+                ->with('success', '当前为 demo 驱动，未真实发送。若要验证真实通道，请先把驱动切换为阿里云或腾讯云');
+        }
+
+        return redirect()->route('admin.settings')
+            ->with('success', '测试短信已发送至 '.SmsService::mask($phone).'，验证码 '.$code.'，请查收');
     }
 }
