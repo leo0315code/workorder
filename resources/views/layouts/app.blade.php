@@ -47,13 +47,28 @@
                     </div>
 
                     <nav class="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
-                        @foreach ($nav as $item)
-                            <a href="{{ route($item['route'], $item['params'] ?? []) }}"
-                               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
-                                      {{ $item['active'] ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100' }}">
-                                <x-nav-icon :name="$item['icon']" class="w-5 h-5 shrink-0" />
-                                <span class="truncate">{{ $item['label'] }}</span>
-                            </a>
+                        @php
+                            // 按 section 分块渲染；section 为空的项目不渲染小标题，顺序接在前一块后
+                            $__groups = [];
+                            foreach ($nav as $__item) {
+                                $__key = $__item['section'] ?? '';
+                                $__groups[$__key][] = $__item;
+                            }
+                        @endphp
+                        @foreach ($__groups as $__section => $__items)
+                            @if ($__section !== '')
+                                <div class="px-3 pt-4 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 first:pt-0">
+                                    {{ $__section }}
+                                </div>
+                            @endif
+                            @foreach ($__items as $item)
+                                <a href="{{ route($item['route'], $item['params'] ?? []) }}"
+                                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                                          {{ $item['active'] ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100' }}">
+                                    <x-nav-icon :name="$item['icon']" class="w-5 h-5 shrink-0" />
+                                    <span class="truncate">{{ $item['label'] }}</span>
+                                </a>
+                            @endforeach
                         @endforeach
                     </nav>
 

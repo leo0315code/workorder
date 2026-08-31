@@ -62,6 +62,7 @@ class MenuController extends Controller
             'admin_only' => ['nullable', 'boolean'],
             'icon' => ['required', 'string', 'max:30'],
             'module' => ['nullable', 'string', 'max:50'],
+            'section' => ['nullable', 'string', 'max:30'],
             'active_pattern' => ['nullable', 'string', 'max:100'],
             'except_pattern' => ['nullable', 'string', 'max:100'],
             'sort' => ['nullable', 'integer', 'min:0', 'max:9999'],

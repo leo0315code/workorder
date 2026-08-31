@@ -45,6 +45,7 @@ class MenuService
                 'label' => $m->label,
                 'route' => $m->route_name,
                 'icon' => $m->icon,
+                'section' => $m->section,
                 'active' => self::isActive($m),
             ])
             ->values()

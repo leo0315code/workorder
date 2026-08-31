@@ -147,4 +147,18 @@ class MenuTest extends TestCase
         $this->assertSame($first, Menu::count());
         $this->assertSame(14, $first); // 12 客服端 + 2 客户端
     }
+
+    public function test_sidebar_groups_items_by_section(): void
+    {
+        // 构造一组有明显分块的两条菜单
+        $this->menu(['audience' => 'agent', 'label' => '工作台', 'route_name' => 'dashboard', 'section' => '概览', 'sort' => 1]);
+        $this->menu(['audience' => 'agent', 'label' => '数据', 'route_name' => 'admin.reports', 'section' => '运营', 'sort' => 50]);
+
+        $body = $this->actingAs($this->admin())->get(route('dashboard'))->getContent();
+        // 小标题出现
+        $this->assertStringContainsString('概览', $body);
+        $this->assertStringContainsString('运营', $body);
+        // 同组的 概览 出现在 运营 之前
+        $this->assertLessThan(strpos($body, '运营'), strpos($body, '概览'));
+    }
 }

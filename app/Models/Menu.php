@@ -22,7 +22,7 @@ class Menu extends Model
 
     protected $fillable = [
         'audience', 'admin_only', 'label', 'route_name',
-        'icon', 'module', 'active_pattern', 'except_pattern',
+        'icon', 'module', 'section', 'active_pattern', 'except_pattern',
         'sort', 'is_active',
     ];
 

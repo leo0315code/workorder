@@ -30,6 +30,7 @@
                         <th class="py-3 px-4">排序</th>
                         <th class="py-3 px-4">所属端</th>
                         <th class="py-3 px-4">显示名</th>
+                        <th class="py-3 px-4">分组</th>
                         <th class="py-3 px-4">路由名</th>
                         <th class="py-3 px-4">模块权限</th>
                         <th class="py-3 px-4">仅管理员</th>
@@ -47,6 +48,10 @@
                                       x-text="m.audience === 'agent' ? '客服端' : '客户端'"></span>
                             </td>
                             <td class="py-3 px-4 font-medium text-gray-800 dark:text-gray-200" x-text="m.label"></td>
+                            <td class="py-3 px-4">
+                                <span x-show="m.section" class="rounded-md bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-200" x-text="m.section"></span>
+                                <span x-show="!m.section" class="text-xs text-gray-400">—</span>
+                            </td>
                             <td class="py-3 px-4 font-mono text-xs text-gray-500 dark:text-gray-400" x-text="m.route_name || '-'"></td>
                             <td class="py-3 px-4">
                                 <span x-show="!m.module" class="text-xs text-gray-400">—</span>
@@ -143,6 +148,11 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">分组（侧栏小标题）</label>
+                            <input type="text" name="section" x-model="form.section" maxlength="30" placeholder="如：概览 / 业务数据 / 系统管理"
+                                   class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -184,18 +194,18 @@
                     open: false,
                     editing: null,
                     menus: @json($__menuRows),
-                    form: { label: '', route_name: '', audience: 'agent', admin_only: false, icon: 'ticket', module: '', sort: 0, is_active: true },
+                    form: { label: '', route_name: '', audience: 'agent', admin_only: false, icon: 'ticket', module: '', section: '', sort: 0, is_active: true },
 
                     openCreate() {
                         this.editing = null;
-                        this.form = { label: '', route_name: '', audience: 'agent', admin_only: false, icon: 'ticket', module: '', sort: 0, is_active: true };
+                        this.form = { label: '', route_name: '', audience: 'agent', admin_only: false, icon: 'ticket', module: '', section: '', sort: 0, is_active: true };
                         this.open = true;
                     },
                     openEdit(m) {
                         this.editing = m;
                         this.form = {
                             label: m.label, route_name: m.route_name || '', audience: m.audience,
-                            admin_only: !!m.admin_only, icon: m.icon, module: m.module || '',
+                            admin_only: !!m.admin_only, icon: m.icon, module: m.module || '', section: m.section || '',
                             sort: m.sort, is_active: !!m.is_active,
                         };
                         this.open = true;
