@@ -2,9 +2,16 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
+    {{-- 卡片内标题区 --}}
     <div class="mb-6 text-center">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">用户登录</h2>
-        <p class="text-sm text-gray-500 mt-1">提交工单、跟进处理进度</p>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-300 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-500/30">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" /></svg>
+            工单服务平台
+        </span>
+        <h2 class="mt-3 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            登录账号
+        </h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">提交工单、跟进处理进度，随时掌握售后状态</p>
     </div>
 
     @if (session('error'))
@@ -13,53 +20,90 @@
 
     <div x-data="loginTabs()">
         {{-- Tab 切换 --}}
-        <div class="grid grid-cols-3 gap-1 mb-6 rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
-            <button type="button" @click="tab = 'password'" :class="tab === 'password' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'"
-                    class="rounded-md px-3 py-2 text-sm font-medium transition">密码登录</button>
-            <button type="button" @click="tab = 'phone'" :class="tab === 'phone' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'"
-                    class="rounded-md px-3 py-2 text-sm font-medium transition">手机号登录</button>
-            <button type="button" @click="tab = 'wechat'" :class="tab === 'wechat' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'"
-                    class="rounded-md px-3 py-2 text-sm font-medium transition">微信扫码</button>
+        <div class="grid grid-cols-3 gap-1 mb-6 rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
+            <button type="button" @click="tab = 'password'"
+                    :class="tab === 'password' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+                    class="rounded-lg px-3 py-2 text-sm font-medium transition">密码登录</button>
+            <button type="button" @click="tab = 'phone'"
+                    :class="tab === 'phone' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+                    class="rounded-lg px-3 py-2 text-sm font-medium transition">手机号登录</button>
+            <button type="button" @click="tab = 'wechat'"
+                    :class="tab === 'wechat' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+                    class="rounded-lg px-3 py-2 text-sm font-medium transition">微信扫码</button>
         </div>
 
         {{-- 密码登录 --}}
         <form method="POST" action="{{ route('login') }}" x-show="tab === 'password'" class="space-y-4">
             @csrf
             <div>
-                <x-input-label for="email" :value="__('邮箱')" />
-                <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
+                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">邮箱</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-3.5 flex items-center text-gray-400 dark:text-gray-500">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
+                    </span>
+                    <input id="email" type="email" name="email" :value="old('email')" required autofocus autocomplete="username"
+                           placeholder="you@example.com"
+                           class="block w-full h-11 pl-11 pr-4 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                </div>
                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
             </div>
+
             <div>
-                <x-input-label for="password" :value="__('密码')" />
-                <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="current-password" />
+                <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">密码</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-3.5 flex items-center text-gray-400 dark:text-gray-500">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+                    </span>
+                    <input id="password" type="password" name="password" required autocomplete="current-password"
+                           placeholder="请输入密码"
+                           class="block w-full h-11 pl-11 pr-4 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                </div>
                 <x-input-error :messages="$errors->get('password')" class="mt-2" />
             </div>
+
             <div class="flex items-center justify-between">
-                <label for="remember_me" class="inline-flex items-center">
-                    <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
+                <label for="remember_me" class="inline-flex items-center cursor-pointer">
+                    <input id="remember_me" type="checkbox"
+                           class="rounded-md border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
                     <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">{{ __('记住我') }}</span>
                 </label>
                 @if (Route::has('password.request'))
-                    <a class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline" href="{{ route('password.request') }}">{{ __('忘记密码？') }}</a>
+                    <a class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 hover:underline" href="{{ route('password.request') }}">{{ __('忘记密码？') }}</a>
                 @endif
             </div>
-            <x-primary-button class="w-full justify-center">{{ __('登录') }}</x-primary-button>
+
+            <button type="submit"
+                    class="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/35 active:scale-[0.98] transition">
+                登录
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+            </button>
         </form>
 
         {{-- 手机号登录 --}}
         <form method="POST" action="{{ route('login.phone') }}" x-show="tab === 'phone'" class="space-y-4" @submit="loginPhone($event)">
             @csrf
             <div>
-                <x-input-label for="phone" :value="__('手机号')" />
-                <x-text-input id="phone" class="block mt-1 w-full" type="tel" name="phone" x-model="phone" placeholder="11 位手机号" required autocomplete="tel" />
+                <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">手机号</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-3.5 flex items-center text-gray-400 dark:text-gray-500">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>
+                    </span>
+                    <input id="phone" type="tel" name="phone" x-model="phone" placeholder="11 位手机号" required autocomplete="tel"
+                           class="block w-full h-11 pl-11 pr-4 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                </div>
             </div>
             <div>
-                <x-input-label for="code" :value="__('验证码')" />
+                <label for="code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">验证码</label>
                 <div class="flex gap-2">
-                    <x-text-input id="code" class="block mt-1 w-full" type="text" name="code" x-model="code" placeholder="6 位验证码" maxlength="6" required inputmode="numeric" />
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-3.5 flex items-center text-gray-400 dark:text-gray-500">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        </span>
+                        <input id="code" type="text" name="code" x-model="code" placeholder="6 位验证码" maxlength="6" required inputmode="numeric"
+                               class="block w-full h-11 pl-11 pr-4 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                    </div>
                     <button type="button" @click="sendCode()" :disabled="sending || countdown > 0"
-                            class="mt-1 shrink-0 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 disabled:opacity-50"
+                            class="shrink-0 h-11 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 text-sm font-medium text-indigo-600 dark:text-indigo-300 disabled:opacity-50 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition"
                             x-text="countdown > 0 ? countdown + 's 后重发' : (sending ? '发送中…' : '获取验证码')"></button>
                 </div>
                 <template x-if="debugCode">
@@ -69,15 +113,19 @@
                     <p class="mt-2 text-xs text-red-500" x-text="phoneError"></p>
                 </template>
             </div>
-            <x-primary-button class="w-full justify-center">{{ __('验证码登录') }}</x-primary-button>
+            <button type="submit"
+                    class="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/35 active:scale-[0.98] transition">
+                验证码登录
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+            </button>
             <p class="text-xs text-gray-400 text-center">未注册的手机号将自动创建账号</p>
         </form>
 
         {{-- 微信扫码 --}}
         <div x-show="tab === 'wechat'" class="flex flex-col items-center py-2">
-            <div class="w-48 h-48 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center gap-3">
+            <div class="w-52 h-52 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center gap-3 overflow-hidden">
                 <template x-if="wechatEnabled">
-                    <img :src="qrUrl" alt="微信扫码" class="w-full h-full rounded-xl" x-show="qrUrl">
+                    <img :src="qrUrl" alt="微信扫码" class="w-full h-full rounded-2xl" x-show="qrUrl">
                 </template>
                 <template x-if="!wechatEnabled">
                     <div class="text-center px-4">
@@ -90,7 +138,7 @@
 
             <template x-if="!wechatEnabled">
                 <button type="button" @click="mockScan()" :disabled="polling"
-                        class="mt-4 rounded-lg bg-green-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50">
+                        class="mt-4 rounded-xl bg-green-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50 shadow-lg shadow-green-500/25 transition">
                     <span x-text="polling ? '正在登录…' : '模拟微信扫码'"></span>
                 </button>
             </template>
@@ -103,8 +151,14 @@
     </div>
 
     <div class="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-sm">
-        <a href="{{ route('register') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">还没有账号？立即注册</a>
-        <a href="{{ route('admin.login') }}" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:underline">客服/管理员入口 →</a>
+        <a href="{{ route('register') }}" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 hover:underline">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            还没有账号？立即注册
+        </a>
+        <a href="{{ route('admin.login') }}" class="inline-flex items-center gap-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:underline">
+            客服/管理员入口
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+        </a>
     </div>
 
     <script>
