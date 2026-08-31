@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\Route;
  */
 
 // ---- 公开 ----
-Route::post('/auth/login', [AuthApiController::class, 'login']);
+// 登录限流：每 IP 每分钟最多 5 次（防爆破；短信验证码另有 60s 重发保护）
+Route::post('/auth/login', [AuthApiController::class, 'login'])->middleware('throttle:5,1');
 
 // ---- 需 token ----
 Route::middleware('auth:sanctum')->group(function () {
