@@ -21,12 +21,12 @@ class SupportScanDailyTest extends TestCase
 
     public function test_schedule_is_registered(): void
     {
-        $schedule = app(\Illuminate\Console\Scheduling\Schedule::class);
-        $events = collect($schedule->events())
-            ->filter(fn ($e) => str_contains($e->command, 'support:scan-daily'));
+        // 走 schedule:list 输出断言，避免直接解析 Schedule 单例时受应用引导时序影响
+        Artisan::call('schedule:list');
+        $output = Artisan::output();
 
-        $this->assertCount(1, $events, 'support:scan-daily 必须已注册到调度器');
-        $this->assertStringContainsString('0 9 * * *', (string) $events->first()->expression);
+        $this->assertStringContainsString('support:scan-daily', $output);
+        $this->assertStringContainsString('0 9 * * *', $output);
     }
 
     public function test_command_notifies_on_overdue_sla_ticket(): void
