@@ -1,5 +1,5 @@
-@props(['label', 'value', 'icon' => 'ticket', 'color' => 'indigo'])
-{{-- 仪表盘统计卡（图标+数值+标签） --}}
+@props(['label', 'value', 'icon' => 'ticket', 'color' => 'indigo', 'hint' => null])
+{{-- 通用统计卡（图标+数值+标签+可选辅助说明），全站统计口径统一 --}}
 
 @php
     $colors = [
@@ -19,5 +19,8 @@
     <div class="min-w-0">
         <p class="text-3xl font-bold text-gray-900 dark:text-white leading-none">{{ $value }}</p>
         <p class="text-xs text-gray-400 mt-1.5 truncate">{{ $label }}</p>
+        @if ($hint)
+            <p class="text-[11px] text-gray-400/80 dark:text-gray-500 truncate">{{ $hint }}</p>
+        @endif
     </div>
 </div>

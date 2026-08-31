@@ -8,7 +8,7 @@
         <div class="flex items-center gap-2">
             @foreach ([7 => '近 7 天', 30 => '近 30 天', 90 => '近 90 天'] as $d => $label)
                 <a href="{{ route('admin.reports', ['days' => $d]) }}"
-                   class="rounded-lg px-4 py-2 text-sm font-medium transition {{ $days === $d ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                   class="rounded-xl px-4 py-2 text-sm font-medium transition {{ $days === $d ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
                     {{ $label }}
                 </a>
             @endforeach
@@ -30,33 +30,9 @@
 
     {{-- 满意度 --}}
     <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4">
-            <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>
-            </span>
-            <div>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $ratingStats['avg'] === null ? '-' : $ratingStats['avg'] }}</p>
-                <p class="text-xs text-gray-400 mt-0.5">平均满意度（{{ $ratingStats['count'] }} 次评价）</p>
-            </div>
-        </div>
-        <div class="flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4">
-            <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-            </span>
-            <div>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $ratingStats['positive_rate'] }}<span class="text-base text-gray-400">%</span></p>
-                <p class="text-xs text-gray-400 mt-0.5">满意率（4★及以上，{{ $ratingStats['positive'] }} 条）</p>
-            </div>
-        </div>
-        <div class="flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4">
-            <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>
-            </span>
-            <div>
-                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $ratingStats['solved_rate'] }}<span class="text-base text-gray-400">%</span></p>
-                <p class="text-xs text-gray-400 mt-0.5">问题已解决率（{{ $ratingStats['solved'] }}/{{ $ratingStats['count'] }} 条）</p>
-            </div>
-        </div>
+        <x-stat-card label="平均满意度" :value="$ratingStats['avg'] === null ? '-' : $ratingStats['avg']" icon="star" color="amber" :hint="'共 '.$ratingStats['count'].' 次评价'" />
+        <x-stat-card label="满意率（4★及以上）" :value="$ratingStats['positive_rate']" icon="check" color="green" :hint="'好评 '.$ratingStats['positive'].' 条'" />
+        <x-stat-card label="问题已解决率" :value="$ratingStats['solved_rate']" icon="shield" color="sky" :hint="'解决 '.$ratingStats['solved'].'/'.$ratingStats['count'].' 条'" />
     </div>
 
     <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -66,7 +42,7 @@
                 @php $max = max(1, max($dailySeries)); @endphp
                 @foreach ($dailySeries as $i => $v)
                     <div class="flex-1 flex flex-col items-center justify-end h-full group relative">
-                        <div class="w-full rounded-t bg-indigo-500/80 hover:bg-indigo-500 transition"
+                        <div class="w-full rounded-t bg-gradient-to-t from-indigo-600 to-violet-400 hover:from-indigo-500 hover:to-violet-300 transition"
                              style="height: {{ max(2, round($v / $max * 100)) }}%"></div>
                         @if ($v > 0)
                             <span class="absolute -top-1 text-[10px] text-gray-400 opacity-0 group-hover:opacity-100">{{ $v }}</span>
