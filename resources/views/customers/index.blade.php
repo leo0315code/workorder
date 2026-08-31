@@ -5,7 +5,7 @@
 @section('content')
     <div class="mb-4 flex flex-wrap items-center gap-3">
         <a href="{{ route('admin.customers.create') }}"
-           class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 shadow-sm">
+           class="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/35 transition">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
             新建客户
         </a>
@@ -20,8 +20,13 @@
             <input type="file" accept=".csv" class="hidden" x-data
                    @change="if ($event.target.files.length) { const f = $event.target.files[0]; const fd = new FormData(); fd.append('file', f); fd.append('_token', document.querySelector('meta[name=csrf-token]').content); fetch('{{ route('admin.customers.import') }}', { method: 'POST', body: fd }).then(() => location.reload()); }">
         </label>
-        <span class="text-sm text-gray-500 dark:text-gray-400">
-            售后已过期 <span class="font-semibold text-red-500">{{ $expiredCount }}</span> 家 · 7 天内到期 <span class="font-semibold text-amber-500">{{ $expiringCount }}</span> 家
+        <span class="inline-flex items-center gap-2 text-xs">
+            <span class="inline-flex items-center gap-1.5 rounded-lg bg-red-50 dark:bg-red-500/10 px-2.5 py-1.5 font-medium text-red-600 dark:text-red-300 ring-1 ring-inset ring-red-200 dark:ring-red-500/30">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> 售后已过期 {{ $expiredCount }} 家
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1.5 font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-500/30">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> 7 天内到期 {{ $expiringCount }} 家
+            </span>
         </span>
     </div>
 

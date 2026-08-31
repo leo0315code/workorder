@@ -100,8 +100,9 @@
                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
                         </button>
 
-                        <h1 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate hidden sm:block">
-                            @yield('page_title', \App\Services\SettingService::siteName())
+                        <h1 class="flex items-center gap-2.5 text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate hidden sm:flex">
+                            <span class="shrink-0 w-1.5 h-5 rounded-full bg-gradient-to-b from-indigo-500 to-violet-500"></span>
+                            <span class="truncate">@yield('page_title', \App\Services\SettingService::siteName())</span>
                         </h1>
 
                         {{-- 全局搜索（带下拉建议） --}}
