@@ -329,5 +329,83 @@ class DatabaseSeeder extends Seeder
                 ]
             );
         }
+
+        // ---- 标签（多对多，打给示例工单与部分批量工单）----
+        $tagDefs = [
+            ['name' => '高优先级', 'color' => 'rose'],
+            ['name' => '硬件故障', 'color' => 'amber'],
+            ['name' => '软件问题', 'color' => 'sky'],
+            ['name' => '网络故障', 'color' => 'violet'],
+            ['name' => '售后', 'color' => 'emerald'],
+            ['name' => '功能需求', 'color' => 'indigo'],
+            ['name' => '紧急', 'color' => 'red'],
+            ['name' => '待跟进', 'color' => 'cyan'],
+        ];
+        $tags = collect($tagDefs)->map(fn ($d) => \App\Models\Tag::updateOrCreate(['name' => $d['name']], $d));
+
+        // 示例工单打标签
+        $t1?->tags()->syncWithoutDetaching($tags->where('name', '软件问题')->first()?->id);
+        $t1?->tags()->syncWithoutDetaching($tags->where('name', '高优先级')->first()?->id);
+        $t2?->tags()->syncWithoutDetaching($tags->where('name', '售后')->first()?->id);
+        $t3?->tags()->syncWithoutDetaching($tags->where('name', '功能需求')->first()?->id);
+        // 批量工单确定性打 1-2 个标签（按索引取固定标签，保证重复 seed 幂等）
+        $tagIds = $tags->pluck('id')->all();
+        $tagCount = count($tagIds);
+        $bulkTicketIds = Ticket::where('no', 'like', 'TK-DEMO-1%')->pluck('id')->all();
+        foreach ($bulkTicketIds as $k => $tid) {
+            $pickIds = array_slice([$tagIds[$k % $tagCount], $tagIds[($k + 3) % $tagCount]], 0, 1 + ($k % 2));
+            Ticket::find($tid)?->tags()->syncWithoutDetaching($pickIds);
+        }
+
+        // ---- 工单自定义字段（定义 + 给演示工单填值）----
+        $fieldDefs = [
+            ['label' => '设备序列号', 'key' => 'serial_no', 'type' => 'text', 'is_required' => false, 'sort' => 10],
+            ['label' => '故障类型', 'key' => 'fault_type', 'type' => 'select', 'options' => ['硬件故障', '软件问题', '网络问题'], 'is_required' => false, 'sort' => 20],
+            ['label' => '期望解决日期', 'key' => 'expect_date', 'type' => 'date', 'is_required' => false, 'sort' => 30],
+        ];
+        $fieldDefs = collect($fieldDefs)->map(fn ($d) => \App\Models\TicketFieldDef::updateOrCreate(
+            ['key' => $d['key']],
+            $d + ['is_active' => true]
+        ));
+
+        // 给部分工单填字段值
+        $fieldSamples = [
+            ['no' => 'TK-DEMO-0001', 'serial_no' => 'X1-2025-0001', 'fault_type' => '软件问题'],
+            ['no' => 'TK-DEMO-0002', 'serial_no' => 'HWX1-8842', 'fault_type' => '硬件故障'],
+            ['no' => 'TK-DEMO-0003', 'serial_no' => 'X1-2025-0001', 'fault_type' => '功能需求'],
+        ];
+        foreach ($fieldSamples as $sample) {
+            $ft = Ticket::where('no', $sample['no'])->first();
+            if (! $ft) {
+                continue;
+            }
+            foreach (['serial_no' => $sample['serial_no'], 'fault_type' => $sample['fault_type']] as $key => $val) {
+                $def = $fieldDefs->firstWhere('key', $key);
+                if ($def) {
+                    \App\Models\TicketFieldValue::updateOrCreate(
+                        ['ticket_id' => $ft->id, 'field_def_id' => $def->id],
+                        ['value' => $val]
+                    );
+                }
+            }
+        }
+
+        // ---- 知识库（2 分类 + 5 篇文章）----
+        $kbCatBug = \App\Models\KbCategory::updateOrCreate(['name' => '常见故障'], ['sort' => 10]);
+        $kbCatSvc = \App\Models\KbCategory::updateOrCreate(['name' => '售后政策'], ['sort' => 20]);
+
+        $kbArticles = [
+            ['kb_category_id' => $kbCatBug->id, 'title' => '登录提示验证码错误怎么办', 'content' => "# 登录提示验证码错误\n\n1. **清理浏览器缓存**并硬刷新（Mac：Cmd+Shift+R / Win：Ctrl+F5）\n2. 确认输入法处于英文状态\n3. 更换浏览器（Chrome / Edge）重试\n4. 仍无法解决：提交工单并附上报错截图"],
+            ['kb_category_id' => $kbCatBug->id, 'title' => '系统无法打开/白屏处理步骤', 'content' => "# 系统白屏处理步骤\n\n## 排查\n- 确认网络可达（ping 域名）\n- 清缓存硬刷新\n- 查看浏览器控制台是否有 5xx 报错\n\n## 升级\n- 携带控制台截图提交故障工单，标注发生时间"],
+            ['kb_category_id' => $kbCatBug->id, 'title' => '数据报表导出格式说明', 'content' => "# 报表导出说明\n\n| 导出格式 | 用途 |\n|---|---|\n| CSV | 通用，Excel/WPS 直开 |\n| Excel（开发中） | 财务对账 |\n\n> 导出文件为 UTF-8 编码，Excel 打开无需额外设置"],
+            ['kb_category_id' => $kbCatSvc->id, 'title' => '硬件终端续保政策', 'content' => "# 硬件终端续保政策\n\n- 标准质保期：**3 年**（自注册日起）\n- 续保方案：1 年 / 2 年 / 3 年三档\n- 续保价格随终端型号与采购量浮动\n\n## 办理流程\n1. 提交售后工单，备注「申请续保」\n2. 客服 1 个工作日内对接报价"],
+            ['kb_category_id' => $kbCatSvc->id, 'title' => 'SaaS 账号权限管理说明', 'content' => "# 账号权限管理\n\n- 管理员可在「用户管理」维护客服角色与模块权限\n- 客服角色模板在「角色管理」中配置\n\n```\n角色 = 系统角色(customer/agent/admin)\n     + 客服角色模板(模块权限)\n```"],
+        ];
+        foreach ($kbArticles as $i => $a) {
+            \App\Models\KbArticle::updateOrCreate(
+                ['title' => $a['title']],
+                $a + ['created_by' => $agent1->id, 'views' => 3 + ($i * 7), 'is_published' => true]
+            );
+        }
     }
 }
