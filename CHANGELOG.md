@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-09-08 — v2.1.9：后台管理登录支持用户名
+
+> 测试：209 → **210** 用例全通过（+1）
+
+### 新增
+
+- **users 表新增 `username` 字段**（唯一、可空，兼容已有账号仅邮箱/手机号）
+- **管理后台登录支持「用户名 或 邮箱」**：登录页字段改为「用户名 / 邮箱」，后端按 `email = ? OR username = ?` 查找
+- **用户管理**：新增用户时必填用户名（字母/数字/下划线/横线），列表展示用户名，搜索支持用户名
+- 演示账号已补用户名：`admin` / `agent` / `agent2` / `customer` / `customer2`
+- UserFactory 默认生成 username
+
+### 验证
+
+- 用用户名 `admin` + 密码登录 → 302 进入后台 ✅
+- 邮箱登录兼容（CLI 双通道查找均匹配 id=1）✅
+- 新增 Feature 测试 `test_admin_login_accepts_username` ✅
+
+### 部署注意
+
+```bash
+php artisan migrate   # 新增 username 列
+php artisan db:seed   # 演示账号补 username（可重复执行）
+```
+
+---
+
 ## 2026-09-08 — v2.1.8：对外 API 全量限流
 
 > 测试：208 → **209** 用例全通过（+1）

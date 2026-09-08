@@ -4,12 +4,20 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Customer;
+use App\Models\KbArticle;
+use App\Models\KbCategory;
 use App\Models\Product;
+use App\Models\QuickReply;
+use App\Models\Setting;
+use App\Models\Tag;
 use App\Models\Ticket;
+use App\Models\TicketFieldDef;
+use App\Models\TicketFieldValue;
 use App\Models\TicketReply;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,23 +29,23 @@ class DatabaseSeeder extends Seeder
         // ---- 用户 ----
         $admin = User::updateOrCreate(
             ['email' => 'admin@example.com'],
-            ['name' => '系统管理员', 'role' => 'admin', 'phone' => '13800000001', 'password' => Hash::make('password')]
+            ['name' => '系统管理员', 'username' => 'admin', 'role' => 'admin', 'phone' => '13800000001', 'password' => Hash::make('password')]
         );
         $agent1 = User::updateOrCreate(
             ['email' => 'agent@example.com'],
-            ['name' => '客服小张', 'role' => 'agent', 'phone' => '13800000002', 'password' => Hash::make('password')]
+            ['name' => '客服小张', 'username' => 'agent', 'role' => 'agent', 'phone' => '13800000002', 'password' => Hash::make('password')]
         );
         $agent2 = User::updateOrCreate(
             ['email' => 'agent2@example.com'],
-            ['name' => '客服小李', 'role' => 'agent', 'phone' => '13800000003', 'password' => Hash::make('password')]
+            ['name' => '客服小李', 'username' => 'agent2', 'role' => 'agent', 'phone' => '13800000003', 'password' => Hash::make('password')]
         );
         $customer1 = User::updateOrCreate(
             ['email' => 'customer@example.com'],
-            ['name' => '客户小王', 'role' => 'customer', 'phone' => '13800000004', 'password' => Hash::make('password')]
+            ['name' => '客户小王', 'username' => 'customer', 'role' => 'customer', 'phone' => '13800000004', 'password' => Hash::make('password')]
         );
         $customer2 = User::updateOrCreate(
             ['email' => 'customer2@example.com'],
-            ['name' => '客户老赵', 'role' => 'customer', 'phone' => '13800000005', 'password' => Hash::make('password')]
+            ['name' => '客户老赵', 'username' => 'customer2', 'role' => 'customer', 'phone' => '13800000005', 'password' => Hash::make('password')]
         );
 
         // 种子用户直接标记为已验证（演示环境）
@@ -57,7 +65,7 @@ class DatabaseSeeder extends Seeder
             'work_days' => '1,2,3,4,5',
         ];
         foreach ($settings as $key => $value) {
-            \App\Models\Setting::updateOrCreate(['setting_key' => $key], ['value' => $value]);
+            Setting::updateOrCreate(['setting_key' => $key], ['value' => $value]);
         }
 
         // ---- 分类 ----
@@ -70,19 +78,19 @@ class DatabaseSeeder extends Seeder
         foreach ($categories as $c) {
             Category::updateOrCreate(
                 ['name' => $c['name']],
-                $c + ['slug' => \Illuminate\Support\Str::slug($c['name']).'-'.substr(md5($c['name']), 0, 4), 'is_active' => true]
+                $c + ['slug' => Str::slug($c['name']).'-'.substr(md5($c['name']), 0, 4), 'is_active' => true]
             );
         }
 
         // ---- 快捷回复模板 ----
         $quickReplies = [
             ['title' => '已收到，正在排查', 'content' => "您好，已收到您的问题，我们正在排查，稍后给您答复。\n如有更多信息（截图、报错文本）可一并补充，有助于尽快定位。"],
-            ['title' => '请清理缓存重试', 'content' => "您好，建议先清理浏览器缓存并硬刷新（Mac: Cmd+Shift+R）后重试；若仍复现，请提供具体报错截图，我们继续跟进。"],
-            ['title' => '已解决并关闭', 'content' => "您好，经确认问题已解决。若后续还有其他问题，欢迎随时提交新工单，感谢您的反馈与支持！"],
-            ['title' => '抱歉让您久等', 'content' => "您好，非常抱歉让您久等，该问题我们正在加急处理中，预计今天内给您进展反馈。"],
+            ['title' => '请清理缓存重试', 'content' => '您好，建议先清理浏览器缓存并硬刷新（Mac: Cmd+Shift+R）后重试；若仍复现，请提供具体报错截图，我们继续跟进。'],
+            ['title' => '已解决并关闭', 'content' => '您好，经确认问题已解决。若后续还有其他问题，欢迎随时提交新工单，感谢您的反馈与支持！'],
+            ['title' => '抱歉让您久等', 'content' => '您好，非常抱歉让您久等，该问题我们正在加急处理中，预计今天内给您进展反馈。'],
         ];
         foreach ($quickReplies as $qr) {
-            \App\Models\QuickReply::updateOrCreate(['title' => $qr['title']], $qr + ['is_active' => true]);
+            QuickReply::updateOrCreate(['title' => $qr['title']], $qr + ['is_active' => true]);
         }
 
         // ---- 产品 ----
@@ -341,7 +349,7 @@ class DatabaseSeeder extends Seeder
             ['name' => '紧急', 'color' => 'red'],
             ['name' => '待跟进', 'color' => 'cyan'],
         ];
-        $tags = collect($tagDefs)->map(fn ($d) => \App\Models\Tag::updateOrCreate(['name' => $d['name']], $d));
+        $tags = collect($tagDefs)->map(fn ($d) => Tag::updateOrCreate(['name' => $d['name']], $d));
 
         // 示例工单打标签
         $t1?->tags()->syncWithoutDetaching($tags->where('name', '软件问题')->first()?->id);
@@ -363,7 +371,7 @@ class DatabaseSeeder extends Seeder
             ['label' => '故障类型', 'key' => 'fault_type', 'type' => 'select', 'options' => ['硬件故障', '软件问题', '网络问题'], 'is_required' => false, 'sort' => 20],
             ['label' => '期望解决日期', 'key' => 'expect_date', 'type' => 'date', 'is_required' => false, 'sort' => 30],
         ];
-        $fieldDefs = collect($fieldDefs)->map(fn ($d) => \App\Models\TicketFieldDef::updateOrCreate(
+        $fieldDefs = collect($fieldDefs)->map(fn ($d) => TicketFieldDef::updateOrCreate(
             ['key' => $d['key']],
             $d + ['is_active' => true]
         ));
@@ -382,7 +390,7 @@ class DatabaseSeeder extends Seeder
             foreach (['serial_no' => $sample['serial_no'], 'fault_type' => $sample['fault_type']] as $key => $val) {
                 $def = $fieldDefs->firstWhere('key', $key);
                 if ($def) {
-                    \App\Models\TicketFieldValue::updateOrCreate(
+                    TicketFieldValue::updateOrCreate(
                         ['ticket_id' => $ft->id, 'field_def_id' => $def->id],
                         ['value' => $val]
                     );
@@ -391,8 +399,8 @@ class DatabaseSeeder extends Seeder
         }
 
         // ---- 知识库（2 分类 + 5 篇文章）----
-        $kbCatBug = \App\Models\KbCategory::updateOrCreate(['name' => '常见故障'], ['sort' => 10]);
-        $kbCatSvc = \App\Models\KbCategory::updateOrCreate(['name' => '售后政策'], ['sort' => 20]);
+        $kbCatBug = KbCategory::updateOrCreate(['name' => '常见故障'], ['sort' => 10]);
+        $kbCatSvc = KbCategory::updateOrCreate(['name' => '售后政策'], ['sort' => 20]);
 
         $kbArticles = [
             ['kb_category_id' => $kbCatBug->id, 'title' => '登录提示验证码错误怎么办', 'content' => "# 登录提示验证码错误\n\n1. **清理浏览器缓存**并硬刷新（Mac：Cmd+Shift+R / Win：Ctrl+F5）\n2. 确认输入法处于英文状态\n3. 更换浏览器（Chrome / Edge）重试\n4. 仍无法解决：提交工单并附上报错截图"],
@@ -402,7 +410,7 @@ class DatabaseSeeder extends Seeder
             ['kb_category_id' => $kbCatSvc->id, 'title' => 'SaaS 账号权限管理说明', 'content' => "# 账号权限管理\n\n- 管理员可在「用户管理」维护客服角色与模块权限\n- 客服角色模板在「角色管理」中配置\n\n```\n角色 = 系统角色(customer/agent/admin)\n     + 客服角色模板(模块权限)\n```"],
         ];
         foreach ($kbArticles as $i => $a) {
-            \App\Models\KbArticle::updateOrCreate(
+            KbArticle::updateOrCreate(
                 ['title' => $a['title']],
                 $a + ['created_by' => $agent1->id, 'views' => 3 + ($i * 7), 'is_published' => true]
             );

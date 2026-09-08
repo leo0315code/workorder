@@ -38,16 +38,32 @@ class AuthFlowTest extends TestCase
     {
         $this->user('a@t.test', 'agent');
 
-        $this->post(route('admin.login.store'), ['email' => 'a@t.test', 'password' => 'password'])
+        $this->post(route('admin.login.store'), ['account' => 'a@t.test', 'password' => 'password'])
             ->assertRedirect(route('admin.dashboard')); // 客服/管理员登录后进带前缀后台首页
+    }
+
+    public function test_admin_login_accepts_username(): void
+    {
+        User::factory()->create([
+            'email' => 'b@t.test',
+            'username' => 'boss',
+            'role' => 'admin',
+            'password' => bcrypt('password'),
+        ]);
+
+        // 用用户名登录
+        $this->post(route('admin.login.store'), ['account' => 'boss', 'password' => 'password'])
+            ->assertRedirect(route('admin.dashboard'));
+
+        $this->assertAuthenticated();
     }
 
     public function test_admin_login_rejects_customer_role(): void
     {
         $this->user('c@t.test', 'customer');
 
-        $this->post(route('admin.login.store'), ['email' => 'c@t.test', 'password' => 'password'])
-            ->assertSessionHasErrors('email');
+        $this->post(route('admin.login.store'), ['account' => 'c@t.test', 'password' => 'password'])
+            ->assertSessionHasErrors('account');
 
         $this->assertGuest();
     }
@@ -56,8 +72,8 @@ class AuthFlowTest extends TestCase
     {
         $this->user('a@t.test', 'agent');
 
-        $this->post(route('admin.login.store'), ['email' => 'a@t.test', 'password' => 'wrong'])
-            ->assertSessionHasErrors('email');
+        $this->post(route('admin.login.store'), ['account' => 'a@t.test', 'password' => 'wrong'])
+            ->assertSessionHasErrors('account');
 
         $this->assertGuest();
     }

@@ -18,7 +18,7 @@
                     <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-gray-400">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
                     </span>
-                    <input type="search" name="q" value="{{ request('q') }}" placeholder="搜索姓名 / 邮箱"
+                    <input type="search" name="q" value="{{ request('q') }}" placeholder="搜索姓名 / 用户名 / 邮箱"
                            class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 pl-8 pr-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <button type="submit" class="rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition">搜索</button>
@@ -54,6 +54,21 @@
                             @error('name')<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                         </div>
                         <div>
+                            <label for="username" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">用户名 <span class="text-red-500">*</span></label>
+                            <input type="text" id="username" name="username" value="{{ old('username') }}" required maxlength="50" pattern="[A-Za-z0-9_.\-]+" placeholder="登录用，如 admin"
+                                   class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            @error('username')<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="email" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">邮箱</label>
+                            <input type="email" id="email" name="email" value="{{ old('email') }}"
+                                   class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            @error('email')<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
                             <label for="phone" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">手机号</label>
                             <input type="text" id="phone" name="phone" value="{{ old('phone') }}" inputmode="numeric" maxlength="11" placeholder="选填"
                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
@@ -61,14 +76,7 @@
                         </div>
                     </div>
 
-                    <div>
-                        <label for="email" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">邮箱</label>
-                        <input type="email" id="email" name="email" value="{{ old('email') }}"
-                               class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                        @error('email')<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
-                    </div>
-
-                    <p class="-mt-1 text-xs text-gray-400">邮箱可留空；邮箱与手机号至少填一个，只有手机号的用户可通过短信验证码登录。</p>
+                    <p class="-mt-1 text-xs text-gray-400">用户名用于管理后台登录（客服/管理员），格式：字母/数字/下划线/横线。邮箱可留空；邮箱与手机号至少填一个，只有手机号的用户可通过短信验证码登录。</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -148,10 +156,15 @@
                                     <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-xs font-semibold text-indigo-600 dark:text-indigo-300">
                                         {{ strtoupper(mb_substr($u->name, 0, 1)) }}
                                     </div>
-                                    <span class="font-medium text-gray-800 dark:text-gray-200">{{ $u->name }}</span>
-                                    @if ($u->id === auth()->id())
-                                        <span class="text-xs text-gray-400">（我）</span>
-                                    @endif
+                                    <div class="min-w-0">
+                                        <span class="font-medium text-gray-800 dark:text-gray-200">{{ $u->name }}</span>
+                                        @if ($u->username)
+                                            <span class="block text-[11px] text-gray-400">{{ $u->username }}</span>
+                                        @endif
+                                        @if ($u->id === auth()->id())
+                                            <span class="text-xs text-gray-400">（我）</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
                             <td class="py-3 px-4 text-gray-500 dark:text-gray-400">{{ $u->email ?: '-' }}</td>

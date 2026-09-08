@@ -4,19 +4,22 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+    use HasApiTokens;
     use HasFactory;
     use Notifiable;
-    use HasApiTokens;
 
     public const ROLE_CUSTOMER = 'customer';
+
     public const ROLE_AGENT = 'agent';
+
     public const ROLE_ADMIN = 'admin';
 
     public const ROLES = [
@@ -27,6 +30,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'username',
         'email',
         'phone',
         'avatar',
@@ -137,7 +141,7 @@ class User extends Authenticatable
         return $this->hasMany(TicketReply::class);
     }
 
-    public function agentRole(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function agentRole(): BelongsTo
     {
         return $this->belongsTo(AgentRole::class, 'agent_role_id');
     }

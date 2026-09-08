@@ -6,6 +6,7 @@ use App\Models\AgentRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -24,6 +25,7 @@ class UserManagementTest extends TestCase
     {
         return array_merge([
             'name' => '新客服小李',
+            'username' => 'xiaoli_'.Str::random(4),
             'email' => 'newagent@example.com',
             'phone' => '13800138000',
             'role' => 'agent',
@@ -96,6 +98,7 @@ class UserManagementTest extends TestCase
         $this->actingAs($this->admin())
             ->post(route('admin.users.store'), [
                 'name' => '只有手机号的客户',
+                'username' => 'phone_only_'.Str::random(4),
                 'email' => null,
                 'phone' => '13900139000',
                 'role' => 'customer',

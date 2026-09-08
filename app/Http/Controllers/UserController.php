@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\AgentRole;
 use App\Models\User;
 use App\Services\AutoAssignService;
 use App\Services\WebSocketService;
@@ -25,7 +26,9 @@ class UserController extends Controller
         if ($request->filled('q')) {
             $q = trim($request->input('q'));
             $query->where(function ($w) use ($q) {
-                $w->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%");
+                $w->where('name', 'like', "%{$q}%")
+                    ->orWhere('username', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%");
             });
         }
 
@@ -33,7 +36,7 @@ class UserController extends Controller
 
         // 在线 uid 集合（用于展示实时状态）
         $onlineUids = AutoAssignService::onlineUids() ?: [];
-        $agentRoles = \App\Models\AgentRole::where('is_active', true)->orderBy('sort')->orderBy('id')->get();
+        $agentRoles = AgentRole::where('is_active', true)->orderBy('sort')->orderBy('id')->get();
 
         return view('users.index', compact('users', 'onlineUids', 'agentRoles'));
     }
@@ -51,12 +54,15 @@ class UserController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:50'],
+            'username' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9_.\-]+$/', 'unique:users,username'],
             'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'regex:/^1[3-9]\d{9}$/', 'unique:users,phone'],
             'role' => ['required', 'in:customer,agent,admin'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'agent_role_id' => ['nullable', 'exists:agent_roles,id'],
         ], [
+            'username.regex' => '用户名只能包含字母、数字、下划线、横线',
+            'username.unique' => '该用户名已被占用',
             'phone.regex' => '手机号格式不正确，应为 11 位大陆手机号',
             'password.confirmed' => '两次输入的密码不一致',
         ]);
@@ -73,6 +79,7 @@ class UserController extends Controller
 
         $user = User::create([
             'name' => $data['name'],
+            'username' => $data['username'],
             'email' => $data['email'],
             'phone' => $data['phone'] ?: null,
             'role' => $data['role'],
@@ -144,6 +151,7 @@ class UserController extends Controller
             'agent_role_id' => ['nullable', 'exists:agent_roles,id'],
         ]);
         $user->update(['agent_role_id' => $data['agent_role_id'] ?: null]);
+
         return back()->with('success', '用户 '.$user->name.' 的客服角色已更新');
     }
 
