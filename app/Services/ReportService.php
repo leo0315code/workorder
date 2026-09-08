@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Http\Controllers\TicketController;
 use App\Models\Ticket;
 use App\Models\TicketRating;
 use App\Models\TicketReply;
@@ -68,6 +67,32 @@ class ReportService
         }
 
         return [$dates, $series];
+    }
+
+    /**
+     * 每日满意度趋势：返回 [dates => ['m-d', ...], avg => [float|null, ...], count => [int, ...]]
+     * 按天统计平均评分（无评分当天为 null）
+     */
+    public function ratingDailySeries(Carbon $start): array
+    {
+        $daily = TicketRating::where('created_at', '>=', $start)
+            ->selectRaw('DATE(created_at) as d, AVG(rating) as avg, COUNT(*) as c')
+            ->groupBy('d')
+            ->orderBy('d')
+            ->get()
+            ->keyBy('d');
+
+        $dates = [];
+        $avg = [];
+        $count = [];
+        foreach (CarbonPeriod::create($start, now()->endOfDay())->toArray() as $date) {
+            $dates[] = $date->format('m-d');
+            $row = $daily[$date->format('Y-m-d')] ?? null;
+            $avg[] = $row ? round((float) $row->avg, 2) : null;
+            $count[] = (int) ($row?->c ?? 0);
+        }
+
+        return [$dates, $avg, $count];
     }
 
     /**

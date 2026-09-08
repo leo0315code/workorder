@@ -64,6 +64,13 @@
                             @endforeach
                         </div>
                     </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">满意度评分有效期（天）</label>
+                        <input type="number" name="csat_days" value="{{ $settings['csat_days'] ?? 7 }}" min="1" max="90"
+                               class="w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="mt-1.5 text-xs text-gray-400">工单解决/关闭后 N 天内客户可评分，过期不再接受</p>
+                    </div>
                 </x-settings-section>
 
                 {{-- 工作时间 --}}

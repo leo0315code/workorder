@@ -8,7 +8,10 @@ use App\Models\Attachment;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\QuickReply;
+use App\Models\Tag;
 use App\Models\Ticket;
+use App\Models\TicketFieldDef;
 use App\Models\TicketRating;
 use App\Models\TicketReply;
 use App\Models\TicketTemplate;
@@ -25,9 +28,8 @@ use Illuminate\View\View;
 
 class TicketController extends Controller
 {
-    public function __construct(protected TicketService $service)
-    {
-    }
+    public function __construct(protected TicketService $service) {}
+
     /** 附件存放盘：必须是私有盘，绝不能是 public（否则 /storage 可未登录直连下载） */
     public const ATTACHMENT_DISK = 'local';
 
@@ -66,6 +68,7 @@ class TicketController extends Controller
             $request->boolean('mine') ? 1 : null,
             $request->boolean('unassigned') ? 1 : null,
             $request->boolean('overdue') ? 1 : null,
+            $request->boolean('warning') ? 1 : null,
         ]));
 
         $categories = Category::where('is_active', true)->orderBy('name')->get();
@@ -73,16 +76,16 @@ class TicketController extends Controller
         $agents = User::whereIn('role', ['agent', 'admin'])->orderBy('name')->get();
         $statuses = self::STATUS_NAMES;
         $priorities = self::PRIORITY_NAMES;
-        $allTags = \App\Models\Tag::orderBy('name')->get();
+        $allTags = Tag::orderBy('name')->get();
 
         // 列表页实时连接配置（订阅 ticket.all 房间）+ 轮询兜底基准时间
         $uid = (int) Auth::id();
         $wsConfig = [
-            'wsUrl' => \App\Services\WebSocketService::frontendWsUrl(),
+            'wsUrl' => WebSocketService::frontendWsUrl(),
             'uid' => $uid,
             'token' => WebSocketService::signature($uid, ['ticket.all']),
             'rooms' => ['ticket.all'],
-            'pollUrl' => route('tickets.changes'),
+            'pollUrl' => ticket_route('changes'),
             'lastUpdated' => $tickets->first()?->updated_at?->toIso8601String() ?? now()->toIso8601String(),
         ];
         $onlineAgentIds = AutoAssignService::onlineUids() ?: [];
@@ -122,7 +125,7 @@ class TicketController extends Controller
         $agents = $user->isAgent() ? User::whereIn('role', ['agent', 'admin'])->orderBy('name')->get() : collect();
         $onlineAgentIds = AutoAssignService::onlineUids() ?: [];
         $templates = $user->isAgent() ? TicketTemplate::where('is_active', true)->orderBy('sort')->orderBy('name')->get() : collect();
-        $fieldDefs = \App\Models\TicketFieldDef::where('is_active', true)->orderBy('sort')->orderBy('id')->get();
+        $fieldDefs = TicketFieldDef::where('is_active', true)->orderBy('sort')->orderBy('id')->get();
 
         return view('tickets.create', compact('categories', 'products', 'priorities', 'customers', 'agents', 'onlineAgentIds', 'templates', 'fieldDefs'));
     }
@@ -199,14 +202,14 @@ class TicketController extends Controller
 
         // 站内通知：指派给指定客服，否则通知全体客服
         if ($ticket->assignee_id) {
-            NotificationService::notifyUser($ticket->assignee_id, '新工单已指派给你', $ticket->no.' · '.$ticket->subject, route('tickets.show', $ticket));
+            NotificationService::notifyUser($ticket->assignee_id, '新工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
             WebSocketService::pushToUid($ticket->assignee_id, [
                 'type' => 'new_ticket',
                 'ticket' => $this->service->ticketPayload($ticket),
             ]);
         } else {
             $agentIds = User::whereIn('role', ['agent', 'admin'])->pluck('id')->all();
-            NotificationService::notifyUsers($agentIds, '有新工单待处理', $ticket->no.' · '.$ticket->subject, route('tickets.show', $ticket));
+            NotificationService::notifyUsers($agentIds, '有新工单待处理', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
         }
 
         session()->flash('success', '工单 '.$ticket->no.' 已提交');
@@ -216,7 +219,7 @@ class TicketController extends Controller
             session()->flash('warning', '检测到您近 24 小时内提交过相似工单（'.$duplicate->no.'），如属同一问题可直接在原工单继续沟通。');
         }
 
-        return redirect()->route('tickets.show', $ticket);
+        return redirect(ticket_route('show', $ticket));
     }
 
     public function show(Ticket $ticket): View
@@ -238,13 +241,13 @@ class TicketController extends Controller
         if ($isAgent) {
             $ticket->load('logs');
         }
-        $quickReplies = $isAgent ? \App\Models\QuickReply::where('is_active', true)->orderBy('title')->get() : collect();
+        $quickReplies = $isAgent ? QuickReply::where('is_active', true)->orderBy('title')->get() : collect();
 
         $agents = $isAgent
             ? User::whereIn('role', ['agent', 'admin'])->orderBy('name')->get()
             : collect();
         $onlineAgentIds = AutoAssignService::onlineUids() ?: [];
-        $allTags = $isAgent ? \App\Models\Tag::orderBy('name')->get() : collect();
+        $allTags = $isAgent ? Tag::orderBy('name')->get() : collect();
 
         // WebSocket 鉴权参数
         $wsUid = Auth::id();
@@ -253,16 +256,22 @@ class TicketController extends Controller
 
         // 前端实时组件配置（避免在 Blade 属性中用复杂 @json）
         $roomConfig = [
-            'wsUrl' => \App\Services\WebSocketService::frontendWsUrl(),
+            'wsUrl' => WebSocketService::frontendWsUrl(),
             'uid' => (int) $wsUid,
             'token' => $wsToken,
             'rooms' => $wsRooms,
             'lastReplyId' => $ticket->replies->last()?->id ?? 0,
-            'pollUrl' => route('tickets.replies', $ticket),
+            'pollUrl' => ticket_route('replies', $ticket),
             'isAgent' => $isAgent,
         ];
 
-        return view('tickets.show', compact('ticket', 'agents', 'roomConfig', 'quickReplies', 'onlineAgentIds', 'allTags'));
+        // CSAT 时效：客户在解决/关闭后 N 天内可评分（超期隐藏表单）
+        $canRate = ! $isAgent
+            && ! $ticket->rating
+            && in_array($ticket->status, [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
+            && (($ticket->closed_at ?? $ticket->updated_at)?->gte(now()->subDays(SettingService::csatDays())) ?? false);
+
+        return view('tickets.show', compact('ticket', 'agents', 'roomConfig', 'quickReplies', 'onlineAgentIds', 'allTags', 'canRate'));
     }
 
     /**
@@ -294,9 +303,9 @@ class TicketController extends Controller
             ->take(5);
 
         foreach ($newNames as $name) {
-            $tag = \App\Models\Tag::firstOrCreate(
+            $tag = Tag::firstOrCreate(
                 ['name' => $name],
-                ['color' => \App\Models\Tag::COLORS[$ids->count() % count(\App\Models\Tag::COLORS)]]
+                ['color' => Tag::COLORS[$ids->count() % count(Tag::COLORS)]]
             );
             $ids->push($tag->id);
         }
@@ -309,6 +318,11 @@ class TicketController extends Controller
     public function reply(Request $request, Ticket $ticket): RedirectResponse
     {
         $this->service->authorizeView($ticket);
+
+        // 已关闭为终态：禁止再回复（避免死灰复燃，需重新开单）
+        if ($ticket->status === Ticket::STATUS_CLOSED) {
+            return back()->with('error', '该工单已关闭，无法回复。如需继续沟通请提交新工单');
+        }
 
         $request->validate([
             'content' => ['required', 'string', 'max:10000'],
@@ -344,17 +358,16 @@ class TicketController extends Controller
         $this->service->logAction($ticket, $reopened ? 'reopened' : 'replied', null, null, null,
             Auth::user()->isAgent() ? '客服回复' : '客户补充说明');
 
-        // 通知对方
-        $link = route('tickets.show', $ticket);
+        // 通知对方（链接按接收者角色：客服 → 带前缀后台；客户 → 用户门户）
         if (Auth::user()->isAgent()) {
-            NotificationService::notifyUser($ticket->user_id, '你的工单有新回复', $ticket->no.' · '.$ticket->subject, $link);
+            NotificationService::notifyUser($ticket->user_id, '你的工单有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'customer']));
             // @提及同事（客服回复时）
             $this->service->notifyMentions($request->input('content'), $ticket);
         } elseif ($ticket->assignee_id) {
-            NotificationService::notifyUser($ticket->assignee_id, '工单有新回复，请处理', $ticket->no.' · '.$ticket->subject, $link);
+            NotificationService::notifyUser($ticket->assignee_id, '工单有新回复，请处理', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
         } else {
             $agentIds = User::whereIn('role', ['agent', 'admin'])->pluck('id')->all();
-            NotificationService::notifyUsers($agentIds, '工单有新回复，请处理', $ticket->no.' · '.$ticket->subject, $link);
+            NotificationService::notifyUsers($agentIds, '工单有新回复，请处理', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
         }
 
         WebSocketService::pushToRoom('ticket.'.$ticket->id, [
@@ -365,12 +378,17 @@ class TicketController extends Controller
 
         session()->flash('success', '回复成功');
 
-        return redirect()->route('tickets.show', $ticket);
+        return redirect(ticket_route('show', $ticket));
     }
 
     public function note(Request $request, Ticket $ticket): RedirectResponse
     {
         $this->service->authorizeStaff($ticket);
+
+        // 已关闭为终态：禁止内部备注
+        if ($ticket->status === Ticket::STATUS_CLOSED) {
+            return back()->with('error', '该工单已关闭，无法添加备注');
+        }
 
         $request->validate([
             'content' => ['required', 'string', 'max:10000'],
@@ -390,7 +408,7 @@ class TicketController extends Controller
 
         session()->flash('success', '内部备注已添加');
 
-        return redirect()->route('tickets.show', $ticket);
+        return redirect(ticket_route('show', $ticket));
     }
 
     public function update(Request $request, Ticket $ticket): RedirectResponse
@@ -439,7 +457,7 @@ class TicketController extends Controller
 
         // 指派变更通知新负责人
         if (isset($data['assignee_id']) && (int) $data['assignee_id'] !== (int) $old['assignee_id'] && $data['assignee_id']) {
-            NotificationService::notifyUser((int) $data['assignee_id'], '工单已指派给你', $ticket->no.' · '.$ticket->subject, route('tickets.show', $ticket));
+            NotificationService::notifyUser((int) $data['assignee_id'], '工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
         }
         // 状态变更通知提交人
         if (isset($data['status']) && $data['status'] !== $old['status'] && $ticket->user_id !== Auth::id()) {
@@ -453,7 +471,7 @@ class TicketController extends Controller
 
         session()->flash('success', '工单已更新');
 
-        return redirect()->route('tickets.show', $ticket);
+        return redirect(ticket_route('show', $ticket));
     }
 
     /**
@@ -470,6 +488,12 @@ class TicketController extends Controller
 
         if (! in_array($ticket->status, [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])) {
             return back()->with('error', '工单解决或关闭后才能评分');
+        }
+
+        // CSAT 时效：解决/关闭后 N 天内可评（默认 7 天），过期则提示
+        $solvedAt = $ticket->closed_at ?? $ticket->updated_at;
+        if ($solvedAt && $solvedAt->lt(now()->subDays(SettingService::csatDays()))) {
+            return back()->with('error', '该工单已超过 '.SettingService::csatDays().' 天，不再接受评分');
         }
 
         $request->validate([
@@ -492,7 +516,7 @@ class TicketController extends Controller
 
         session()->flash('success', '感谢您的评价！');
 
-        return redirect()->route('tickets.show', $ticket);
+        return redirect(ticket_route('show', $ticket));
     }
 
     /**
@@ -517,7 +541,7 @@ class TicketController extends Controller
 
         session()->flash('success', '已认领工单 '.$ticket->no.'，请及时处理');
 
-        return redirect()->route('tickets.show', $ticket);
+        return redirect(ticket_route('show', $ticket));
     }
 
     /**

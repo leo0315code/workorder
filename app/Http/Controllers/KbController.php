@@ -25,7 +25,11 @@ class KbController extends Controller
         $categories = KbCategory::orderBy('sort')->orderBy('id')->get();
 
         $query = KbArticle::with(['category', 'author:id,name'])
-            ->when($request->filled('q'), fn ($q) => $q->where('title', 'like', '%'.$request->input('q').'%'))
+            ->when($request->filled('q'), fn ($q) => $q->where(function ($w) use ($request) {
+                $kw = trim($request->input('q'));
+                $w->where('title', 'like', '%'.$kw.'%')
+                    ->orWhere('content', 'like', '%'.$kw.'%');
+            }))
             ->when($request->filled('category'), fn ($q) => $q->where('kb_category_id', (int) $request->input('category')))
             ->when($request->filled('status'), function ($q) use ($request) {
                 if ($request->input('status') === 'published') {

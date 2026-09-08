@@ -31,7 +31,7 @@
 
         {{-- 搜索 + 状态筛选 --}}
         <form method="GET" action="{{ route('admin.kb.index') }}" class="mb-4 flex flex-wrap items-center gap-2">
-            <input type="text" name="q" value="{{ request('q') }}" placeholder="搜索文章标题…"
+            <input type="text" name="q" value="{{ request('q') }}" placeholder="搜索标题或内容…"
                    class="w-64 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
             <select name="status" onchange="this.form.submit()"
                     class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">

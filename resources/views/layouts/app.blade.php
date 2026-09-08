@@ -35,7 +35,7 @@
             <div class="fixed inset-y-0 left-0 z-40 w-64 transform transition-transform lg:translate-x-0" x-bind:class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
                 <div class="flex flex-col h-full bg-white border-r border-gray-200 dark:bg-gray-900 dark:border-gray-800">
                     <div class="flex items-center justify-between h-16 px-5 border-b border-gray-200 dark:border-gray-800">
-                        <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5">
+                        <a href="{{ route($user?->isAgent() ? 'admin.dashboard' : 'dashboard') }}" class="flex items-center gap-2.5">
                             <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-600 text-white">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                             </span>
@@ -212,7 +212,7 @@
                             </button>
 
                             @auth
-                                <a href="{{ route('tickets.create') }}" class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 shadow-sm">
+                                <a href="{{ ticket_route('create') }}" class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 shadow-sm">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                     <span class="hidden sm:inline">新建工单</span>
                                 </a>
@@ -252,7 +252,7 @@
         {{-- 移动端浮动「新建工单」（仅客户，小屏常驻，提升转化） --}}
         @auth
             @if (! auth()->user()->isAgent() && ! request()->routeIs('tickets.create'))
-                <a href="{{ route('tickets.create') }}"
+                <a href="{{ ticket_route('create') }}"
                    class="md:hidden fixed bottom-5 right-5 z-40 inline-flex items-center justify-center w-14 h-14 rounded-full bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 hover:bg-indigo-500 active:scale-95 transition">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 </a>

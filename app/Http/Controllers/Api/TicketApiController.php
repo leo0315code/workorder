@@ -7,13 +7,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\TicketReply;
+use App\Models\User;
 use App\Services\AutoAssignService;
 use App\Services\NotificationService;
 use App\Services\SettingService;
+use App\Services\TicketService;
 use App\Services\WebSocketService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 /**
  * 工单 API（App / 小程序 / 第三方）
@@ -136,16 +137,16 @@ class TicketApiController extends Controller
         ]);
 
         if ($ticket->assignee_id) {
-            NotificationService::notifyUser($ticket->assignee_id, '新工单已指派给你', $ticket->no.' · '.$ticket->subject, route('tickets.show', $ticket));
+            NotificationService::notifyUser($ticket->assignee_id, '新工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
         } else {
             NotificationService::notifyUsers(
-                \App\Models\User::whereIn('role', ['agent', 'admin'])->pluck('id')->all(),
-                '新工单待认领', $ticket->no.' · '.$ticket->subject, route('tickets.show', $ticket)
+                User::whereIn('role', ['agent', 'admin'])->pluck('id')->all(),
+                '新工单待认领', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent'])
             );
         }
 
         // 重复工单识别：近 24h 同主题未关闭 → 附加 duplicate 提示（不阻止）
-        $duplicate = (new \App\Services\TicketService())->duplicateOf($ticket->subject, $user->id, $ticket->id);
+        $duplicate = (new TicketService)->duplicateOf($ticket->subject, $user->id, $ticket->id);
 
         return response()->json([
             'message' => '工单已提交',
@@ -181,13 +182,13 @@ class TicketApiController extends Controller
 
         // 客服回复 → 通知客户；客户回复 → 通知负责人/全体客服
         if ($user->isAgent()) {
-            NotificationService::notifyUser($ticket->user_id, '工单有新回复', $ticket->no.' · '.$ticket->subject, route('tickets.show', $ticket));
+            NotificationService::notifyUser($ticket->user_id, '工单有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'customer']));
         } elseif ($ticket->assignee_id) {
-            NotificationService::notifyUser($ticket->assignee_id, '客户有新回复', $ticket->no.' · '.$ticket->subject, route('tickets.show', $ticket));
+            NotificationService::notifyUser($ticket->assignee_id, '客户有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
         } else {
             NotificationService::notifyUsers(
-                \App\Models\User::whereIn('role', ['agent', 'admin'])->pluck('id')->all(),
-                '工单有新回复', $ticket->no.' · '.$ticket->subject, route('tickets.show', $ticket)
+                User::whereIn('role', ['agent', 'admin'])->pluck('id')->all(),
+                '工单有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent'])
             );
         }
 

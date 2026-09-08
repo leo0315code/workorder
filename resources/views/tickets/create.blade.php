@@ -18,7 +18,7 @@
     @endif
 
     <div class="max-w-3xl">
-        <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data"
+        <form method="POST" action="{{ ticket_route('store') }}" enctype="multipart/form-data"
               x-data="ticketForm({{ json_encode($templates->map(fn ($t) => $t->only(['id', 'name', 'subject', 'description', 'category_id', 'product_id', 'priority']))->values()) }})">
             @csrf
 
@@ -159,7 +159,7 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <a href="{{ route('tickets.index') }}" class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">取消</a>
+                    <a href="{{ ticket_route('index') }}" class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">取消</a>
                     <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 shadow-sm">提交工单</button>
                 </div>
             </div>

@@ -22,8 +22,8 @@ class MenuSeeder extends Seeder
     {
         $items = [
             // ---- 客服端（agent）----
-            ['audience' => 'agent', 'label' => '仪表盘',   'route_name' => 'dashboard',                   'icon' => 'dashboard', 'section' => '概览',   'sort' => 1],
-            ['audience' => 'agent', 'label' => '工单',     'route_name' => 'tickets.index',              'icon' => 'ticket',    'section' => '概览',   'sort' => 2, 'active_pattern' => 'tickets.*', 'except_pattern' => 'tickets.create'],
+            ['audience' => 'agent', 'label' => '仪表盘',   'route_name' => 'admin.dashboard',             'icon' => 'dashboard', 'section' => '概览',   'sort' => 1],
+            ['audience' => 'agent', 'label' => '工单',     'route_name' => 'admin.tickets.index',         'icon' => 'ticket',    'section' => '概览',   'sort' => 2, 'active_pattern' => 'admin.tickets.*', 'except_pattern' => 'admin.tickets.create'],
             ['audience' => 'agent', 'label' => '客户档案', 'route_name' => 'admin.customers.index',      'icon' => 'customer',  'section' => '业务数据', 'sort' => 10, 'module' => 'customers'],
             ['audience' => 'agent', 'label' => '产品管理', 'route_name' => 'admin.products.index',       'icon' => 'product',   'section' => '业务数据', 'sort' => 20, 'module' => 'products'],
             ['audience' => 'agent', 'label' => '分类管理', 'route_name' => 'admin.categories.index',     'icon' => 'category',  'section' => '业务数据', 'sort' => 30, 'module' => 'categories'],
@@ -38,6 +38,7 @@ class MenuSeeder extends Seeder
             ['audience' => 'agent', 'label' => '系统设置', 'route_name' => 'admin.settings',          'icon' => 'gear',   'section' => '系统管理', 'sort' => 90, 'admin_only' => true],
             ['audience' => 'agent', 'label' => '菜单管理', 'route_name' => 'admin.menus.index',       'icon' => 'list',   'section' => '系统管理', 'sort' => 100, 'admin_only' => true],
             ['audience' => 'agent', 'label' => '工单字段', 'route_name' => 'admin.field-defs.index', 'icon' => 'list',   'section' => '系统管理', 'sort' => 105, 'admin_only' => true],
+            ['audience' => 'agent', 'label' => '登录审计', 'route_name' => 'admin.login-audits.index', 'icon' => 'shield', 'section' => '系统管理', 'sort' => 110, 'admin_only' => true],
 
             // ---- 客户端（customer）----
             ['audience' => 'customer', 'label' => '仪表盘',   'route_name' => 'dashboard',      'icon' => 'dashboard', 'section' => '概览', 'sort' => 1],
@@ -50,5 +51,11 @@ class MenuSeeder extends Seeder
                 $item
             );
         }
+
+        // 清理：agent 端不再使用全局 dashboard / tickets（改用带前缀的 admin.* 版本）
+        // 防止旧版本残留的 agent 端全局路由条目重复出现
+        Menu::where('audience', 'agent')
+            ->whereIn('route_name', ['dashboard', 'tickets.index'])
+            ->delete();
     }
 }

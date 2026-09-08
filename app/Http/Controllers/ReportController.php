@@ -11,9 +11,7 @@ use Illuminate\View\View;
 
 class ReportController extends Controller
 {
-    public function __construct(protected ReportService $reports)
-    {
-    }
+    public function __construct(protected ReportService $reports) {}
 
     /**
      * 导出当前时间范围报表为 CSV（UTF-8 BOM，直开 Excel）
@@ -34,6 +32,7 @@ class ReportController extends Controller
             ->get();
         $agents = $this->reports->agents($start);
         $ratingStats = $this->reports->ratingStats($start);
+        [$ratingDates, $ratingAvgSeries, $ratingCountSeries] = $this->reports->ratingDailySeries($start);
 
         $rows = [];
         $rows[] = ['项目', '数值'];
@@ -58,6 +57,11 @@ class ReportController extends Controller
         $rows[] = ['日期', '新增工单'];
         foreach ($daily as $d) {
             $rows[] = [$d->d, $d->c];
+        }
+        $rows[] = [];
+        $rows[] = ['日期', '平均满意度', '评价数'];
+        foreach ($ratingDates as $i => $date) {
+            $rows[] = [$date, $ratingAvgSeries[$i] ?? '', $ratingCountSeries[$i] ?? 0];
         }
         $rows[] = [];
         $rows[] = ['客服', '处理工单', '回复数', '平均首次响应(小时)', '平均解决时长(小时)', 'SLA 超时'];
@@ -90,6 +94,7 @@ class ReportController extends Controller
         $start = $this->reports->startOf($days);
 
         [$dates, $dailySeries] = $this->reports->dailySeries($start);
+        [$ratingDates, $ratingAvgSeries, $ratingCountSeries] = $this->reports->ratingDailySeries($start);
 
         $agents = $this->reports->agents($start);
         $byStatus = $this->reports->byStatus($start);
@@ -98,6 +103,6 @@ class ReportController extends Controller
         $summary = $this->reports->summary($start);
         $ratingStats = $this->reports->ratingStats($start);
 
-        return view('reports.index', compact('days', 'dates', 'dailySeries', 'agents', 'byStatus', 'byPriority', 'byCategory', 'summary', 'ratingStats'));
+        return view('reports.index', compact('days', 'dates', 'dailySeries', 'ratingDates', 'ratingAvgSeries', 'ratingCountSeries', 'agents', 'byStatus', 'byPriority', 'byCategory', 'summary', 'ratingStats'));
     }
 }

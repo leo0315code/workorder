@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Setting;
+use App\Models\Ticket;
+use Illuminate\Support\Carbon;
 
 /**
  * 系统配置（settings 表，运行时修改即时生效）
@@ -55,10 +57,10 @@ class SettingService
     public static function slaHours(): array
     {
         return [
-            \App\Models\Ticket::PRIORITY_LOW => (int) self::get('sla_low', \App\Models\Ticket::$slaHours[\App\Models\Ticket::PRIORITY_LOW]),
-            \App\Models\Ticket::PRIORITY_NORMAL => (int) self::get('sla_normal', \App\Models\Ticket::$slaHours[\App\Models\Ticket::PRIORITY_NORMAL]),
-            \App\Models\Ticket::PRIORITY_HIGH => (int) self::get('sla_high', \App\Models\Ticket::$slaHours[\App\Models\Ticket::PRIORITY_HIGH]),
-            \App\Models\Ticket::PRIORITY_URGENT => (int) self::get('sla_urgent', \App\Models\Ticket::$slaHours[\App\Models\Ticket::PRIORITY_URGENT]),
+            Ticket::PRIORITY_LOW => (int) self::get('sla_low', Ticket::$slaHours[Ticket::PRIORITY_LOW]),
+            Ticket::PRIORITY_NORMAL => (int) self::get('sla_normal', Ticket::$slaHours[Ticket::PRIORITY_NORMAL]),
+            Ticket::PRIORITY_HIGH => (int) self::get('sla_high', Ticket::$slaHours[Ticket::PRIORITY_HIGH]),
+            Ticket::PRIORITY_URGENT => (int) self::get('sla_urgent', Ticket::$slaHours[Ticket::PRIORITY_URGENT]),
         ];
     }
 
@@ -68,6 +70,14 @@ class SettingService
     public static function autoAssignEnabled(): bool
     {
         return self::get('auto_assign', '1') === '1';
+    }
+
+    /**
+     * CSAT 评分有效期（天）：工单解决/关闭后 N 天内可评分，默认 7 天
+     */
+    public static function csatDays(): int
+    {
+        return max(1, (int) self::get('csat_days', 7));
     }
 
     /**
@@ -81,7 +91,7 @@ class SettingService
     /**
      * 当前是否处于上班时间（工作日 + 时段内）
      */
-    public static function isWorkTime(?\Illuminate\Support\Carbon $now = null): bool
+    public static function isWorkTime(?Carbon $now = null): bool
     {
         if (! self::workTimeEnabled()) {
             return true;

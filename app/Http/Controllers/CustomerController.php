@@ -10,6 +10,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -91,6 +92,59 @@ class CustomerController extends Controller
     }
 
     /**
+     * 售后到期时间快捷调整（详情页）：
+     * - action = extend_1y / extend_6m / extend_30d：在现有到期时间上加时长
+     * - action = recalc：按登记时间 + 产品保修期重算
+     * - action = set：用传入的 date 覆盖
+     */
+    public function adjustWarranty(Request $request, Customer $customer): RedirectResponse
+    {
+        $action = $request->input('action', 'set');
+        $base = $customer->after_sales_expired_at;
+
+        switch ($action) {
+            case 'extend_1y':
+            case 'extend_6m':
+            case 'extend_30d':
+                // 无现有到期时间时以今天为基准
+                $base = $base ?: now();
+                $date = match ($action) {
+                    'extend_1y' => $base->copy()->addYear(),
+                    'extend_6m' => $base->copy()->addMonths(6),
+                    default => $base->copy()->addDays(30),
+                };
+                $label = match ($action) {
+                    'extend_1y' => '延长 1 年',
+                    'extend_6m' => '延长 6 个月',
+                    default => '延长 30 天',
+                };
+                break;
+
+            case 'recalc':
+                // 需有关联产品 + 登记时间
+                if (! $customer->product?->warranty_days || ! $customer->registered_at) {
+                    return back()->with('error', '重算售后到期需先关联产品并填写登记/购买时间');
+                }
+                $date = $customer->registered_at->copy()->addDays((int) $customer->product->warranty_days);
+                $label = '按登记时间+保修期重算';
+                break;
+
+            case 'set':
+            default:
+                $request->validate([
+                    'date' => ['required', 'date', 'after_or_equal:today'],
+                ]);
+                $date = Carbon::parse($request->input('date'));
+                $label = '设置售后到期';
+                break;
+        }
+
+        $customer->update(['after_sales_expired_at' => $date]);
+
+        return back()->with('success', "已{$label}：{$date->format('Y-m-d')}");
+    }
+
+    /**
      * 导出客户档案 CSV（当前筛选）
      */
     public function export(Request $request)
@@ -164,6 +218,7 @@ class CustomerController extends Controller
 
                     if ($company === '' && $contact === '') {
                         $errors++;
+
                         continue;
                     }
 
@@ -189,7 +244,7 @@ class CustomerController extends Controller
                         $data['product_id'] = $products[mb_strtolower($productName)]->id;
                         // 未填售后到期时按保修期自动计算
                         if (! $data['after_sales_expired_at'] && $data['registered_at']) {
-                            $data['after_sales_expired_at'] = \Illuminate\Support\Carbon::parse($data['registered_at'])
+                            $data['after_sales_expired_at'] = Carbon::parse($data['registered_at'])
                                 ->addDays((int) $products[mb_strtolower($productName)]->warranty_days);
                         }
                     }
@@ -217,7 +272,7 @@ class CustomerController extends Controller
         return redirect()->route('admin.customers.index');
     }
 
-    protected function parseDate(?string $value): ?\Illuminate\Support\Carbon
+    protected function parseDate(?string $value): ?Carbon
     {
         $value = trim((string) $value);
         if ($value === '') {
@@ -225,10 +280,10 @@ class CustomerController extends Controller
         }
         // 兼容 YYYY-MM-DD、YYYY/M/D、YYYYMMDD、Excel 序列号
         if (is_numeric($value) && (float) $value > 30000) {
-            return \Illuminate\Support\Carbon::createFromDate(1899, 12, 30)->addDays((float) $value);
+            return Carbon::createFromDate(1899, 12, 30)->addDays((float) $value);
         }
 
-        return \Illuminate\Support\Carbon::parse($value);
+        return Carbon::parse($value);
     }
 
     /**
@@ -280,7 +335,7 @@ class CustomerController extends Controller
             && filled($data['registered_at'] ?? null)
             && filled($data['product_id'] ?? null)) {
             $product = Product::find($data['product_id']);
-            $data['after_sales_expired_at'] = \Illuminate\Support\Carbon::parse($data['registered_at'])
+            $data['after_sales_expired_at'] = Carbon::parse($data['registered_at'])
                 ->addDays((int) $product?->warranty_days);
         }
 

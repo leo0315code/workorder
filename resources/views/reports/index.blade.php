@@ -57,6 +57,40 @@
             </div>
         </x-panel>
 
+        {{-- 满意度趋势 --}}
+        <x-panel title="每日满意度趋势" class="xl:col-span-2" icon="star">
+            @php
+                $hasRating = collect($ratingAvgSeries)->filter(fn ($v) => $v !== null)->isNotEmpty();
+            @endphp
+            @if ($hasRating)
+                <div class="flex items-end gap-[3px] h-40">
+                    @foreach ($ratingAvgSeries as $i => $v)
+                        <div class="flex-1 flex flex-col items-center justify-end h-full group relative">
+                            @if ($v !== null)
+                                @php
+                                    $pct = round($v / 5 * 100);
+                                    $color = $v >= 4 ? 'from-green-500 to-emerald-400' : ($v >= 3 ? 'from-amber-500 to-yellow-400' : 'from-red-500 to-orange-400');
+                                @endphp
+                                <div class="w-full rounded-t bg-gradient-to-t {{ $color }} hover:opacity-80 transition"
+                                     style="height: {{ max(4, $pct) }}%"></div>
+                                <span class="absolute -top-1 text-[10px] text-gray-400 opacity-0 group-hover:opacity-100">{{ $v }}</span>
+                            @else
+                                <div class="w-full h-0.5 bg-gray-100 dark:bg-gray-800"></div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+                <div class="flex gap-[3px] mt-1">
+                    @foreach ($ratingDates as $i => $d)
+                        <div class="flex-1 text-center text-[10px] text-gray-400 {{ $i % max(1, intdiv(count($ratingDates), 8)) === 0 ? '' : 'opacity-0' }}">{{ $d }}</div>
+                    @endforeach
+                </div>
+                <p class="mt-2 text-xs text-gray-400">柱高 = 当日平均评分（满分 5）；无评价当天显示为空</p>
+            @else
+                <div class="py-10 text-center text-sm text-gray-400">本时段暂无满意度评价数据</div>
+            @endif
+        </x-panel>
+
         {{-- 状态/优先级分布 --}}
         <div class="space-y-6">
             <x-panel title="状态分布">

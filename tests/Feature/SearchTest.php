@@ -126,7 +126,8 @@ class SearchTest extends TestCase
 
         $items = $response->json('items');
         $this->assertNotEmpty($items);
-        $this->assertSame('/tickets/'.$ticket->id, $items[0]['url']);
+        // 客服搜索建议 → 带后台前缀（ADMIN_URL）
+        $this->assertSame('/console/tickets/'.$ticket->id, $items[0]['url']);
     }
 
     public function test_suggest_returns_empty_for_blank_keyword(): void

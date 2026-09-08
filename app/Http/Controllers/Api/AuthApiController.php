@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -32,10 +33,14 @@ class AuthApiController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
+            AuditService::logLogin($request, 'api', $data['account'], false, 'bad_credentials');
+
             throw ValidationException::withMessages([
                 'account' => ['账号或密码错误'],
             ]);
         }
+
+        AuditService::logLogin($request, 'api', $data['account'], true, null, (int) $user->id);
 
         // 每次登录签发新 token（旧 token 仍有效；登出可单独吊销）
         $token = $user->createToken($data['device'] ?? 'api');

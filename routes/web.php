@@ -5,8 +5,8 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KbController;
+use App\Http\Controllers\LoginAuditController;
 use App\Http\Controllers\MenuController;
-use App\Http\Controllers\TicketFieldDefController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -15,6 +15,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TicketFieldDefController;
 use App\Http\Controllers\TicketTemplateController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -31,12 +32,20 @@ use Illuminate\Support\Facades\Route;
 |
 | 路由顺序注意：tickets 的静态子路由（export/changes/batch）必须声明在
 | tickets/{ticket} 之前，否则会被 {ticket} 参数匹配。
-*/  
+*/
 
 // ---------------------------------------------------------------------------
 // 1. 公开
 // ---------------------------------------------------------------------------
-Route::get('/', fn () => redirect()->route('dashboard'));
+// 已登录按角色分流：客服/管理员 → 带前缀后台首页；客户/游客 → 全局仪表盘
+Route::get('/', function () {
+    $user = auth()->user();
+    if ($user?->isAgent()) {
+        return redirect()->route('admin.dashboard');
+    }
+
+    return redirect()->route('dashboard');
+});
 
 require __DIR__.'/auth.php';
 
@@ -97,10 +106,37 @@ Route::middleware('auth')->group(function () {
 // ---------------------------------------------------------------------------
 Route::middleware(['auth', 'verified', 'role:agent'])->prefix(config('app.admin_url'))->name('admin.')->group(function () {
 
+    // ---- 后台首页（带自定义前缀，如 /console）----
+    // 客服/管理员登录后跳这里；与全局 /dashboard 并存（客户仍用 /dashboard）
+    Route::get('/', DashboardController::class)->name('dashboard');
+
+    // ---- 后台工单（带前缀别名，供客服后台侧边栏使用）----
+    // 与全局 /tickets 指向同一控制器，但使用独立路由名 admin.tickets.* 避免覆盖客户端的 tickets.*
+    Route::middleware('module:export')->group(function () {
+        Route::get('tickets/export', [TicketController::class, 'export'])->name('tickets.export');
+    });
+    Route::get('tickets/changes', [TicketController::class, 'changes'])->name('tickets.changes');
+    Route::middleware('module:batch')->group(function () {
+        Route::post('tickets/batch', [TicketController::class, 'batch'])->name('tickets.batch');
+    });
+    Route::get('tickets', [TicketController::class, 'index'])->name('tickets.index');
+    Route::get('tickets/create', [TicketController::class, 'create'])->name('tickets.create');
+    Route::post('tickets', [TicketController::class, 'store'])->name('tickets.store');
+    Route::get('tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+    Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
+    Route::post('tickets/{ticket}/note', [TicketController::class, 'note'])->name('tickets.note');
+    Route::patch('tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
+    Route::post('tickets/{ticket}/rate', [TicketController::class, 'rate'])->name('tickets.rate');
+    Route::post('tickets/{ticket}/claim', [TicketController::class, 'claim'])->name('tickets.claim');
+    Route::post('tickets/{ticket}/tags', [TicketController::class, 'syncTags'])->name('tickets.tags');
+    Route::get('tickets/{ticket}/replies', [TicketController::class, 'pollReplies'])->name('tickets.replies');
+
     Route::middleware('module:customers')->group(function () {
         // export/import 必须在 resource 之前，避免被 {customer} 匹配
         Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');
         Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
+        // 售后到期快捷调整（详情页）
+        Route::post('customers/{customer}/warranty', [CustomerController::class, 'adjustWarranty'])->name('customers.warranty');
         Route::resource('customers', CustomerController::class);
     });
 
@@ -166,4 +202,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix(config('app.admin_
     Route::post('field-defs', [TicketFieldDefController::class, 'store'])->name('field-defs.store');
     Route::patch('field-defs/{def}', [TicketFieldDefController::class, 'update'])->name('field-defs.update');
     Route::delete('field-defs/{def}', [TicketFieldDefController::class, 'destroy'])->name('field-defs.destroy');
+
+    // ---- 登录审计（仅管理员）----
+    Route::get('login-audits', [LoginAuditController::class, 'index'])->name('login-audits.index');
 });

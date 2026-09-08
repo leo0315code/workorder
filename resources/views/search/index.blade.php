@@ -59,10 +59,10 @@
                                 @foreach ($tickets as $t)
                                     <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/40">
                                         <td class="py-3 pr-4 font-mono text-xs text-indigo-600 dark:text-indigo-400">
-                                            <a href="{{ route('tickets.show', $t) }}">{{ $t->no }}</a>
+                                            <a href="{{ ticket_route('show', $t) }}">{{ $t->no }}</a>
                                         </td>
                                         <td class="py-3 pr-4 max-w-[320px]">
-                                            <a href="{{ route('tickets.show', $t) }}" class="hover:underline line-clamp-1">{{ $t->subject }}</a>
+                                            <a href="{{ ticket_route('show', $t) }}" class="hover:underline line-clamp-1">{{ $t->subject }}</a>
                                             <span class="text-xs text-gray-400">{{ $t->category?->name ?? '未分类' }}{{ $t->product ? ' · '.$t->product->name : '' }}</span>
                                         </td>
                                         <td class="py-3 pr-4"><x-ticket-status :status="$t->status" /></td>

@@ -6,12 +6,14 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuditService;
 use App\Services\WechatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 /**
@@ -49,9 +51,10 @@ class WechatLoginController extends Controller
                 // 已绑定：直接登录
                 Auth::login($user, true);
                 request()->session()->regenerate();
+                AuditService::logLogin(request(), 'wechat', $user->email ?? 'wechat', true, null, (int) $user->id);
                 WechatService::forget($scene);
 
-                return response()->json(['status' => 'success', 'redirect' => route('dashboard')]);
+                return response()->json(['status' => 'success', 'redirect' => route($this->homeRoute())]);
             }
 
             // 未绑定：跳绑定页
@@ -139,6 +142,8 @@ class WechatLoginController extends Controller
             $user = User::where('email', $data['email'])->first();
 
             if (! $user || ! Hash::check($data['password'], $user->password)) {
+                AuditService::logLogin($request, 'wechat', $data['email'], false, 'bad_credentials');
+
                 return back()->withErrors(['email' => '邮箱或密码不正确']);
             }
 
@@ -149,6 +154,7 @@ class WechatLoginController extends Controller
             ]);
 
             Auth::login($user, true);
+            AuditService::logLogin($request, 'wechat', $user->email ?? '', true, null, (int) $user->id);
         } else {
             $data = $request->validate([
                 'name' => ['required', 'string', 'max:50'],
@@ -166,7 +172,7 @@ class WechatLoginController extends Controller
                     'phone' => $data['phone'] ?? null,
                     'email' => 'wechat_'.substr(md5($openid), 0, 12).'@ticket.local',
                     'role' => 'customer',
-                    'password' => Hash::make(\Illuminate\Support\Str::random(16)),
+                    'password' => Hash::make(Str::random(16)),
                     'wechat_openid' => $openid,
                     'wechat_unionid' => $state['unionid'] ?? null,
                 ]);
@@ -176,10 +182,11 @@ class WechatLoginController extends Controller
         }
 
         $request->session()->regenerate();
+        AuditService::logLogin($request, 'wechat', $user->email ?? '', true, null, (int) $user->id);
         WechatService::forget($scene);
 
         session()->flash('success', '微信登录成功，欢迎 '.$user->name);
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended(route($this->homeRoute()));
     }
 }

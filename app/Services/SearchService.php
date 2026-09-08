@@ -69,10 +69,10 @@ class SearchService
         }
 
         return Product::where(function ($w) use ($q) {
-                $w->where('name', 'like', "%{$q}%")
-                    ->orWhere('sku', 'like', "%{$q}%")
-                    ->orWhere('description', 'like', "%{$q}%");
-            })
+            $w->where('name', 'like', "%{$q}%")
+                ->orWhere('sku', 'like', "%{$q}%")
+                ->orWhere('description', 'like', "%{$q}%");
+        })
             ->orderBy('name')->paginate(10, ['*'], 'pp')->withQueryString();
     }
 
@@ -104,9 +104,9 @@ class SearchService
         $out = [];
 
         $tickets = Ticket::where(function ($w) use ($q) {
-                $w->where('no', 'like', "%{$q}%")
-                    ->orWhere('subject', 'like', "%{$q}%");
-            })
+            $w->where('no', 'like', "%{$q}%")
+                ->orWhere('subject', 'like', "%{$q}%");
+        })
             ->when($user->isCustomer(), fn ($q2) => $q2->where('user_id', $user->id))
             ->orderByDesc('updated_at')->limit(5)
             ->get(['id', 'no', 'subject', 'status']);
@@ -116,16 +116,16 @@ class SearchService
                 'type' => 'ticket',
                 'label' => $t->subject,
                 'meta' => $t->no,
-                'url' => self::rel(route('tickets.show', $t)),
+                'url' => self::rel(ticket_route('show', $t)),
             ];
         }
 
         if (! $user->isCustomer()) {
             $customers = Customer::where(function ($w) use ($q) {
-                    $w->where('company', 'like', "%{$q}%")
-                        ->orWhere('contact_name', 'like', "%{$q}%")
-                        ->orWhere('phone', 'like', "%{$q}%");
-                })
+                $w->where('company', 'like', "%{$q}%")
+                    ->orWhere('contact_name', 'like', "%{$q}%")
+                    ->orWhere('phone', 'like', "%{$q}%");
+            })
                 ->limit(4)->get(['id', 'company', 'contact_name', 'phone']);
 
             foreach ($customers as $c) {
@@ -138,9 +138,9 @@ class SearchService
             }
 
             $products = Product::where(function ($w) use ($q) {
-                    $w->where('name', 'like', "%{$q}%")
-                        ->orWhere('sku', 'like', "%{$q}%");
-                })
+                $w->where('name', 'like', "%{$q}%")
+                    ->orWhere('sku', 'like', "%{$q}%");
+            })
                 ->limit(3)->get(['id', 'name', 'sku']);
 
             foreach ($products as $p) {

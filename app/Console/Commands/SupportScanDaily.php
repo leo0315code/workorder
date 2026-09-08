@@ -33,7 +33,25 @@ class SupportScanDaily extends Command
 
             $count = $tickets->count();
             $first = $tickets->first();
-            NotificationService::notifyUsers($targetIds, "有 {$count} 个工单 SLA 已超时", $first?->no.' '.$first?->subject.' 等工单需尽快处理', route('tickets.index', ['status' => 'open']));
+            NotificationService::notifyUsers($targetIds, "有 {$count} 个工单 SLA 已超时", $first?->no.' '.$first?->subject.' 等工单需尽快处理', ticket_route('index', ['status' => 'open'], ['for_role' => 'agent']));
+            $notified += count($targetIds);
+        }
+
+        // ---- 1.5 SLA 临期预警（剩余 6 小时内，尚未超时）----
+        $warning = Ticket::whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
+            ->whereNotNull('sla_due_at')
+            ->where('sla_due_at', '>', now())          // 未超时
+            ->where('sla_due_at', '<', now()->addHours(6)) // 但 6 小时内到期
+            ->get();
+
+        foreach ($warning->groupBy(fn ($t) => $t->assignee_id) as $assigneeId => $tickets) {
+            $targetIds = $assigneeId
+                ? [(int) $assigneeId]
+                : User::whereIn('role', ['agent', 'admin'])->pluck('id')->all();
+
+            $count = $tickets->count();
+            $first = $tickets->first();
+            NotificationService::notifyUsers($targetIds, "有 {$count} 个工单 SLA 即将到期", $first?->no.' '.$first?->subject.' 等工单剩余不足 6 小时，请尽快处理', ticket_route('index', ['status' => 'open'], ['for_role' => 'agent']));
             $notified += count($targetIds);
         }
 
@@ -47,7 +65,7 @@ class SupportScanDaily extends Command
             $adminIds = User::where('role', 'admin')->pluck('id')->all();
             $count = $staleUnclaimed->count();
             $first = $staleUnclaimed->first();
-            NotificationService::notifyUsers($adminIds, "有 {$count} 个工单待认领超过 24 小时", $first?->no.' '.$first?->subject.' 等工单无人接单，请尽快处理', route('tickets.index', ['unassigned' => 1]));
+            NotificationService::notifyUsers($adminIds, "有 {$count} 个工单待认领超过 24 小时", $first?->no.' '.$first?->subject.' 等工单无人接单，请尽快处理', ticket_route('index', ['unassigned' => 1], ['for_role' => 'agent']));
             $notified += count($adminIds);
         }
 
@@ -67,7 +85,7 @@ class SupportScanDaily extends Command
             $notified += count($adminIds);
         }
 
-        $this->info("巡检完成：SLA 超时 {$overdue->count()} 个，售后临期 {$expiring->count()} 家，已过期 {$expired->count()} 家，共发送通知 {$notified} 条");
+        $this->info("巡检完成：SLA 超时 {$overdue->count()} 个，SLA 临期 {$warning->count()} 个，售后临期 {$expiring->count()} 家，已过期 {$expired->count()} 家，共发送通知 {$notified} 条");
 
         return self::SUCCESS;
     }

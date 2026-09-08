@@ -40,7 +40,7 @@
     {{-- 移动端卡片 --}}
     <div class="md:hidden space-y-3">
         @foreach ($recent as $t)
-            <a href="{{ route('tickets.show', $t) }}" class="block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm active:scale-[0.99] transition">
+            <a href="{{ ticket_route('show', $t) }}" class="block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm active:scale-[0.99] transition">
                 <div class="flex items-center justify-between">
                     <span class="font-mono text-xs text-indigo-600 dark:text-indigo-400">{{ $t->no }}</span>
                     <div class="flex items-center gap-1.5">
@@ -82,10 +82,10 @@
                 @foreach ($recent as $t)
                     <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/40">
                         <td class="py-3 pr-4 font-mono text-xs text-indigo-600 dark:text-indigo-400">
-                            <a href="{{ route('tickets.show', $t) }}">{{ $t->no }}</a>
+                            <a href="{{ ticket_route('show', $t) }}">{{ $t->no }}</a>
                         </td>
                         <td class="py-3 pr-4 max-w-[260px] truncate">
-                            <a href="{{ route('tickets.show', $t) }}" class="hover:underline">{{ $t->subject }}</a>
+                            <a href="{{ ticket_route('show', $t) }}" class="hover:underline">{{ $t->subject }}</a>
                         </td>
                         <td class="py-3 pr-4"><x-ticket-status :status="$t->status" /></td>
                         <td class="py-3 pr-4"><x-ticket-priority :priority="$t->priority" /></td>
@@ -102,5 +102,5 @@
 @endif
 
 <div class="mt-4">
-    <a href="{{ route('tickets.index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">查看全部工单 →</a>
+    <a href="{{ ticket_route('index') }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">查看全部工单 →</a>
 </div>

@@ -7,7 +7,7 @@
 
     <div x-data="ticketList({{ json_encode($wsConfig) }})">
         {{-- 筛选（移动端折叠：默认收起，已选筛选项时自动展开） --}}
-        <form method="GET" action="{{ route('tickets.index') }}" x-data="{ open: {{ $activeFilterCount > 0 ? 'true' : 'false' }}, count: {{ (int) $activeFilterCount }} }" class="mb-5">
+        <form method="GET" action="{{ ticket_route('index') }}" x-data="{ open: {{ $activeFilterCount > 0 ? 'true' : 'false' }}, count: {{ (int) $activeFilterCount }} }" class="mb-5">
             {{-- 移动端折叠触发 --}}
             <div class="md:hidden mb-3 flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 shadow-sm">
                 <button type="button" @click="open = !open"
@@ -17,7 +17,7 @@
                     <span x-show="count > 0" class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-indigo-600 text-white text-[11px] font-semibold" x-text="count"></span>
                 </button>
                 @if ($activeFilterCount > 0)
-                    <a href="{{ route('tickets.index') }}" class="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">重置</a>
+                    <a href="{{ ticket_route('index') }}" class="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">重置</a>
                 @endif
             </div>
 
@@ -58,15 +58,20 @@
                 </select>
 
                 @if ($isAgent)
-                    <a href="{{ route('tickets.index', array_merge(request()->query(), ['unassigned' => 1])) }}"
+                    <a href="{{ ticket_route('index', array_merge(request()->query(), ['unassigned' => 1])) }}"
                        class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition
                               {{ request()->boolean('unassigned') ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20' }}">
                         <span class="w-2 h-2 rounded-full bg-amber-500"></span> 待认领
                     </a>
-                    <a href="{{ route('tickets.index', array_merge(request()->query(), ['overdue' => 1])) }}"
+                    <a href="{{ ticket_route('index', array_merge(request()->query(), ['overdue' => 1])) }}"
                        class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition
                               {{ request()->boolean('overdue') ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300' : 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20' }}">
                         <span class="w-2 h-2 rounded-full bg-red-500"></span> SLA 超时
+                    </a>
+                    <a href="{{ ticket_route('index', array_merge(request()->query(), ['warning' => 1])) }}"
+                       class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition
+                              {{ request()->boolean('warning') ? 'bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-300' : 'bg-orange-50 text-orange-700 hover:bg-orange-100 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/20' }}">
+                        <span class="w-2 h-2 rounded-full bg-orange-400"></span> SLA 临期
                     </a>
                     <select name="assignee" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
                         <option value="">全部负责人</option>
@@ -86,20 +91,20 @@
                 @endif
 
                 <button type="submit" class="rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2 text-sm font-medium text-white dark:text-gray-900 hover:bg-gray-700">筛选</button>
-                <a href="{{ route('tickets.index') }}" class="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">重置</a>
+                <a href="{{ ticket_route('index') }}" class="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">重置</a>
             </div>
             </div>
         </form>
 
         {{-- 工具条 --}}
         <div class="mb-4 flex flex-wrap items-center gap-3">
-            <a href="{{ route('tickets.create') }}"
+            <a href="{{ ticket_route('create') }}"
                class="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/35 transition">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 新建工单
             </a>
             @if ($isAgent)
-                <a href="{{ route('tickets.export', request()->query()) }}"
+                <a href="{{ ticket_route('export', request()->query()) }}"
                    class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                     导出 CSV（当前筛选）
@@ -107,7 +112,7 @@
             @endif
 
             <template x-if="isAgent && selected.length > 0">
-                <form method="POST" action="{{ route('tickets.batch') }}" class="flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2">
+                <form method="POST" action="{{ ticket_route('batch') }}" class="flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2">
                     @csrf
                     <template x-for="id in selected" :key="id">
                         <input type="hidden" name="ticket_ids[]" :value="id">
@@ -143,14 +148,14 @@
             <div class="md:hidden rounded-xl border border-dashed border-gray-300 dark:border-gray-700 py-14 text-center">
                 <p class="text-sm text-gray-400">暂无工单</p>
                 @if (! $isAgent)
-                    <a href="{{ route('tickets.create') }}" class="mt-2 inline-block text-sm text-indigo-600 dark:text-indigo-400 hover:underline">去创建第一个工单 →</a>
+                    <a href="{{ ticket_route('create') }}" class="mt-2 inline-block text-sm text-indigo-600 dark:text-indigo-400 hover:underline">去创建第一个工单 →</a>
                 @endif
             </div>
         @endif
         @if ($tickets->isNotEmpty())
             <div class="md:hidden space-y-3 mb-4">
                 @foreach ($tickets as $t)
-                    <a href="{{ route('tickets.show', $t) }}" class="block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm active:scale-[0.99] transition">
+                    <a href="{{ ticket_route('show', $t) }}" class="block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm active:scale-[0.99] transition">
                         <div class="flex items-center justify-between gap-2">
                             <span class="font-mono text-xs text-indigo-600 dark:text-indigo-400">{{ $t->no }}</span>
                             <div class="flex items-center gap-1.5">
@@ -220,7 +225,7 @@
                                 <td class="py-3 px-4 font-mono text-xs text-indigo-600 dark:text-indigo-400">{{ $t->no }}</td>
                                 <td class="py-3 px-4 max-w-[240px]">
                                     <div class="flex items-center gap-1.5">
-                                        <a href="{{ route('tickets.show', $t) }}" class="font-medium text-gray-800 dark:text-gray-200 hover:underline line-clamp-1">{{ $t->subject }}</a>
+                                        <a href="{{ ticket_route('show', $t) }}" class="font-medium text-gray-800 dark:text-gray-200 hover:underline line-clamp-1">{{ $t->subject }}</a>
                                         @if ($t->isOverdue())
                                             <span class="shrink-0 inline-flex rounded-md bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-300 ring-1 ring-inset ring-red-200 dark:ring-red-500/30">超时</span>
                                         @endif
@@ -257,9 +262,9 @@
                                 @endif
                                 <td class="py-3 px-4 text-gray-400 whitespace-nowrap">{{ $t->updated_at?->format('m-d H:i') }}</td>
                                 <td class="py-3 px-4 text-right whitespace-nowrap">
-                                    <a href="{{ route('tickets.show', $t) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">查看</a>
+                                    <a href="{{ ticket_route('show', $t) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">查看</a>
                                     @if ($isAgent && ! $t->assignee)
-                                        <form method="POST" action="{{ route('tickets.claim', $t) }}" class="inline ml-2">
+                                        <form method="POST" action="{{ ticket_route('claim', $t) }}" class="inline ml-2">
                                             @csrf
                                             <button type="submit" class="text-green-600 dark:text-green-400 hover:underline">认领</button>
                                         </form>

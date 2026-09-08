@@ -287,6 +287,9 @@ class ApiTest extends TestCase
 
     public function test_api_customer_cannot_specify_assignee(): void
     {
+        // 关闭自动分配，使测试不依赖 WS 服务在线状态（否则 WS 不可用时 pick() 会退化指派第一个客服）
+        Setting::updateOrCreate(['setting_key' => 'auto_assign'], ['value' => '0']);
+
         $agent = $this->makeUser('agent');
         $user = $this->makeUser();
         Sanctum::actingAs($user);

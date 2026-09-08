@@ -39,7 +39,7 @@ class AuthFlowTest extends TestCase
         $this->user('a@t.test', 'agent');
 
         $this->post(route('admin.login.store'), ['email' => 'a@t.test', 'password' => 'password'])
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('admin.dashboard')); // 客服/管理员登录后进带前缀后台首页
     }
 
     public function test_admin_login_rejects_customer_role(): void

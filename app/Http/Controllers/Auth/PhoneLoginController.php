@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Auth;
 use App\Exceptions\SmsSendException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuditService;
 use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -14,7 +15,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -68,6 +68,8 @@ class PhoneLoginController extends Controller
         $phone = $request->input('phone');
 
         if (! SmsService::verify($phone, $request->input('code'))) {
+            AuditService::logLogin($request, 'phone', $phone, false, 'code_invalid');
+
             throw ValidationException::withMessages([
                 'code' => __('验证码错误或已过期'),
             ]);
@@ -89,8 +91,10 @@ class PhoneLoginController extends Controller
         Auth::login($user, true);
         $request->session()->regenerate();
 
+        AuditService::logLogin($request, 'phone', $phone, true, null, (int) $user->id);
+
         session()->flash('success', '登录成功，欢迎 '.$user->name);
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended(route($this->homeRoute()));
     }
 }

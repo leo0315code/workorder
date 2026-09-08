@@ -33,17 +33,17 @@
             </div>
             <div class="flex items-center gap-3 shrink-0">
                 @if ($isAgent)
-                    <a href="{{ route('tickets.create') }}"
+                    <a href="{{ ticket_route('create') }}"
                        class="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm hover:bg-indigo-50 transition">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                         新建工单
                     </a>
-                    <a href="{{ route('tickets.index', ['status' => 'open']) }}"
+                    <a href="{{ ticket_route('index', ['status' => 'open']) }}"
                        class="inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-white/25 hover:bg-white/20 transition">
                         待处理列表
                     </a>
                 @else
-                    <a href="{{ route('tickets.create') }}"
+                    <a href="{{ ticket_route('create') }}"
                        class="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm hover:bg-indigo-50 transition">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                         提交工单
@@ -57,11 +57,11 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <x-stat-card label="工单总数" :value="$total" icon="ticket" color="indigo" />
         @if ($isAgent)
-            <a href="{{ route('tickets.index', ['status' => 'open']) }}" class="block">
+            <a href="{{ ticket_route('index', ['status' => 'open']) }}" class="block">
                 <x-stat-card label="待处理" :value="$open" icon="clock" color="amber" />
             </a>
             <x-stat-card label="今日已解决" :value="$resolvedToday" icon="check" color="green" />
-            <a href="{{ route('tickets.index', ['overdue' => 1]) }}" class="block">
+            <a href="{{ ticket_route('index', ['overdue' => 1]) }}" class="block">
                 <x-stat-card label="SLA 超时" :value="$overdue" icon="alert" color="red" />
             </a>
         @else
@@ -73,10 +73,10 @@
 
     @if ($isAgent)
         <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <a href="{{ route('tickets.index', ['mine' => 1]) }}" class="block">
+            <a href="{{ ticket_route('index', ['mine' => 1]) }}" class="block">
                 <x-stat-card label="指派给我(未完成)" :value="$myOpen" icon="user" color="sky" />
             </a>
-            <a href="{{ route('tickets.index', ['unassigned' => 1]) }}" class="block">
+            <a href="{{ ticket_route('index', ['unassigned' => 1]) }}" class="block">
                 <x-stat-card label="待认领" :value="$unassigned" icon="alert" color="orange" />
             </a>
             <div class="col-span-2 flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4">

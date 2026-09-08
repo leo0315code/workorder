@@ -10,7 +10,7 @@
         <nav class="flex items-center gap-1.5 text-sm text-gray-400 dark:text-gray-500">
             <a href="{{ route('dashboard') }}" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition">仪表盘</a>
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-            <a href="{{ route('tickets.index') }}" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition">工单列表</a>
+            <a href="{{ ticket_route('index') }}" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition">工单列表</a>
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
             <span class="font-mono text-indigo-600 dark:text-indigo-400 font-medium">{{ $ticket->no }}</span>
         </nav>
@@ -98,7 +98,7 @@
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                     添加
                                 </summary>
-                                <form method="POST" action="{{ route('tickets.tags', $ticket) }}"
+                                <form method="POST" action="{{ ticket_route('tags', $ticket) }}"
                                       class="absolute right-0 top-full mt-2 z-30 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl p-3">
                                     @csrf
                                     <div class="space-y-1.5 max-h-40 overflow-y-auto">
@@ -153,12 +153,12 @@
                 @endif
             </div>
 
-            {{-- 满意度评分 --}}
+            {{-- 满意度评分（仅时效内显示） --}}
             @php $rating = $ticket->rating; @endphp
-            @if (! $isAgent && in_array($ticket->status, ['resolved', 'closed']) && ! $rating)
+            @if ($canRate)
                 <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6" x-data="{ stars: 0, comment: '' }">
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">本次服务体验如何？</h3>
-                    <form method="POST" action="{{ route('tickets.rate', $ticket) }}">
+                    <form method="POST" action="{{ ticket_route('rate', $ticket) }}">
                         @csrf
                         <div class="flex gap-1 mb-3">
                             <template x-for="i in 5" :key="i">
@@ -237,7 +237,7 @@
                 <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">
                     {{ $isAgent ? '回复客户' : '补充说明 / 回复' }}
                 </h3>
-                <form method="POST" action="{{ route('tickets.reply', $ticket) }}"
+                <form method="POST" action="{{ ticket_route('reply', $ticket) }}"
                       enctype="multipart/form-data"
                       x-data="{ content: '', quick: '', files: [] }"
                       @submit="if (content.trim() === '') { $event.preventDefault(); }">
@@ -280,7 +280,7 @@
             @if ($isAgent)
                 <div class="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5 p-6">
                     <h3 class="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-4">内部备注（客户不可见）</h3>
-                    <form method="POST" action="{{ route('tickets.note', $ticket) }}">
+                    <form method="POST" action="{{ ticket_route('note', $ticket) }}">
                         @csrf
                         <textarea name="content" rows="3" maxlength="10000" placeholder="仅客服可见的备注…（@客服姓名 可提及同事）"
                                   class="w-full rounded-lg border-amber-300 dark:border-amber-500/40 dark:bg-gray-900 text-sm shadow-sm focus:ring-amber-500 focus:border-amber-500"></textarea>
@@ -381,7 +381,7 @@
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">处理操作</h3>
 
                     @if (! $ticket->assignee_id)
-                        <form method="POST" action="{{ route('tickets.claim', $ticket) }}" class="mb-4">
+                        <form method="POST" action="{{ ticket_route('claim', $ticket) }}" class="mb-4">
                             @csrf
                             <button type="submit" class="w-full rounded-lg bg-green-600 py-2.5 text-sm font-medium text-white hover:bg-green-500 shadow-sm">
                                 认领此工单（指派给自己）
@@ -389,7 +389,7 @@
                         </form>
                     @endif
 
-                    <form method="POST" action="{{ route('tickets.update', $ticket) }}" class="space-y-4">
+                    <form method="POST" action="{{ ticket_route('update', $ticket) }}" class="space-y-4">
                         @csrf
                         @method('PATCH')
 

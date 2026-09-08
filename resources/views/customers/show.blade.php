@@ -97,6 +97,47 @@
                             <p class="mt-1.5 text-xs text-gray-400">保修期已用 {{ round($used / $total * 100) }}%</p>
                         </div>
                     @endif
+
+                    {{-- 售后到期快捷调整 --}}
+                    <div class="pt-4 mt-4 border-t border-gray-100 dark:border-gray-800">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2.5">售后时间调整</p>
+                        <div class="space-y-2.5">
+                            <div class="flex flex-wrap gap-2">
+                                @php
+                                    $warrantyBase = $customer->after_sales_expired_at ?: now();
+                                @endphp
+                                <form method="POST" action="{{ route('admin.customers.warranty', $customer) }}">
+                                    @csrf
+                                    <input type="hidden" name="action" value="extend_1y">
+                                    <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-300 transition">+1 年</button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.customers.warranty', $customer) }}">
+                                    @csrf
+                                    <input type="hidden" name="action" value="extend_6m">
+                                    <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-300 transition">+6 个月</button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.customers.warranty', $customer) }}">
+                                    @csrf
+                                    <input type="hidden" name="action" value="extend_30d">
+                                    <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-300 transition">+30 天</button>
+                                </form>
+                                @if ($customer->product?->warranty_days && $customer->registered_at)
+                                    <form method="POST" action="{{ route('admin.customers.warranty', $customer) }}">
+                                        @csrf
+                                        <input type="hidden" name="action" value="recalc">
+                                        <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-amber-200 dark:border-amber-500/30 px-3 py-1.5 text-xs text-amber-700 dark:text-amber-300 hover:border-amber-300 dark:hover:border-amber-500/60 transition">按登记+保修期重算</button>
+                                    </form>
+                                @endif
+                            </div>
+                            <form method="POST" action="{{ route('admin.customers.warranty', $customer) }}" class="flex items-center gap-2">
+                                @csrf
+                                <input type="hidden" name="action" value="set">
+                                <input type="date" name="date" value="{{ $customer->after_sales_expired_at?->format('Y-m-d') }}"
+                                       class="rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-xs px-2 py-1.5">
+                                <button type="submit" class="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 transition">设为该日期</button>
+                            </form>
+                        </div>
+                    </div>
                 </dl>
             </div>
         </div>
@@ -123,10 +164,10 @@
                         @forelse ($tickets as $t)
                             <tr class="border-b border-gray-100 dark:border-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-800/40">
                                 <td class="py-3 px-4 font-mono text-xs text-indigo-600 dark:text-indigo-400">
-                                    <a href="{{ route('tickets.show', $t) }}">{{ $t->no }}</a>
+                                    <a href="{{ ticket_route('show', $t) }}">{{ $t->no }}</a>
                                 </td>
                                 <td class="py-3 px-4 max-w-[220px]">
-                                    <a href="{{ route('tickets.show', $t) }}" class="hover:underline line-clamp-1">{{ $t->subject }}</a>
+                                    <a href="{{ ticket_route('show', $t) }}" class="hover:underline line-clamp-1">{{ $t->subject }}</a>
                                 </td>
                                 <td class="py-3 px-4 text-gray-500 dark:text-gray-400">{{ $t->category?->name ?? '-' }}</td>
                                 <td class="py-3 px-4"><x-ticket-status :status="$t->status" /></td>

@@ -6,8 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
@@ -25,7 +25,7 @@ class DashboardController extends Controller
     /**
      * 「最近工单」区块的局部刷新接口（AJAX，不整页刷新）
      */
-    public function recentFragment(Request $request): \Illuminate\Http\Response
+    public function recentFragment(Request $request): Response
     {
         $user = Auth::user();
         $data = $this->recentData($request->input('scope', 'all'));

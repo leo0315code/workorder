@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,9 +40,11 @@ class AdminAuthenticatedSessionController extends Controller
 
         $credentials = $request->only('email', 'password');
         $remember = $request->boolean('remember');
+        $email = (string) $request->input('email', '');
 
         if (! Auth::attempt($credentials, $remember)) {
             RateLimiter::hit($this->throttleKey($request));
+            AuditService::logLogin($request, 'admin', $email, false, 'bad_credentials');
 
             throw ValidationException::withMessages([
                 'email' => __('登录信息不正确'),
@@ -55,6 +57,7 @@ class AdminAuthenticatedSessionController extends Controller
         if (! $user->isAgent()) {
             Auth::logout();
             RateLimiter::hit($this->throttleKey($request));
+            AuditService::logLogin($request, 'admin', $email, false, 'not_agent', (int) $user->id);
 
             throw ValidationException::withMessages([
                 'email' => __('该账号不是客服/管理员，请使用用户端登录'),
@@ -64,9 +67,11 @@ class AdminAuthenticatedSessionController extends Controller
         RateLimiter::clear($this->throttleKey($request));
         $request->session()->regenerate();
 
+        AuditService::logLogin($request, 'admin', $email, true, null, (int) $user->id);
+
         session()->flash('success', '欢迎回来，'.$user->name);
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended(route($this->homeRoute()));
     }
 
     protected function ensureIsNotRateLimited(Request $request): void

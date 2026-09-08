@@ -52,6 +52,12 @@ class TicketService
                 $query->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
                     ->where('sla_due_at', '<', now());
             }
+            if ($request->boolean('warning')) {
+                $query->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
+                    ->whereNotNull('sla_due_at')
+                    ->where('sla_due_at', '>', now())
+                    ->where('sla_due_at', '<', now()->addHours(6));
+            }
         }
 
         if ($request->filled('status')) {
@@ -241,7 +247,7 @@ class TicketService
                 $user->id,
                 '有人 @ 了你',
                 $ticket->no.' · '.$ticket->subject,
-                route('tickets.show', $ticket)
+                ticket_route('show', $ticket, ['for_role' => 'agent'])
             );
             WebSocketService::pushToUid($user->id, [
                 'type' => 'mention',
