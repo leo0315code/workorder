@@ -21,28 +21,31 @@ use Illuminate\Support\Facades\Route;
 Route::post('/auth/login', [AuthApiController::class, 'login'])->middleware('throttle:5,1');
 
 // ---- 需 token ----
+// 分层限流（防滥用/刷接口）：
+//   throttle:60,1  读操作 —— 每 IP/用户 每分钟 60 次
+//   throttle:20,1  写操作 —— 每 IP/用户 每分钟 20 次
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/auth/logout', [AuthApiController::class, 'logout']);
-    Route::get('/me', [AuthApiController::class, 'me']);
+    Route::post('/auth/logout', [AuthApiController::class, 'logout'])->middleware('throttle:20,1');
+    Route::get('/me', [AuthApiController::class, 'me'])->middleware('throttle:60,1');
 
     // 工单
-    Route::get('/tickets', [TicketApiController::class, 'index']);
-    Route::post('/tickets', [TicketApiController::class, 'store']);
-    Route::get('/tickets/{ticket}', [TicketApiController::class, 'show']);
-    Route::post('/tickets/{ticket}/replies', [TicketApiController::class, 'reply']);
+    Route::get('/tickets', [TicketApiController::class, 'index'])->middleware('throttle:60,1');
+    Route::post('/tickets', [TicketApiController::class, 'store'])->middleware('throttle:20,1');
+    Route::get('/tickets/{ticket}', [TicketApiController::class, 'show'])->middleware('throttle:60,1');
+    Route::post('/tickets/{ticket}/replies', [TicketApiController::class, 'reply'])->middleware('throttle:20,1');
 
     // 基础数据
-    Route::get('/products', [ReferenceApiController::class, 'products']);
-    Route::get('/customers', [ReferenceApiController::class, 'customers']);
-    Route::get('/tags', [ReferenceApiController::class, 'tags']);
+    Route::get('/products', [ReferenceApiController::class, 'products'])->middleware('throttle:60,1');
+    Route::get('/customers', [ReferenceApiController::class, 'customers'])->middleware('throttle:60,1');
+    Route::get('/tags', [ReferenceApiController::class, 'tags'])->middleware('throttle:60,1');
 
     // 知识库（App 端浏览已发布文章）
-    Route::get('/kb/categories', [KbApiController::class, 'categories']);
-    Route::get('/kb/articles', [KbApiController::class, 'index']);
-    Route::get('/kb/articles/{article}', [KbApiController::class, 'show']);
+    Route::get('/kb/categories', [KbApiController::class, 'categories'])->middleware('throttle:60,1');
+    Route::get('/kb/articles', [KbApiController::class, 'index'])->middleware('throttle:60,1');
+    Route::get('/kb/articles/{article}', [KbApiController::class, 'show'])->middleware('throttle:60,1');
 
     // 通知
-    Route::get('/notifications', [NotificationApiController::class, 'index']);
-    Route::get('/notifications/unread-count', [NotificationApiController::class, 'unreadCount']);
-    Route::post('/notifications/{notification}/read', [NotificationApiController::class, 'markRead']);
+    Route::get('/notifications', [NotificationApiController::class, 'index'])->middleware('throttle:60,1');
+    Route::get('/notifications/unread-count', [NotificationApiController::class, 'unreadCount'])->middleware('throttle:60,1');
+    Route::post('/notifications/{notification}/read', [NotificationApiController::class, 'markRead'])->middleware('throttle:20,1');
 });

@@ -322,4 +322,27 @@ class ApiTest extends TestCase
         $this->assertSame(Ticket::STATUS_OPEN, $ticket->fresh()->status);
         $this->assertNull($ticket->fresh()->closed_at);
     }
+
+    // -------------------------------------------------------------------------
+    // API 限流（写操作 20/min，超限 429）
+    // -------------------------------------------------------------------------
+
+    public function test_api_write_endpoints_rate_limited(): void
+    {
+        $user = $this->makeUser();
+        Sanctum::actingAs($user);
+
+        // 连发 21 次建单（超过 20/min 阈值）→ 最后一次应 429
+        $lastStatus = null;
+        for ($i = 0; $i < 21; $i++) {
+            $response = $this->postJson('/api/tickets', [
+                'subject' => "限流测试 {$i}",
+                'description' => 'desc',
+                'priority' => 'normal',
+            ]);
+            $lastStatus = $response->getStatusCode();
+        }
+
+        $this->assertSame(429, $lastStatus);
+    }
 }
