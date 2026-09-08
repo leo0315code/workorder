@@ -88,8 +88,30 @@ class DashboardController extends Controller
             ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
             ->count();
 
+        // 我负责的待处理工单（含 SLA 状态，Top 5）
+        $myOpenTickets = Ticket::with(['category', 'user:id,name'])
+            ->where('assignee_id', Auth::id())
+            ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
+            ->select('*')
+            ->selectRaw('CASE
+                WHEN sla_due_at IS NOT NULL AND sla_due_at < ? THEN 0
+                WHEN sla_due_at IS NOT NULL AND sla_due_at < ? THEN 1
+                ELSE 2 END as sla_rank', [now(), now()->addHours(6)])
+            ->orderBy('sla_rank')
+            ->orderBy('sla_due_at')
+            ->limit(5)
+            ->get();
+
+        // 待认领工单（无负责人，Top 5）
+        $unassignedTickets = Ticket::with(['category', 'user:id,name'])
+            ->whereNull('assignee_id')
+            ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
+
         return view('dashboard', array_merge(
-            compact('total', 'open', 'resolvedToday', 'overdue', 'byStatus', 'byPriority', 'byCategory', 'recent', 'myOpen', 'unassigned', 'scope'),
+            compact('total', 'open', 'resolvedToday', 'overdue', 'byStatus', 'byPriority', 'byCategory', 'recent', 'myOpen', 'unassigned', 'scope', 'myOpenTickets', 'unassignedTickets'),
             $recentData
         ));
     }

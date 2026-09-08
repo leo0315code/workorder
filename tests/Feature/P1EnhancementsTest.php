@@ -440,4 +440,38 @@ class P1EnhancementsTest extends TestCase
             'title' => '工单已指派给你',
         ]);
     }
+
+    // ---------------------------------------------------------------------
+    // 仪表盘：我的待处理 / 待认领列表
+    // ---------------------------------------------------------------------
+
+    public function test_dashboard_shows_my_open_and_unassigned(): void
+    {
+        $agent = $this->user('agent');
+        $customer = $this->user('customer');
+
+        // 一条指派给我且超时的工单 + 一条待认领
+        Ticket::factory()->create([
+            'user_id' => $customer->id,
+            'assignee_id' => $agent->id,
+            'status' => Ticket::STATUS_OPEN,
+            'sla_due_at' => now()->subHour(),
+            'subject' => '我的超时工单',
+        ]);
+        Ticket::factory()->create([
+            'user_id' => $customer->id,
+            'assignee_id' => null,
+            'status' => Ticket::STATUS_OPEN,
+            'subject' => '待认领工单',
+        ]);
+
+        $this->actingAs($agent)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('我的待处理')
+            ->assertSee('我的超时工单')
+            ->assertSee('待认领')
+            ->assertSee('待认领工单')
+            ->assertSee('超时');
+    }
 }

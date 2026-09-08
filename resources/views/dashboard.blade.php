@@ -145,6 +145,52 @@
         </div>
     </x-panel>
 
+    @if ($isAgent)
+        <div class="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {{-- 我的待处理（按 SLA 优先级排序） --}}
+            <x-panel title="我的待处理" icon="ticket">
+                @forelse ($myOpenTickets as $t)
+                    <a href="{{ ticket_route('show', $t) }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/60 transition group">
+                        <span class="font-mono text-xs text-indigo-600 dark:text-indigo-400 shrink-0">{{ $t->no }}</span>
+                        <span class="flex-1 truncate text-sm text-gray-700 dark:text-gray-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-300">{{ $t->subject }}</span>
+                        @if ($t->sla_due_at && ! in_array($t->status, ['resolved', 'closed']))
+                            @if ($t->sla_due_at->lt(now()))
+                                <span class="shrink-0 inline-flex rounded-md bg-red-50 dark:bg-red-500/10 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:text-red-300 ring-1 ring-inset ring-red-200 dark:ring-red-500/30">超时</span>
+                            @elseif ($t->sla_due_at->lt(now()->addHours(6)))
+                                <span class="shrink-0 inline-flex rounded-md bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-500/30">临期</span>
+                            @endif
+                        @endif
+                        <x-ticket-priority :priority="$t->priority" class="shrink-0" />
+                    </a>
+                @empty
+                    <p class="py-6 text-center text-sm text-gray-400">暂无待处理工单 🎉</p>
+                @endforelse
+                @if ($myOpenTickets->isNotEmpty())
+                    <a href="{{ ticket_route('index', ['mine' => 1]) }}" class="mt-2 inline-block text-xs text-indigo-500 hover:underline">查看全部 {{ $myOpen }} 个 →</a>
+                @endif
+            </x-panel>
+
+            {{-- 待认领 --}}
+            <x-panel title="待认领" icon="ticket">
+                @forelse ($unassignedTickets as $t)
+                    <a href="{{ ticket_route('show', $t) }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/60 transition group">
+                        <span class="font-mono text-xs text-gray-400 shrink-0">{{ $t->no }}</span>
+                        <span class="flex-1 truncate text-sm text-gray-700 dark:text-gray-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-300">{{ $t->subject }}</span>
+                        <span class="shrink-0 text-xs text-gray-400">{{ $t->created_at?->diffForHumans() }}</span>
+                        <span class="shrink-0 inline-flex rounded-md bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 text-[11px] font-medium text-indigo-600 dark:text-indigo-300">认领</span>
+                    </a>
+                @empty
+                    <p class="py-6 text-center text-sm text-gray-400">没有待认领工单 ✅</p>
+                @endforelse
+                @if ($unassignedTickets->isNotEmpty())
+                    <a href="{{ ticket_route('index', ['unassigned' => 1]) }}" class="mt-2 inline-block text-xs text-indigo-500 hover:underline">查看全部 {{ $unassigned }} 个 →</a>
+                @endif
+            </x-panel>
+        </div>
+    @endif
+
     <script>
         (function () {
             // data-scope 按钮点击 → 局部刷新最近工单区块（不整页刷新）
