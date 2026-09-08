@@ -614,28 +614,51 @@ class TicketController extends Controller
         $this->service->authorizeStaff(new Ticket);
 
         $request->validate([
-            'action' => ['required', 'in:assign,close'],
+            'action' => ['required', 'in:assign,close,priority'],
             'ticket_ids' => ['required', 'array', 'min:1'],
             'ticket_ids.*' => ['integer'],
             'assignee_id' => ['nullable', 'exists:users,id'],
+            'priority' => ['nullable', 'in:low,normal,high,urgent'],
         ]);
 
         $tickets = Ticket::whereIn('id', $request->input('ticket_ids'))->get();
         $action = $request->input('action');
+        $changed = 0;
 
         foreach ($tickets as $ticket) {
             if ($action === 'close') {
                 if (! in_array($ticket->status, [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])) {
                     $ticket->update(['status' => Ticket::STATUS_CLOSED, 'closed_at' => now()]);
                     $this->service->logAction($ticket, 'change', 'status', self::STATUS_NAMES[$ticket->status], '已关闭', '批量关闭');
+                    $changed++;
                 }
             } elseif ($action === 'assign' && $request->filled('assignee_id')) {
-                $ticket->update(['assignee_id' => $request->integer('assignee_id')]);
-                $this->service->logAction($ticket, 'change', 'assignee', '原负责人', User::find($request->integer('assignee_id'))?->name, '批量指派');
+                $newAssigneeId = $request->integer('assignee_id');
+                if ((int) $ticket->assignee_id !== $newAssigneeId) {
+                    $oldName = $ticket->assignee?->name ?? '未指派';
+                    $ticket->update(['assignee_id' => $newAssigneeId]);
+                    $this->service->logAction($ticket, 'change', 'assignee', $oldName, User::find($newAssigneeId)?->name, '批量指派');
+                    $changed++;
+                    // 通知新负责人（静默指派 → 显式通知）
+                    NotificationService::notifyUser($newAssigneeId, '工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
+                }
+            } elseif ($action === 'priority' && $request->filled('priority')) {
+                $newPriority = $request->input('priority');
+                if ($ticket->priority !== $newPriority) {
+                    $ticket->update(['priority' => $newPriority]);
+                    $this->service->logAction($ticket, 'change', 'priority', self::PRIORITY_NAMES[$ticket->priority] ?? $ticket->priority, self::PRIORITY_NAMES[$newPriority], '批量改优先级');
+                    $changed++;
+                }
             }
         }
 
-        session()->flash('success', '已对 '.$tickets->count().' 个工单执行「'.($action === 'close' ? '关闭' : '指派').'」');
+        $label = match ($action) {
+            'close' => '关闭',
+            'assign' => '指派',
+            'priority' => '改优先级',
+        };
+
+        session()->flash('success', "已对 {$changed} 个工单执行「{$label}」");
 
         return redirect()->back();
     }

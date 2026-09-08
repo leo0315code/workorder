@@ -395,4 +395,49 @@ class P1EnhancementsTest extends TestCase
         $this->assertSame(4.0, end($avg));
         $this->assertSame(1, end($count));
     }
+
+    // ---------------------------------------------------------------------
+    // 批量操作扩展：批量改优先级 / 批量指派通知
+    // ---------------------------------------------------------------------
+
+    public function test_batch_change_priority(): void
+    {
+        $agent = $this->user('agent');
+        $customer = $this->user('customer');
+
+        $t1 = Ticket::factory()->create(['user_id' => $customer->id, 'priority' => 'low']);
+        $t2 = Ticket::factory()->create(['user_id' => $customer->id, 'priority' => 'normal']);
+
+        $this->actingAs($agent)
+            ->post(route('admin.tickets.batch'), [
+                'action' => 'priority',
+                'ticket_ids' => [$t1->id, $t2->id],
+                'priority' => 'urgent',
+            ])->assertRedirect();
+
+        $this->assertSame('urgent', $t1->fresh()->priority);
+        $this->assertSame('urgent', $t2->fresh()->priority);
+    }
+
+    public function test_batch_assign_notifies_new_assignee(): void
+    {
+        $agent = $this->user('agent');
+        $target = $this->user('agent');
+        $customer = $this->user('customer');
+
+        $ticket = Ticket::factory()->create(['user_id' => $customer->id, 'assignee_id' => null]);
+
+        $this->actingAs($agent)
+            ->post(route('admin.tickets.batch'), [
+                'action' => 'assign',
+                'ticket_ids' => [$ticket->id],
+                'assignee_id' => $target->id,
+            ])->assertRedirect();
+
+        $this->assertSame($target->id, $ticket->fresh()->assignee_id);
+        $this->assertDatabaseHas('user_notifications', [
+            'user_id' => $target->id,
+            'title' => '工单已指派给你',
+        ]);
+    }
 }

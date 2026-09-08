@@ -121,12 +121,19 @@
                     <select name="action" class="rounded-lg border-indigo-300 dark:border-indigo-500/40 dark:bg-gray-900 text-sm" @change="batchAction = $event.target.value">
                         <option value="close">批量关闭</option>
                         <option value="assign">批量指派</option>
+                        <option value="priority">批量改优先级</option>
                     </select>
                     <select name="assignee_id" x-show="batchAction === 'assign'" class="rounded-lg border-indigo-300 dark:border-indigo-500/40 dark:bg-gray-900 text-sm">
                         <option value="">选择客服…</option>
                         @foreach ($agents as $a)
                             <option value="{{ $a->id }}">{{ $a->name }}{{ in_array($a->id, $onlineAgentIds, true) ? ' · 在线' : '' }}</option>
                         @endforeach
+                    </select>
+                    <select name="priority" x-show="batchAction === 'priority'" class="rounded-lg border-indigo-300 dark:border-indigo-500/40 dark:bg-gray-900 text-sm">
+                        <option value="low">低</option>
+                        <option value="normal" selected>普通</option>
+                        <option value="high">高</option>
+                        <option value="urgent">紧急</option>
                     </select>
                     <button type="submit" class="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/35 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="return confirm('确认执行批量操作？');">执行</button>
                     <button type="button" @click="selected = []" class="text-sm text-indigo-500 hover:underline">取消</button>
