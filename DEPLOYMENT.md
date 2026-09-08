@@ -35,9 +35,11 @@
   - Linux：`* * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1`
   - Windows：计划任务每分钟执行 `php artisan schedule:run`
   - 验证：`php artisan schedule:list` 应显示 `support:scan-daily`，日志在 `storage/logs/support-scan.log`
-- [ ] 队列 worker（若启用邮件/通知入队）：
-  - Linux：`php artisan queue:work --daemon` + supervisor
-  - Windows：计划任务或 NSSM 注册为服务
+- [ ] 队列 worker（**必须常驻**，通知邮件已队列化 `SendNotificationEmailJob`，不跑会积压）：
+  - Linux/macOS：`php artisan ws:queue start`（后台守护，日志 `storage/logs/queue-worker.log`；停止 `ws:queue stop`）
+  - 或传统方式：`php artisan queue:work --daemon` + supervisor（`--sleep=3 --tries=3`）
+  - Windows：计划任务或 NSSM 注册为服务，执行 `php artisan queue:work --sleep=3 --tries=3`
+  - 验证：`php artisan ws:queue status` 应显示「运行中」；`redis-cli LLEN` 队列不应持续增长
 - [ ] GatewayWorker 实时服务：`php artisan ws:start`（Windows 下用 `websocket/start.php start -d` 或注册为服务）
 
 ## 5. Web 服务器

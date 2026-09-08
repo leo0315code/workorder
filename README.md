@@ -65,6 +65,10 @@ php artisan storage:link
 php artisan ws:start           # 停止: php artisan ws:stop
 #    或前台运行: php websocket/start.php start
 
+# 5.1 启动队列 worker（通知邮件消费，必须常驻，否则邮件积压）
+php artisan ws:queue start     # 状态: ws:queue status; 停止: ws:queue stop
+#    或传统方式: php artisan queue:work --sleep=3 --tries=3
+
 # 6. 启动 Web
 php artisan serve
 # 访问 http://127.0.0.1:8000
