@@ -99,7 +99,7 @@
                                     添加
                                 </summary>
                                 <form method="POST" action="{{ ticket_route('tags', $ticket) }}"
-                                      class="absolute right-0 top-full mt-2 z-30 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl p-3">
+                                      class="absolute left-0 top-full mt-2 z-50 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl p-3">
                                     @csrf
                                     <div class="space-y-1.5 max-h-40 overflow-y-auto">
                                         @foreach ($allTags as $t)
