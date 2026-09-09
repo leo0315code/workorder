@@ -291,7 +291,7 @@
                 </div>
             </div>
 
-            {{-- 图片灯箱：气泡内缩略图点击放大（Esc 或点击空白关闭） --}}
+            {{-- 图片灯箱：气泡内缩略图点击放大（点击任意处或 Esc 关闭） --}}
             <div x-data="{ open: false, src: '' }"
                  @open-image.window="src = $event.detail; open = true"
                  @keydown.escape.window="open = false"
@@ -299,8 +299,7 @@
                  class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 cursor-zoom-out"
                  @click="open = false">
                 <img :src="src" alt="附件预览"
-                     class="max-w-full max-h-full rounded-lg shadow-2xl"
-                     @click.stop>
+                     class="max-w-full max-h-full rounded-lg shadow-2xl pointer-events-none">
             </div>
 
             {{-- 回复表单 --}}
