@@ -123,18 +123,77 @@
                 <div class="mt-4 prose prose-sm max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ $ticket->description }}</div>
 
                 {{-- 自定义字段值 --}}
-                @if ($ticket->fieldValues->isNotEmpty())
-                    <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3">
-                        @foreach ($ticket->fieldValues as $fv)
+                <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800" x-data="{ editingFields: false }">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs font-medium text-gray-400">补充信息</p>
+                        @if ($isAgent && $fieldDefs->isNotEmpty())
+                            <button type="button" @click="editingFields = !editingFields"
+                                    class="text-xs text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">
+                                <span x-text="editingFields ? '取消编辑' : '编辑'"></span>
+                            </button>
+                        @endif
+                    </div>
+
+                    {{-- 展示模式 --}}
+                    <div x-show="!editingFields" class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3">
+                        @forelse ($ticket->fieldValues as $fv)
                             @if ($fv->fieldDef)
                                 <div>
                                     <p class="text-xs text-gray-400">{{ $fv->fieldDef->label }}</p>
-                                    <p class="mt-0.5 text-sm text-gray-800 dark:text-gray-200">{{ $fv->value }}</p>
+                                    @if ($fv->value === '' || $fv->value === null)
+                                        <p class="mt-0.5 text-sm text-gray-300 dark:text-gray-600">未填写</p>
+                                    @elseif ($fv->fieldDef->type === 'select')
+                                        <span class="mt-1 inline-flex rounded-md bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-500/30">{{ $fv->value }}</span>
+                                    @else
+                                        <p class="mt-0.5 text-sm text-gray-800 dark:text-gray-200">{{ $fv->value }}</p>
+                                    @endif
                                 </div>
                             @endif
-                        @endforeach
+                        @empty
+                            <p class="col-span-full text-sm text-gray-300 dark:text-gray-600">暂无补充信息</p>
+                        @endforelse
                     </div>
-                @endif
+
+                    {{-- 编辑模式（客服）--}}
+                    @if ($isAgent && $fieldDefs->isNotEmpty())
+                        <form method="POST" action="{{ ticket_route('fields', $ticket) }}" x-show="editingFields" x-cloak class="space-y-3">
+                            @csrf
+                            @foreach ($fieldDefs as $def)
+                                @php
+                                    $fieldName = 'field_'.$def->key;
+                                    $current = $ticket->fieldValues->firstWhere('field_def_id', $def->id)?->value ?? '';
+                                    $required = $def->is_required ? ' <span class="text-red-500">*</span>' : '';
+                                @endphp
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{!! $def->label.$required !!}</label>
+                                    @if ($def->type === 'text')
+                                        <input type="text" name="{{ $fieldName }}" value="{{ old($fieldName, $current) }}" maxlength="500"
+                                               class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                                    @elseif ($def->type === 'number')
+                                        <input type="number" name="{{ $fieldName }}" value="{{ old($fieldName, $current) }}" maxlength="500"
+                                               class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                                    @elseif ($def->type === 'date')
+                                        <input type="date" name="{{ $fieldName }}" value="{{ old($fieldName, $current) }}"
+                                               class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                                    @elseif ($def->type === 'select')
+                                        <select name="{{ $fieldName }}"
+                                                class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm">
+                                            <option value="">请选择…</option>
+                                            @foreach ($def->options ?? [] as $opt)
+                                                <option value="{{ $opt }}" @selected(old($fieldName, $current) === $opt)>{{ $opt }}</option>
+                                            @endforeach
+                                        </select>
+                                    @endif
+                                    @error($fieldName)<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                                </div>
+                            @endforeach
+                            <div class="flex items-center gap-3 pt-1">
+                                <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition">保存补充信息</button>
+                                <button type="button" @click="editingFields = false" class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">取消</button>
+                            </div>
+                        </form>
+                    @endif
+                </div>
 
                 @if ($ticket->attachments->isNotEmpty())
                     <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">

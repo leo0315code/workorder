@@ -71,6 +71,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
     Route::post('tickets/{ticket}/note', [TicketController::class, 'note'])->name('tickets.note');
     Route::patch('tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
+    Route::post('tickets/{ticket}/fields', [TicketController::class, 'updateFields'])->name('tickets.fields');
     Route::post('tickets/{ticket}/rate', [TicketController::class, 'rate'])->name('tickets.rate');
     Route::post('tickets/{ticket}/claim', [TicketController::class, 'claim'])->name('tickets.claim');
     Route::post('tickets/{ticket}/tags', [TicketController::class, 'syncTags'])->name('tickets.tags');
@@ -127,6 +128,7 @@ Route::middleware(['auth', 'verified', 'role:agent'])->prefix(config('app.admin_
     Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
     Route::post('tickets/{ticket}/note', [TicketController::class, 'note'])->name('tickets.note');
     Route::patch('tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
+    Route::post('tickets/{ticket}/fields', [TicketController::class, 'updateFields'])->name('tickets.fields');
     Route::post('tickets/{ticket}/rate', [TicketController::class, 'rate'])->name('tickets.rate');
     Route::post('tickets/{ticket}/claim', [TicketController::class, 'claim'])->name('tickets.claim');
     Route::post('tickets/{ticket}/tags', [TicketController::class, 'syncTags'])->name('tickets.tags');

@@ -72,6 +72,12 @@ php artisan ws:queue start     # 状态: ws:queue status; 停止: ws:queue stop
 # 6. 启动 Web
 php artisan serve
 # 访问 http://127.0.0.1:8000
+
+# 6.1 本地虚拟域名（推荐，生产同构）
+#     ServBay 已生成 https://workorder.test 站点（root=public/，HTTPS 证书 + /ws WSS 代理已配）
+#     .env: APP_URL=https://workorder.test, SESSION_DOMAIN=.workorder.test,
+#           VITE_WS_URL 留空, WS_PROXY_PATH=ws  → 实时消息自动走 wss://workorder.test/ws
+#     浏览器访问 https://workorder.test 即可（首次记得 Cmd+Shift+R 硬刷新）
 ```
 
 ## 演示账号（密码均为 `password`）

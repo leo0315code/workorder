@@ -12,6 +12,7 @@ use App\Models\QuickReply;
 use App\Models\Tag;
 use App\Models\Ticket;
 use App\Models\TicketFieldDef;
+use App\Models\TicketFieldValue;
 use App\Models\TicketRating;
 use App\Models\TicketReply;
 use App\Models\TicketTemplate;
@@ -271,7 +272,10 @@ class TicketController extends Controller
             && in_array($ticket->status, [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
             && (($ticket->closed_at ?? $ticket->updated_at)?->gte(now()->subDays(SettingService::csatDays())) ?? false);
 
-        return view('tickets.show', compact('ticket', 'agents', 'roomConfig', 'quickReplies', 'onlineAgentIds', 'allTags', 'canRate'));
+        // 编辑自定义字段所需的字段定义（客服）
+        $fieldDefs = $isAgent ? TicketFieldDef::where('is_active', true)->orderBy('sort')->orderBy('id')->get() : collect();
+
+        return view('tickets.show', compact('ticket', 'agents', 'roomConfig', 'quickReplies', 'onlineAgentIds', 'allTags', 'canRate', 'fieldDefs'));
     }
 
     /**
@@ -470,6 +474,43 @@ class TicketController extends Controller
         ]);
 
         session()->flash('success', '工单已更新');
+
+        return redirect(ticket_route('show', $ticket));
+    }
+
+    /**
+     * 客服编辑工单自定义字段（补充信息）
+     * 提交全部字段：空值=清除该字段（先删后建，避免旧值残留）
+     */
+    public function updateFields(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $this->service->authorizeStaff($ticket);
+
+        // 必填校验（同创建）
+        $fieldErrors = $this->service->validateFieldValues($request);
+        if ($fieldErrors) {
+            return back()->withInput()->withErrors($fieldErrors);
+        }
+
+        // 重建字段值：提交的所有字段定义
+        TicketFieldValue::where('ticket_id', $ticket->id)->delete();
+
+        $defs = TicketFieldDef::where('is_active', true)->get();
+        foreach ($defs as $def) {
+            $value = trim((string) $request->input('field_'.$def->key));
+            if ($value === '') {
+                continue;
+            }
+            TicketFieldValue::create([
+                'ticket_id' => $ticket->id,
+                'field_def_id' => $def->id,
+                'value' => $value,
+            ]);
+        }
+
+        $this->service->logAction($ticket, 'change', 'fields', null, '补充信息已更新', '编辑自定义字段');
+
+        session()->flash('success', '补充信息已更新');
 
         return redirect(ticket_route('show', $ticket));
     }

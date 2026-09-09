@@ -9,6 +9,8 @@ use App\Models\KbArticle;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Ticket;
+use App\Models\TicketFieldDef;
+use App\Models\TicketFieldValue;
 use App\Models\TicketRating;
 use App\Models\User;
 use App\Services\NotificationService;
@@ -529,5 +531,66 @@ class P1EnhancementsTest extends TestCase
             ['email' => true, 'sla' => false, 'ticket' => false],
             $agent->fresh()->notification_prefs
         );
+    }
+
+    // ---------------------------------------------------------------------
+    // 客服编辑工单自定义字段
+    // ---------------------------------------------------------------------
+
+    public function test_agent_can_update_ticket_fields(): void
+    {
+        $agent = $this->user('agent');
+        $customer = $this->user('customer');
+        $def = TicketFieldDef::create([
+            'label' => '设备序列号',
+            'key' => 'sn',
+            'type' => 'text',
+            'is_active' => true,
+            'sort' => 1,
+        ]);
+        $ticket = Ticket::factory()->create(['user_id' => $customer->id]);
+
+        // 客服编辑补充信息
+        $this->actingAs($agent)
+            ->post(route('admin.tickets.fields', $ticket), [
+                'field_sn' => 'HWX-9999',
+            ])->assertRedirect();
+
+        $this->assertDatabaseHas('ticket_field_values', [
+            'ticket_id' => $ticket->id,
+            'field_def_id' => $def->id,
+            'value' => 'HWX-9999',
+        ]);
+    }
+
+    public function test_agent_clearing_field_removes_value(): void
+    {
+        $agent = $this->user('agent');
+        $customer = $this->user('customer');
+        $def = TicketFieldDef::create([
+            'label' => '故障类型',
+            'key' => 'fault',
+            'type' => 'select',
+            'options' => ['硬件', '软件'],
+            'is_active' => true,
+            'sort' => 1,
+        ]);
+        $ticket = Ticket::factory()->create(['user_id' => $customer->id]);
+        TicketFieldValue::create([
+            'ticket_id' => $ticket->id,
+            'field_def_id' => $def->id,
+            'value' => '硬件',
+        ]);
+
+        // 清空该字段（提交空值）→ 值被删除
+        $this->actingAs($agent)
+            ->post(route('admin.tickets.fields', $ticket), [
+                'field_fault' => '',
+            ])->assertRedirect();
+
+        $this->assertDatabaseMissing('ticket_field_values', [
+            'ticket_id' => $ticket->id,
+            'field_def_id' => $def->id,
+        ]);
     }
 }

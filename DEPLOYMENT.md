@@ -46,8 +46,31 @@
 
 - [ ] nginx 站点根目录指向 `public/`
 - [ ] **不要把 `storage/app/private` 暴露到 URL**（附件是私有数据，nginx 不配置 `/storage` 别名）
-- [ ] WSS 反向代理：`/ws` → `ws://127.0.0.1:6001`（需开启 `Upgrade`/`Connection` 头转发）
+- [ ] WSS 反向代理：`/ws` → `ws://127.0.0.1:6001`（需开启 `Upgrade`/`Connection` 头转发），并设 `.env` 的 `WS_PROXY_PATH=ws`（前端自动生成 `wss://域名/ws`）
 - [ ] 隐藏 `public/index.php` 痕迹、开启 TLS（强制 https + HSTS）
+
+### WSS 代理参考（nginx，本地 workorder.test 同款）
+
+```nginx
+# 站点 server 块内（443 ssl）
+location /ws {
+    proxy_pass http://127.0.0.1:6001;      # GatewayWorker 保持明文
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+}
+```
+
+> ⚠️ ServBay 的 vhosts/*.conf 由面板自动生成，**重新生成站点会覆盖手动加的 `/ws` 块**，需重新补上（备份：`workorder.test.conf.bak-20260909`）。
+
+### 本地虚拟域名（ServBay）
+
+- 站点：`https://workorder.test`（root=`项目/public`，HTTPS 证书自动签发）
+- `.env`：`APP_URL=https://workorder.test`、`SESSION_DOMAIN=.workorder.test`、`VITE_WS_URL=`（留空）、`WS_PROXY_PATH=ws`
+- hosts：`127.0.0.1 workorder.test`（ServBay 已自动配置）
 
 ## 6. 上线自检
 
