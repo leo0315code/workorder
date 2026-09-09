@@ -174,4 +174,16 @@ class TicketFlowTest extends TestCase
         $this->assertStringStartsWith('image/', $match['attachments'][0]['mime_type']);
         $this->assertStringContainsString('/attachments/', $match['attachments'][0]['download_url']);
     }
+
+    public function test_reply_content_urls_become_links_and_html_is_escaped(): void
+    {
+        $r = new TicketReply(['content' => "看这里 https://example.com/a?b=1\n第二行 <script>alert(1)</script>"]);
+
+        $html = $r->renderedContent();
+
+        $this->assertStringContainsString('href="https://example.com/a?b=1" target="_blank" rel="noopener noreferrer"', $html);
+        $this->assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $html);
+        $this->assertStringNotContainsString('<script>alert', $html);
+        $this->assertStringContainsString('<br>', $html);
+    }
 }

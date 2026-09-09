@@ -543,7 +543,6 @@
                         .catch(() => {});
                 },
                 statusBadge(status, label) {
-                    const map = {
                         open: 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/30',
                         pending: 'bg-purple-50 text-purple-700 ring-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:ring-purple-500/30',
                         in_progress: 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/30',
@@ -582,11 +581,15 @@
                                 <span class="text-xs text-gray-400">${time}</span>
                             </div>
                             <div class="mt-1 rounded-lg bg-gray-50 dark:bg-gray-800/70 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">
-                                <div class="whitespace-pre-wrap leading-relaxed">${reply.content}</div>
+                                <div class="whitespace-pre-wrap leading-relaxed">${this.linkify(reply.content)}</div>
                                 ${attBlock}
                             </div>
                         </div>
                     </div>`;
+                },
+                linkify(text) {
+                    const safe = String(text || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+                    return safe.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 hover:underline break-all">$1</a>');
                 },
             };
         }

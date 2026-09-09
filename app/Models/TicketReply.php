@@ -53,4 +53,21 @@ class TicketReply extends Model
     {
         return $this->type === self::TYPE_NOTE;
     }
+
+    /**
+     * 渲染内容：转义 HTML（防 XSS）→ 识别 http(s):// URL 为可点击链接 → 换行转 <br>。
+     * 视图层用 {!! !!} 输出（本方法已自行转义）。
+     */
+    public function renderedContent(): string
+    {
+        $text = e((string) $this->content);
+
+        $text = preg_replace_callback(
+            '#(https?://[^\s<]+)#i',
+            fn ($m) => '<a href="'.e($m[1]).'" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 hover:underline break-all">'.e($m[1]).'</a>',
+            $text
+        );
+
+        return nl2br($text, false);
+    }
 }

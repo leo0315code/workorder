@@ -22,7 +22,7 @@
         <div class="mt-1.5 rounded-xl px-4 py-3 text-sm shadow-sm ring-1 ring-inset
                     {{ $isNote ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200 ring-amber-200 dark:ring-amber-500/30' : ($isAgentSide ? 'bg-indigo-50/60 dark:bg-indigo-500/10 text-gray-800 dark:text-gray-200 ring-indigo-100 dark:ring-indigo-500/20' : 'bg-gray-50 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 ring-gray-100 dark:ring-gray-700/60') }}">
             {{-- pre-wrap 只作用于正文，避免继承到附件区块（模板缩进/换行会被原样渲染撑高气泡） --}}
-            <div class="whitespace-pre-wrap leading-relaxed">{{ $reply->content }}</div>
+            <div class="whitespace-pre-wrap leading-relaxed">{!! $reply->renderedContent() !!}</div>
 
             {{-- 该回复的附件（对话气泡内展示；图片类渲染缩略图，点击放大查看） --}}
             @if ($reply->attachments->isNotEmpty())
