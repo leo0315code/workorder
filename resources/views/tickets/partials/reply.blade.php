@@ -24,16 +24,35 @@
             {{-- pre-wrap 只作用于正文，避免继承到附件区块（模板缩进/换行会被原样渲染撑高气泡） --}}
             <div class="whitespace-pre-wrap leading-relaxed">{{ $reply->content }}</div>
 
-            {{-- 该回复的附件（对话气泡内展示） --}}
+            {{-- 该回复的附件（对话气泡内展示；图片类渲染缩略图，点击放大查看） --}}
             @if ($reply->attachments->isNotEmpty())
-                <div class="mt-3 pt-3 border-t border-black/5 dark:border-white/10 space-y-1.5">
+                <div class="mt-3 pt-3 border-t border-black/5 dark:border-white/10 space-y-2">
                     @foreach ($reply->attachments as $att)
-                        <a href="{{ route('attachments.download', $att) }}"
-                           class="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
-                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
-                            <span class="max-w-[220px] truncate">{{ $att->original_name }}</span>
-                            <span class="text-gray-400 shrink-0">({{ number_format($att->size / 1024, 1) }}KB)</span>
-                        </a>
+                        @if (str_starts_with((string) $att->mime_type, 'image/'))
+                            {{-- 图片：缩略图 + 点击放大；下载走下方文件链接 --}}
+                            <div class="space-y-1">
+                                <button type="button"
+                                        class="block cursor-zoom-in"
+                                        @click="$dispatch('open-image', '{{ route('attachments.download', $att) }}')">
+                                    <img src="{{ route('attachments.download', $att) }}"
+                                         alt="{{ $att->original_name }}"
+                                         class="max-h-48 max-w-full rounded-lg ring-1 ring-black/10 dark:ring-white/10 bg-gray-100 dark:bg-gray-800">
+                                </button>
+                                <a href="{{ route('attachments.download', $att) }}"
+                                   class="inline-flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
+                                    <span class="max-w-[220px] truncate">{{ $att->original_name }}</span>
+                                    <span class="text-gray-400 shrink-0">({{ number_format($att->size / 1024, 1) }}KB)</span>
+                                </a>
+                            </div>
+                        @else
+                            <a href="{{ route('attachments.download', $att) }}"
+                               class="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
+                                <span class="max-w-[220px] truncate">{{ $att->original_name }}</span>
+                                <span class="text-gray-400 shrink-0">({{ number_format($att->size / 1024, 1) }}KB)</span>
+                            </a>
+                        @endif
                     @endforeach
                 </div>
             @endif

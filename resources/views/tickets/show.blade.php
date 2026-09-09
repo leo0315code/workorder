@@ -291,6 +291,18 @@
                 </div>
             </div>
 
+            {{-- 图片灯箱：气泡内缩略图点击放大（Esc 或点击空白关闭） --}}
+            <div x-data="{ open: false, src: '' }"
+                 @open-image.window="src = $event.detail; open = true"
+                 @keydown.escape.window="open = false"
+                 x-show="open" x-cloak x-transition.opacity
+                 class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 cursor-zoom-out"
+                 @click="open = false">
+                <img :src="src" alt="附件预览"
+                     class="max-w-full max-h-full rounded-lg shadow-2xl"
+                     @click.stop>
+            </div>
+
             {{-- 回复表单 --}}
             <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6">
                 <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">
