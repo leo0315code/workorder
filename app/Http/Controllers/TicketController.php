@@ -234,7 +234,7 @@ class TicketController extends Controller
             if (! Auth::user()->isAgent()) {
                 $q->where('type', TicketReply::TYPE_REPLY);
             }
-            $q->with('user');
+            $q->with(['user', 'attachments']);
         }]);
 
         // 操作日志 / 快捷回复模板（客服可见）
@@ -345,8 +345,8 @@ class TicketController extends Controller
             'type' => TicketReply::TYPE_REPLY,
         ]);
 
-        // 回复附件（挂到工单附件区统一展示）
-        $this->service->storeAttachments($request, $ticket);
+        // 回复附件（挂到该回复上，对话气泡内展示）
+        $this->service->storeAttachments($request, $ticket, $reply);
 
         $reopened = in_array($ticket->status, [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]);
 

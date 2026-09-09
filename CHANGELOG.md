@@ -4,6 +4,51 @@
 
 ---
 
+## 2026-09-09 — v2.2.3：回复附件在对话气泡内展示
+
+> 测试：216 → **217** 用例全通过（+1）
+
+### 修复
+
+用户端沟通时提交附件"只显示内容看不到附件"：
+
+- **根因**：回复附件此前挂载到**工单级**（attachable=Ticket），只在工单顶部的独立"附件"汇总区显示，对话气泡里看不到
+- **修复**：回复附件改为挂到**该回复**（多态 attachable=TicketReply），在**对话气泡内**展示附件下载链接（文件名 + 大小）
+- `storeAttachments` 支持指定挂载目标（默认工单，reply 传入回复）
+- `TicketReply` 增加 `attachments()` 多态关联；show 加载 replies 时 eager load attachments
+- 工单创建时的附件仍在顶部"工单附件"区展示
+
+### 验证
+
+- 回复上传附件 → 附件挂到 reply（`attachable_type=TicketReply`），气泡内显示 ✅
+- 工单级附件不重复挂载 ✅
+- 新增 Feature 测试（reply attachment attached to reply）✅
+
+---
+
+## 2026-09-09 — v2.2.2：修复登录页 Alpine 报错 old is not defined
+
+> 测试：215 → **216** 用例全通过（+1）
+
+### 修复
+
+登录/资料页报 `Uncaught ReferenceError: old is not defined`（Alpine 运行时）：
+
+- **根因**：Breeze 脚手架遗留的 `:value="old('xxx')"` 写法——Alpine 动态绑定属性（冒号前缀）**不经 Blade 处理**，`old()` 被原样输出为 JS 表达式 → Alpine 执行时报错
+- **修复**：4 处 `:value="old(...)"` → `value="{{ old(...) }}"`（服务端渲染）：
+  - `auth/login.blade.php`（email）
+  - `auth/admin-login.blade.php`（account）
+  - `profile/partials/update-profile-information-form.blade.php`（name + email）
+- **回归测试**：新增用例断言登录页 email 为服务端 `value` 且产物无 `old(` 表达式
+
+### 验证
+
+- 渲染后登录页：`name="email" value=""`（无 Alpine 表达式）✅
+- 两个登录页产物 `old('` 出现 0 次 ✅
+- 216 测试全过 ✅
+
+---
+
 ## 2026-09-09 — v2.2.1：客服可编辑工单自定义字段
 
 > 测试：213 → **215** 用例全通过（+2）

@@ -13,6 +13,7 @@ use App\Models\TicketLog;
 use App\Models\TicketReply;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -137,12 +138,16 @@ class TicketService
 
     /**
      * 保存附件到私有盘（纵深防御：mimes 之外按原始扩展名二次校验）
+     * 默认挂到工单；传入 $attachable（如回复）时挂到该模型，用于对话气泡内展示
      */
-    public function storeAttachments(Request $request, Ticket $ticket): void
+    public function storeAttachments(Request $request, Ticket $ticket, ?Model $attachable = null): void
     {
         if (! $request->hasFile('attachments')) {
             return;
         }
+
+        // 回复附件挂到回复上（气泡内展示），工单创建附件挂到工单
+        $attachable ??= $ticket;
 
         foreach ($request->file('attachments') as $file) {
             // 纵深防御：mimes 规则之外再按原始扩展名校验一次，拦掉形如 x.png.php 的双扩展名
@@ -155,8 +160,8 @@ class TicketService
             $path = $file->store('tickets/'.$ticket->id, TicketController::ATTACHMENT_DISK);
 
             Attachment::create([
-                'attachable_type' => Ticket::class,
-                'attachable_id' => $ticket->id,
+                'attachable_type' => $attachable::class,
+                'attachable_id' => $attachable->getKey(),
                 'user_id' => Auth::id(),
                 'original_name' => $file->getClientOriginalName(),
                 'path' => $path,

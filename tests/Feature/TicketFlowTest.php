@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Setting;
 use App\Models\Ticket;
+use App\Models\TicketReply;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class TicketFlowTest extends TestCase
@@ -94,5 +96,28 @@ class TicketFlowTest extends TestCase
 
         $this->assertDatabaseHas('ticket_replies', ['ticket_id' => $ticket->id, 'content' => '已收到，正在处理']);
         $this->assertDatabaseHas('ticket_logs', ['ticket_id' => $ticket->id]);
+    }
+
+    public function test_reply_attachment_attached_to_reply(): void
+    {
+        $customer = $this->customer();
+        $ticket = Ticket::factory()->create(['user_id' => $customer->id]);
+
+        // 模拟上传一个文本附件回复
+        $file = UploadedFile::fake()->create('说明.txt', 10, 'text/plain');
+
+        $this->actingAs($customer)
+            ->post(route('tickets.reply', $ticket), [
+                'content' => '带附件回复',
+                'attachments' => [$file],
+            ])->assertRedirect();
+
+        // 附件应挂到回复（多态），而非工单级
+        $reply = TicketReply::where('ticket_id', $ticket->id)->where('content', '带附件回复')->firstOrFail();
+        $this->assertSame(1, $reply->attachments()->count());
+        $this->assertSame(TicketReply::class, $reply->attachments()->first()->attachable_type);
+
+        // 工单级附件仍为 0（附件不在工单上重复挂载）
+        $this->assertSame(0, $ticket->attachments()->count());
     }
 }
