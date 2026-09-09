@@ -16,7 +16,7 @@
 
         <div>
             <x-input-label for="account" :value="__('用户名 / 邮箱')" />
-            <x-text-input id="account" class="block mt-1 w-full" type="text" name="account" :value="old('account')" required autofocus autocomplete="username" placeholder="用户名或邮箱" />
+            <x-text-input id="account" class="block mt-1 w-full" type="text" name="account" value="{{ old('account') }}" required autofocus autocomplete="username" placeholder="用户名或邮箱" />
             <x-input-error :messages="$errors->get('account')" class="mt-2" />
             <p class="mt-1.5 text-xs text-gray-400">支持用用户名或邮箱登录</p>
         </div>

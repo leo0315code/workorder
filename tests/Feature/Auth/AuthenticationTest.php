@@ -17,6 +17,18 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_login_email_uses_server_side_value_not_alpine_expression(): void
+    {
+        // 回归：登录页 email 字段曾用 :value="old('email')"（Alpine 属性），
+        // Blade 不处理冒号属性 → 渲染为裸 old('email') → Alpine 报 old is not defined
+        $html = $this->get('/login')->assertOk()->getContent();
+
+        // email 输入框必须是服务端渲染的 value（而非 Alpine :value 绑定）
+        $this->assertMatchesRegularExpression('/name="email"[^>]*value="/', $html);
+        // 渲染产物中不得出现裸 old() JS 表达式
+        $this->assertStringNotContainsString(':value="old(', $html);
+    }
+
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
         $user = User::factory()->create();
