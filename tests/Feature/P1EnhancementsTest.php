@@ -11,6 +11,7 @@ use App\Models\Setting;
 use App\Models\Ticket;
 use App\Models\TicketRating;
 use App\Models\User;
+use App\Services\NotificationService;
 use App\Services\ReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -473,5 +474,60 @@ class P1EnhancementsTest extends TestCase
             ->assertSee('待认领')
             ->assertSee('待认领工单')
             ->assertSee('超时');
+    }
+
+    // ---------------------------------------------------------------------
+    // 用户级通知偏好
+    // ---------------------------------------------------------------------
+
+    public function test_notify_user_respects_sla_pref_off(): void
+    {
+        $agent = User::factory()->create([
+            'role' => 'agent',
+            'notification_prefs' => ['email' => true, 'sla' => false, 'ticket' => true],
+            'password' => bcrypt('password'),
+        ]);
+
+        // SLA 偏好关闭 → 不发 SLA 类通知
+        $result = NotificationService::notifyUser($agent->id, 'SLA 测试', 'body', null, 'sla');
+        $this->assertNull($result);
+
+        // ticket 偏好开启 → 正常发工单通知
+        $result2 = NotificationService::notifyUser($agent->id, '工单测试', 'body', null, 'ticket');
+        $this->assertNotNull($result2);
+
+        $this->assertDatabaseHas('user_notifications', [
+            'user_id' => $agent->id,
+            'title' => '工单测试',
+        ]);
+        $this->assertDatabaseMissing('user_notifications', [
+            'user_id' => $agent->id,
+            'title' => 'SLA 测试',
+        ]);
+    }
+
+    public function test_notify_defaults_to_enabled_when_prefs_null(): void
+    {
+        $agent = User::factory()->create(['role' => 'agent', 'notification_prefs' => null]);
+
+        $result = NotificationService::notifyUser($agent->id, '默认通知', null, null, 'sla');
+        $this->assertNotNull($result);
+
+        $this->assertDatabaseHas('user_notifications', ['user_id' => $agent->id, 'title' => '默认通知']);
+    }
+
+    public function test_profile_update_notification_prefs(): void
+    {
+        $agent = User::factory()->create(['role' => 'agent']);
+
+        $this->actingAs($agent)
+            ->post(route('profile.notification-prefs'), [
+                'prefs' => ['email'],
+            ])->assertRedirect();
+
+        $this->assertSame(
+            ['email' => true, 'sla' => false, 'ticket' => false],
+            $agent->fresh()->notification_prefs
+        );
     }
 }

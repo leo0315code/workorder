@@ -137,11 +137,11 @@ class TicketApiController extends Controller
         ]);
 
         if ($ticket->assignee_id) {
-            NotificationService::notifyUser($ticket->assignee_id, '新工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
+            NotificationService::notifyUser($ticket->assignee_id, '新工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']), 'ticket');
         } else {
             NotificationService::notifyUsers(
                 User::whereIn('role', ['agent', 'admin'])->pluck('id')->all(),
-                '新工单待认领', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent'])
+                '新工单待认领', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']), 'ticket'
             );
         }
 
@@ -182,13 +182,13 @@ class TicketApiController extends Controller
 
         // 客服回复 → 通知客户；客户回复 → 通知负责人/全体客服
         if ($user->isAgent()) {
-            NotificationService::notifyUser($ticket->user_id, '工单有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'customer']));
+            NotificationService::notifyUser($ticket->user_id, '工单有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'customer']), 'ticket');
         } elseif ($ticket->assignee_id) {
-            NotificationService::notifyUser($ticket->assignee_id, '客户有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
+            NotificationService::notifyUser($ticket->assignee_id, '客户有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']), 'ticket');
         } else {
             NotificationService::notifyUsers(
                 User::whereIn('role', ['agent', 'admin'])->pluck('id')->all(),
-                '工单有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent'])
+                '工单有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']), 'ticket'
             );
         }
 

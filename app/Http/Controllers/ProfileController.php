@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,6 +36,31 @@ class ProfileController extends Controller
         $request->user()->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    }
+
+    /**
+     * Update the user's notification preferences (email / sla / ticket channels).
+     */
+    public function updateNotificationPrefs(Request $request): RedirectResponse
+    {
+        $valid = implode(',', User::NOTIFY_CHANNELS);
+        $data = $request->validate([
+            'prefs' => ['nullable', 'array'],
+            'prefs.*' => ['in:'.$valid],
+        ]);
+
+        $user = $request->user();
+        $selected = $data['prefs'] ?? [];
+
+        // 构建完整偏好：未勾选的频道记为 false
+        $prefs = [];
+        foreach (User::NOTIFY_CHANNELS as $channel) {
+            $prefs[$channel] = in_array($channel, $selected, true);
+        }
+
+        $user->update(['notification_prefs' => $prefs]);
+
+        return Redirect::route('profile.edit')->with('status', 'prefs-updated');
     }
 
     /**

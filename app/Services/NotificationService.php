@@ -15,10 +15,22 @@ use Illuminate\Support\Facades\Log;
 class NotificationService
 {
     /**
-     * 给单个用户发通知（入库 + 推送 + 可选邮件）
+     * 给单个用户发通知（入库 + 推送 + 可选邮件）。
+     *
+     * @param  string|null  $channel  通知类型（sla/ticket/null=通用），按用户偏好过滤
      */
-    public static function notifyUser(int $userId, string $title, ?string $body = null, ?string $link = null): ?UserNotification
+    public static function notifyUser(int $userId, string $title, ?string $body = null, ?string $link = null, ?string $channel = null): ?UserNotification
     {
+        $user = User::find($userId);
+        if (! $user) {
+            return null;
+        }
+
+        // 用户级偏好过滤：sla/ticket 类通知可被用户关闭（默认开启）
+        if ($channel !== null && ! $user->notifyEnabled($channel)) {
+            return null;
+        }
+
         $notification = UserNotification::create([
             'user_id' => $userId,
             'title' => $title,
@@ -38,7 +50,7 @@ class NotificationService
             ],
         ]);
 
-        // 邮件提醒（系统设置开启时）
+        // 邮件提醒（系统设置开启 且 用户开启邮件偏好 时）
         self::sendEmailIfEnabled($userId, $title, $body, self::normalizeLink($link));
 
         return $notification;
@@ -71,14 +83,16 @@ class NotificationService
 
     /**
      * 群发给多个用户
+     *
+     * @param  string|null  $channel  通知类型（sla/ticket/null=通用），按用户偏好过滤
      */
-    public static function notifyUsers(array $userIds, string $title, ?string $body = null, ?string $link = null): void
+    public static function notifyUsers(array $userIds, string $title, ?string $body = null, ?string $link = null, ?string $channel = null): void
     {
         // 群发只需规范化一次
         $link = self::normalizeLink($link);
         foreach (array_unique(array_filter($userIds)) as $userId) {
             try {
-                self::notifyUser((int) $userId, $title, $body, $link);
+                self::notifyUser((int) $userId, $title, $body, $link, $channel);
             } catch (\Throwable $e) {
                 Log::warning('notification send failed: '.$e->getMessage());
             }
@@ -86,7 +100,7 @@ class NotificationService
     }
 
     /**
-     * 邮件提醒（队列化）：设置页开启 email_notify_enabled 且用户有邮箱时入队异步发送
+     * 邮件提醒（队列化）：设置页开启 email_notify_enabled、用户开启邮件偏好且有邮箱时入队异步发送
      * MAIL_MAILER=log（默认）时写日志；生产配 SMTP 后真实发送
      */
     protected static function sendEmailIfEnabled(int $userId, string $title, ?string $body, ?string $link): void
@@ -97,6 +111,11 @@ class NotificationService
 
         $user = User::find($userId);
         if (! $user?->email) {
+            return;
+        }
+
+        // 用户级邮件偏好（未设置默认发）
+        if (! $user->notifyEnabled('email')) {
             return;
         }
 

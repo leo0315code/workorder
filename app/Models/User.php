@@ -42,6 +42,7 @@ class User extends Authenticatable
         'wechat_avatar',
         'manual_offline',
         'permissions',
+        'notification_prefs',
         // agent_role_id 曾缺失导致「用户管理→分配客服角色」静默失效（update 不报错但不落库），
         // 加入 fillable 后 updateAgentRole() 才能正常写入，勿移除
         'agent_role_id',
@@ -57,7 +58,25 @@ class User extends Authenticatable
         'password' => 'hashed',
         'manual_offline' => 'boolean',
         'permissions' => 'array',
+        'notification_prefs' => 'array',
     ];
+
+    // 通知偏好键：email=是否发邮件提醒，sla=是否接收 SLA 预警，ticket=是否接收工单通知
+    public const NOTIFY_CHANNELS = ['email', 'sla', 'ticket'];
+
+    /**
+     * 某类通知是否开启（用户偏好，未设置时默认开启）
+     */
+    public function notifyEnabled(string $channel): bool
+    {
+        if (! in_array($channel, self::NOTIFY_CHANNELS, true)) {
+            return true;
+        }
+        $prefs = $this->notification_prefs ?? [];
+
+        // 显式设置过才按用户偏好；否则默认开启
+        return array_key_exists($channel, $prefs) ? (bool) $prefs[$channel] : true;
+    }
 
     /**
      * 客服可授权的后台模块（业务菜单 + 高级操作）

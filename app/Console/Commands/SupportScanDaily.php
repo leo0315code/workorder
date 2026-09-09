@@ -33,7 +33,7 @@ class SupportScanDaily extends Command
 
             $count = $tickets->count();
             $first = $tickets->first();
-            NotificationService::notifyUsers($targetIds, "有 {$count} 个工单 SLA 已超时", $first?->no.' '.$first?->subject.' 等工单需尽快处理', ticket_route('index', ['status' => 'open'], ['for_role' => 'agent']));
+            NotificationService::notifyUsers($targetIds, "有 {$count} 个工单 SLA 已超时", $first?->no.' '.$first?->subject.' 等工单需尽快处理', ticket_route('index', ['status' => 'open'], ['for_role' => 'agent']), 'sla');
             $notified += count($targetIds);
         }
 
@@ -51,7 +51,7 @@ class SupportScanDaily extends Command
 
             $count = $tickets->count();
             $first = $tickets->first();
-            NotificationService::notifyUsers($targetIds, "有 {$count} 个工单 SLA 即将到期", $first?->no.' '.$first?->subject.' 等工单剩余不足 6 小时，请尽快处理', ticket_route('index', ['status' => 'open'], ['for_role' => 'agent']));
+            NotificationService::notifyUsers($targetIds, "有 {$count} 个工单 SLA 即将到期", $first?->no.' '.$first?->subject.' 等工单剩余不足 6 小时，请尽快处理', ticket_route('index', ['status' => 'open'], ['for_role' => 'agent']), 'sla');
             $notified += count($targetIds);
         }
 
@@ -65,7 +65,7 @@ class SupportScanDaily extends Command
             $adminIds = User::where('role', 'admin')->pluck('id')->all();
             $count = $staleUnclaimed->count();
             $first = $staleUnclaimed->first();
-            NotificationService::notifyUsers($adminIds, "有 {$count} 个工单待认领超过 24 小时", $first?->no.' '.$first?->subject.' 等工单无人接单，请尽快处理', ticket_route('index', ['unassigned' => 1], ['for_role' => 'agent']));
+            NotificationService::notifyUsers($adminIds, "有 {$count} 个工单待认领超过 24 小时", $first?->no.' '.$first?->subject.' 等工单无人接单，请尽快处理', ticket_route('index', ['unassigned' => 1], ['for_role' => 'agent']), 'sla');
             $notified += count($adminIds);
         }
 

@@ -247,7 +247,8 @@ class TicketService
                 $user->id,
                 '有人 @ 了你',
                 $ticket->no.' · '.$ticket->subject,
-                ticket_route('show', $ticket, ['for_role' => 'agent'])
+                ticket_route('show', $ticket, ['for_role' => 'agent']),
+                'ticket'
             );
             WebSocketService::pushToUid($user->id, [
                 'type' => 'mention',

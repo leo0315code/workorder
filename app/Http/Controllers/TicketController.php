@@ -202,14 +202,14 @@ class TicketController extends Controller
 
         // 站内通知：指派给指定客服，否则通知全体客服
         if ($ticket->assignee_id) {
-            NotificationService::notifyUser($ticket->assignee_id, '新工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
+            NotificationService::notifyUser($ticket->assignee_id, '新工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']), 'ticket');
             WebSocketService::pushToUid($ticket->assignee_id, [
                 'type' => 'new_ticket',
                 'ticket' => $this->service->ticketPayload($ticket),
             ]);
         } else {
             $agentIds = User::whereIn('role', ['agent', 'admin'])->pluck('id')->all();
-            NotificationService::notifyUsers($agentIds, '有新工单待处理', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
+            NotificationService::notifyUsers($agentIds, '有新工单待处理', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']), 'ticket');
         }
 
         session()->flash('success', '工单 '.$ticket->no.' 已提交');
@@ -360,14 +360,14 @@ class TicketController extends Controller
 
         // 通知对方（链接按接收者角色：客服 → 带前缀后台；客户 → 用户门户）
         if (Auth::user()->isAgent()) {
-            NotificationService::notifyUser($ticket->user_id, '你的工单有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'customer']));
+            NotificationService::notifyUser($ticket->user_id, '你的工单有新回复', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'customer']), 'ticket');
             // @提及同事（客服回复时）
             $this->service->notifyMentions($request->input('content'), $ticket);
         } elseif ($ticket->assignee_id) {
-            NotificationService::notifyUser($ticket->assignee_id, '工单有新回复，请处理', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
+            NotificationService::notifyUser($ticket->assignee_id, '工单有新回复，请处理', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']), 'ticket');
         } else {
             $agentIds = User::whereIn('role', ['agent', 'admin'])->pluck('id')->all();
-            NotificationService::notifyUsers($agentIds, '工单有新回复，请处理', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
+            NotificationService::notifyUsers($agentIds, '工单有新回复，请处理', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']), 'ticket');
         }
 
         WebSocketService::pushToRoom('ticket.'.$ticket->id, [
@@ -457,11 +457,11 @@ class TicketController extends Controller
 
         // 指派变更通知新负责人
         if (isset($data['assignee_id']) && (int) $data['assignee_id'] !== (int) $old['assignee_id'] && $data['assignee_id']) {
-            NotificationService::notifyUser((int) $data['assignee_id'], '工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
+            NotificationService::notifyUser((int) $data['assignee_id'], '工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']), 'ticket');
         }
         // 状态变更通知提交人
         if (isset($data['status']) && $data['status'] !== $old['status'] && $ticket->user_id !== Auth::id()) {
-            NotificationService::notifyUser($ticket->user_id, '你的工单状态已更新', $ticket->no.' → '.self::STATUS_NAMES[$data['status']], route('tickets.show', $ticket));
+            NotificationService::notifyUser($ticket->user_id, '你的工单状态已更新', $ticket->no.' → '.self::STATUS_NAMES[$data['status']], route('tickets.show', $ticket), 'ticket');
         }
 
         WebSocketService::pushToRoom('ticket.'.$ticket->id, [
@@ -640,7 +640,7 @@ class TicketController extends Controller
                     $this->service->logAction($ticket, 'change', 'assignee', $oldName, User::find($newAssigneeId)?->name, '批量指派');
                     $changed++;
                     // 通知新负责人（静默指派 → 显式通知）
-                    NotificationService::notifyUser($newAssigneeId, '工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']));
+                    NotificationService::notifyUser($newAssigneeId, '工单已指派给你', $ticket->no.' · '.$ticket->subject, ticket_route('show', $ticket, ['for_role' => 'agent']), 'ticket');
                 }
             } elseif ($action === 'priority' && $request->filled('priority')) {
                 $newPriority = $request->input('priority');

@@ -93,5 +93,51 @@
                 </div>
             </form>
         </x-panel>
+
+        {{-- 通知偏好 --}}
+        <x-panel title="通知偏好" icon="bell">
+            <form method="POST" action="{{ route('profile.notification-prefs') }}" class="space-y-3">
+                @csrf
+                @php $prefs = $user->notification_prefs ?? []; @endphp
+
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="prefs[]" value="email" @checked(($prefs['email'] ?? true))
+                           class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                    <span class="text-sm">
+                        <span class="font-medium text-gray-800 dark:text-gray-200">邮件提醒</span>
+                        <span class="block text-xs text-gray-400">工单动态通过邮件通知我（需系统已开启邮件通道）</span>
+                    </span>
+                </label>
+
+                @if (auth()->user()->isAgent())
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="prefs[]" value="sla" @checked(($prefs['sla'] ?? true))
+                               class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                        <span class="text-sm">
+                            <span class="font-medium text-gray-800 dark:text-gray-200">SLA 预警</span>
+                            <span class="block text-xs text-gray-400">接收工单超时 / 临期 / 待认领升级提醒</span>
+                        </span>
+                    </label>
+                @endif
+
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="prefs[]" value="ticket" @checked(($prefs['ticket'] ?? true))
+                           class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-indigo-600 focus:ring-indigo-500">
+                    <span class="text-sm">
+                        <span class="font-medium text-gray-800 dark:text-gray-200">工单通知</span>
+                        <span class="block text-xs text-gray-400">新工单 / 回复 / 状态变更 / 指派提醒</span>
+                    </span>
+                </label>
+
+                <div class="flex items-center gap-3 pt-1">
+                    <button type="submit" class="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition">
+                        保存偏好
+                    </button>
+                    @if (session('status') === 'prefs-updated')
+                        <span x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 2000)" x-transition class="text-sm text-green-600 dark:text-green-400">已保存</span>
+                    @endif
+                </div>
+            </form>
+        </x-panel>
     </div>
 @endsection
