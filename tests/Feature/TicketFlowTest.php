@@ -147,4 +147,31 @@ class TicketFlowTest extends TestCase
             ->get(route('attachments.download', $attachment))
             ->assertForbidden();
     }
+
+    public function test_poll_replies_includes_attachments(): void
+    {
+        $customer = $this->customer();
+        $ticket = Ticket::factory()->create(['user_id' => $customer->id]);
+
+        $file = UploadedFile::fake()->image('图.png');
+
+        $this->actingAs($customer)
+            ->post(route('tickets.reply', $ticket), [
+                'content' => '带图回复',
+                'attachments' => [$file],
+            ])->assertRedirect();
+
+        // 轮询接口应返回附件（含 mime/download_url），供前端实时渲染缩略图
+        $this->actingAs($customer)
+            ->getJson(route('tickets.replies', $ticket).'?after=0')
+            ->assertOk()
+            ->assertJsonStructure(['replies' => [['id', 'content', 'attachments' => [['id', 'original_name', 'mime_type', 'download_url']]]]]);
+
+        $reply = TicketReply::where('ticket_id', $ticket->id)->where('content', '带图回复')->firstOrFail();
+        $payload = $this->actingAs($customer)->getJson(route('tickets.replies', $ticket).'?after=0')->json();
+        $match = collect($payload['replies'])->firstWhere('id', $reply->id);
+        $this->assertNotEmpty($match['attachments']);
+        $this->assertStringStartsWith('image/', $match['attachments'][0]['mime_type']);
+        $this->assertStringContainsString('/attachments/', $match['attachments'][0]['download_url']);
+    }
 }

@@ -557,6 +557,22 @@
                     const avatar = (reply.user?.name || '?').charAt(0).toUpperCase();
                     const name = reply.user?.name || '用户';
                     const time = reply.created_at || '';
+                    const atts = (reply.attachments || []).map((a) => {
+                        const dl = '<a href="' + a.download_url + '" class="inline-flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:underline">'
+                            + '<svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>'
+                            + '<span class="max-w-[220px] truncate">' + (a.original_name || '') + '</span>'
+                            + '<span class="text-gray-400 shrink-0">(' + ((a.size || 0) / 1024).toFixed(1) + 'KB)</span></a>';
+                        if ((a.mime_type || '').startsWith('image/')) {
+                            return '<div class="space-y-1">'
+                                + '<button type="button" class="block cursor-zoom-in" @click="$dispatch(\'open-image\', \'' + a.download_url + '\')">'
+                                + '<img src="' + a.download_url + '" alt="' + (a.original_name || '') + '" class="max-h-48 max-w-full rounded-lg ring-1 ring-black/10 dark:ring-white/10 bg-gray-100 dark:bg-gray-800"></button>'
+                                + dl + '</div>';
+                        }
+                        return '<div class="flex items-center gap-1.5">' + dl + '</div>';
+                    }).join('');
+                    const attBlock = atts
+                        ? '<div class="mt-3 pt-3 border-t border-black/5 dark:border-white/10 space-y-2">' + atts + '</div>'
+                        : '';
                     return `<div class="flex gap-3">
                         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${isAgentSide ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}">${avatar}</div>
                         <div class="flex-1 min-w-0">
@@ -565,7 +581,10 @@
                                 ${isAgentSide ? '<span class="text-xs text-indigo-500">客服</span>' : ''}
                                 <span class="text-xs text-gray-400">${time}</span>
                             </div>
-                            <div class="mt-1 rounded-lg bg-gray-50 dark:bg-gray-800/70 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">${reply.content}</div>
+                            <div class="mt-1 rounded-lg bg-gray-50 dark:bg-gray-800/70 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">
+                                <div class="whitespace-pre-wrap leading-relaxed">${reply.content}</div>
+                                ${attBlock}
+                            </div>
                         </div>
                     </div>`;
                 },

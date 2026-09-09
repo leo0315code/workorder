@@ -291,6 +291,13 @@ class TicketService
             'type' => $reply->type,
             'user' => ['id' => $reply->user?->id, 'name' => $reply->user?->name, 'role' => $reply->user?->role],
             'created_at' => optional($reply->created_at)->format('Y-m-d H:i:s'),
+            'attachments' => $reply->attachments->map(fn (Attachment $a) => [
+                'id' => $a->id,
+                'original_name' => $a->original_name,
+                'size' => $a->size,
+                'mime_type' => $a->mime_type,
+                'download_url' => route('attachments.download', $a),
+            ])->values(),
         ];
     }
 

@@ -597,7 +597,7 @@ class TicketController extends Controller
         $replies = $ticket->replies()
             ->where('id', '>', $after)
             ->where('type', TicketReply::TYPE_REPLY)
-            ->with('user')
+            ->with(['user', 'attachments'])
             ->get();
 
         return response()->json([
