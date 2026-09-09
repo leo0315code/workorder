@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-09-09 — v2.2.6：修复聊天附件下载 404 + 根除测试套件"下班后挂"定时炸弹
+
+### 修复一：回复附件下载 404
+
+- **根因**：`TicketService::download` 的工单归属解析只认 `attachable_type === Ticket`；v2.2.3 起回复附件挂在 `TicketReply` 上，解析为 null → `abort_unless($ticket, 404)`
+- **修复**：归属解析改为 match——`Ticket` 直取；`TicketReply` 经 `$reply->ticket` 回溯；其他类型 404
+- **测试**：+1 回归用例（回复附件：归属者 200、无关客户 403）
+
+### 修复二：测试套件时间炸弹
+
+- **现象**：18:00 后跑测试，`AttachmentSecurityTest`/`TicketFieldTest` 各挂 2 例（工单/附件未落库）；18:00 前跑全过
+- **根因**：`work_hours_enabled` 默认开启（09:00–18:00），这 4 个用例 POST `tickets.store` 但没有 seeding 禁用工作时间，下班后客户提交被工作时段校验拦截
+- **修复**：基类 `tests/TestCase.php` 统一 `firstOrCreate work_hours_enabled=0`（带 settings 表存在性保护）；移除各子类重复 seeding；需要验证工作时间逻辑的用例仍可显式 `updateOrCreate` 覆盖（如 ApiTest 23:59-23:58、TicketFlowTest 00:00-00:01，均与当前时刻无关）
+
+### 验证
+
+- 218 用例（217+1）全通过 ✅
+
+---
+
 ## 2026-09-09 — v2.2.5：修复附件气泡仍被撑高（pre-wrap 继承问题）
 
 ### 修复

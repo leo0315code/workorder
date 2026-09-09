@@ -22,7 +22,6 @@ class ApiKbTagDuplicateTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Setting::create(['setting_key' => 'work_hours_enabled', 'value' => '0']);
         Setting::create(['setting_key' => 'site_name', 'value' => '测试工单']);
     }
 

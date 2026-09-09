@@ -27,8 +27,7 @@ class ApiTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // 关闭上班时间限制，避免测试受时段影响
-        Setting::create(['setting_key' => 'work_hours_enabled', 'value' => '0']);
+        // 工作时间限制由基类 TestCase 统一关闭
         Setting::create(['setting_key' => 'site_name', 'value' => '测试工单']);
     }
 

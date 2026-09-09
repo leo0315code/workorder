@@ -300,9 +300,12 @@ class TicketService
     public static function download(Attachment $attachment)
     {
         // 越权校验：附件归属的工单须为当前用户可见
-        $ticket = $attachment->attachable_type === Ticket::class
-            ? Ticket::find($attachment->attachable_id)
-            : null;
+        // v2.2.3 起回复附件挂 TicketReply，需经回复回溯到工单
+        $ticket = match ($attachment->attachable_type) {
+            Ticket::class => Ticket::find($attachment->attachable_id),
+            TicketReply::class => TicketReply::find($attachment->attachable_id)?->ticket,
+            default => null,
+        };
 
         abort_unless($ticket, 404);
 

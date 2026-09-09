@@ -18,8 +18,7 @@ class TicketFlowTest extends TestCase
     {
         parent::setUp();
 
-        // 测试环境默认不限制工作时间（避免跑测试的时段影响结果）
-        Setting::create(['setting_key' => 'work_hours_enabled', 'value' => '0']);
+        // 测试环境默认不限制工作时间（基类 TestCase 统一 seeding）
         Setting::create(['setting_key' => 'site_name', 'value' => '测试工单']);
     }
 
@@ -119,5 +118,33 @@ class TicketFlowTest extends TestCase
 
         // 工单级附件仍为 0（附件不在工单上重复挂载）
         $this->assertSame(0, $ticket->attachments()->count());
+    }
+
+    public function test_reply_attachment_downloadable_and_gated(): void
+    {
+        $customer = $this->customer();
+        $other = $this->customer();
+        $ticket = Ticket::factory()->create(['user_id' => $customer->id]);
+
+        $file = UploadedFile::fake()->create('说明.txt', 10, 'text/plain');
+
+        $this->actingAs($customer)
+            ->post(route('tickets.reply', $ticket), [
+                'content' => '带附件回复',
+                'attachments' => [$file],
+            ])->assertRedirect();
+
+        $attachment = TicketReply::where('ticket_id', $ticket->id)->where('content', '带附件回复')->firstOrFail()
+            ->attachments()->firstOrFail();
+
+        // 工单归属者可下载（v2.2.6 回归：回复附件经 TicketReply 回溯工单鉴权）
+        $this->actingAs($customer)
+            ->get(route('attachments.download', $attachment))
+            ->assertOk();
+
+        // 无关客户不可下载
+        $this->actingAs($other)
+            ->get(route('attachments.download', $attachment))
+            ->assertForbidden();
     }
 }
