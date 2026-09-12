@@ -167,4 +167,44 @@ class KbTest extends TestCase
             ->assertSee('我的草稿')
             ->assertDontSee('别人的草稿');
     }
+
+    // -------------------------------------------------------------------------
+    // 客户自助浏览页
+    // -------------------------------------------------------------------------
+
+    public function test_customer_can_browse_published_only(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        $this->actingAs($customer);
+
+        $cat = KbCategory::create(['name' => '售后']);
+        $published = $this->article(['title' => '公开文章', 'kb_category_id' => $cat->id]);
+        $this->article(['title' => '草稿文章', 'is_published' => false, 'kb_category_id' => $cat->id]);
+
+        $this->get(route('kb.browse'))
+            ->assertOk()
+            ->assertSee('公开文章')
+            ->assertDontSee('草稿文章');
+    }
+
+    public function test_customer_can_filter_browse_by_category_and_search(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        $this->actingAs($customer);
+
+        $catA = KbCategory::create(['name' => '安装']);
+        $catB = KbCategory::create(['name' => '售后']);
+        $a = $this->article(['title' => '安装指南', 'kb_category_id' => $catA->id]);
+        $this->article(['title' => '售后政策', 'kb_category_id' => $catB->id]);
+
+        $this->get(route('kb.browse', ['category' => $catA->id]))
+            ->assertOk()
+            ->assertSee('安装指南')
+            ->assertDontSee('售后政策');
+
+        $this->get(route('kb.browse', ['q' => '售后']))
+            ->assertOk()
+            ->assertSee('售后政策')
+            ->assertDontSee('安装指南');
+    }
 }

@@ -69,6 +69,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('tickets/batch', [TicketController::class, 'batch'])->name('tickets.batch');
     });
     Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store', 'show']);
+    Route::post('tickets/{ticket}/urge', [TicketController::class, 'urge'])->name('tickets.urge');
     Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
     Route::post('tickets/{ticket}/note', [TicketController::class, 'note'])->name('tickets.note');
     Route::patch('tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
@@ -92,7 +93,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('search', [SearchController::class, 'index'])->name('search');
     Route::get('search/suggest', [SearchController::class, 'suggest'])->name('search.suggest');
 
-    // ---- 知识库阅读页（仅已发布文章）----
+    // ---- 知识库（客户自助浏览 + 阅读页，仅已发布文章）----
+    Route::get('kb', [KbController::class, 'browse'])->name('kb.browse');
     Route::get('kb/{article}', [KbController::class, 'show'])->whereNumber('article')->name('kb.show');
 });
 

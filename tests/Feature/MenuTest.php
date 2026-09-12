@@ -146,7 +146,7 @@ class MenuTest extends TestCase
         $this->seed(MenuSeeder::class);
 
         $this->assertSame($first, Menu::count());
-        $this->assertSame(18, $first); // 16 客服端（含知识库/工单字段/登录审计/操作审计）+ 2 客户端
+        $this->assertSame(19, $first); // 16 客服端（含知识库/工单字段/登录审计/操作审计）+ 3 客户端（含帮助中心）
     }
 
     public function test_sidebar_groups_items_by_section(): void

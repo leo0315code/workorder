@@ -121,6 +121,26 @@ class KbController extends Controller
     }
 
     /**
+     * 客户自助知识库浏览页（仅已发布文章，按分类/关键字筛选）
+     */
+    public function browse(Request $request): View
+    {
+        $categories = KbCategory::withCount(['articles' => fn ($q) => $q->where('is_published', true)])
+            ->orderBy('sort')->orderBy('id')->get();
+
+        $query = KbArticle::with('category')->where('is_published', true)
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $kw = trim($request->input('q'));
+                $q->where(fn ($w) => $w->where('title', 'like', '%'.$kw.'%')->orWhere('content', 'like', '%'.$kw.'%'));
+            })
+            ->when($request->filled('category'), fn ($q) => $q->where('kb_category_id', (int) $request->input('category')));
+
+        $articles = $query->orderByDesc('updated_at')->paginate(12)->withQueryString();
+
+        return view('kb.browse', compact('categories', 'articles'));
+    }
+
+    /**
      * 阅读页（读者视角，仅已发布；浏览数 +1）
      */
     public function show(KbArticle $article): View

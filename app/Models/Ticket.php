@@ -17,14 +17,21 @@ class Ticket extends Model
     use HasFactory;
 
     public const STATUS_OPEN = 'open';
+
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_IN_PROGRESS = 'in_progress';
+
     public const STATUS_RESOLVED = 'resolved';
+
     public const STATUS_CLOSED = 'closed';
 
     public const PRIORITY_LOW = 'low';
+
     public const PRIORITY_NORMAL = 'normal';
+
     public const PRIORITY_HIGH = 'high';
+
     public const PRIORITY_URGENT = 'urgent';
 
     protected $fillable = [
@@ -80,6 +87,16 @@ class Ticket extends Model
     public function logs(): HasMany
     {
         return $this->hasMany(TicketLog::class)->with('user')->orderByDesc('created_at');
+    }
+
+    /**
+     * 客户催办限频：24 小时内是否已催办过
+     */
+    public function urgedRecently(): bool
+    {
+        $last = $this->logs()->where('action', 'urged')->first();
+
+        return $last?->created_at?->gt(now()->subHours(24)) ?? false;
     }
 
     public function rating()

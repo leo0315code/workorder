@@ -15,6 +15,23 @@
             <span class="font-mono text-indigo-600 dark:text-indigo-400 font-medium">{{ $ticket->no }}</span>
         </nav>
         <div class="flex items-center gap-2">
+            @if (! $isAgent && ! in_array($ticket->status, ['resolved', 'closed']))
+                @if ($ticket->urgedRecently())
+                    <span class="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-500/30" title="每 24 小时可催办一次">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+                        已催办
+                    </span>
+                @else
+                    <form method="POST" action="{{ route('tickets.urge', $ticket) }}" class="inline">
+                        @csrf
+                        <button type="submit" onclick="return confirm('确认催办？我们会尽快优先处理，每 24 小时可催办一次')"
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-300/60 dark:ring-amber-500/30 px-3 py-1.5 text-xs font-medium hover:bg-amber-500/20 transition">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+                            催办
+                        </button>
+                    </form>
+                @endif
+            @endif
             <x-ticket-status :status="$ticket->status" />
             <x-ticket-priority :priority="$ticket->priority" />
         </div>

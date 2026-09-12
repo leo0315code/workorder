@@ -44,6 +44,7 @@ class MenuSeeder extends Seeder
             // ---- 客户端（customer）----
             ['audience' => 'customer', 'label' => '仪表盘',   'route_name' => 'dashboard',      'icon' => 'dashboard', 'section' => '概览', 'sort' => 1],
             ['audience' => 'customer', 'label' => '我的工单', 'route_name' => 'tickets.index', 'icon' => 'ticket',    'section' => '概览', 'sort' => 2, 'active_pattern' => 'tickets.*', 'except_pattern' => 'tickets.create'],
+            ['audience' => 'customer', 'label' => '帮助中心', 'route_name' => 'kb.browse',   'icon' => 'chat',      'section' => '概览', 'sort' => 20, 'active_pattern' => 'kb.*'],
         ];
 
         foreach ($items as $item) {

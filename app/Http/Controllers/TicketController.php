@@ -561,6 +561,42 @@ class TicketController extends Controller
     }
 
     /**
+     * 客户催办：提醒负责人处理（每 24 小时可催一次，限频基于操作日志）
+     */
+    public function urge(Ticket $ticket): RedirectResponse
+    {
+        $this->service->authorizeView($ticket);
+
+        // 仅工单提交人可催办
+        if ($ticket->user_id !== Auth::id() || Auth::user()->isAgent()) {
+            abort(403);
+        }
+
+        if (in_array($ticket->status, [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])) {
+            return back()->with('error', '该工单已处理完毕，无需催办');
+        }
+
+        if ($ticket->urgedRecently()) {
+            return back()->with('error', '您已催办过，请耐心等待（每 24 小时可催办一次）');
+        }
+
+        $this->service->logAction($ticket, 'urged', null, null, null, '客户催办');
+
+        // 通知负责人（未指派 → 全体客服/管理员）
+        $link = ticket_route('show', $ticket, ['for_role' => 'agent']);
+        if ($ticket->assignee_id) {
+            NotificationService::notifyUser($ticket->assignee_id, '客户催办工单', $ticket->no.' · '.$ticket->subject, $link, 'ticket');
+        } else {
+            $agentIds = User::whereIn('role', ['agent', 'admin'])->pluck('id')->all();
+            foreach ($agentIds as $id) {
+                NotificationService::notifyUser($id, '客户催办工单（未指派）', $ticket->no.' · '.$ticket->subject, $link, 'ticket');
+            }
+        }
+
+        return back()->with('success', '已催办，我们会尽快处理');
+    }
+
+    /**
      * 客服认领（抢单）：仅未指派工单，认领后指派给自己
      */
     public function claim(Request $request, Ticket $ticket): RedirectResponse
