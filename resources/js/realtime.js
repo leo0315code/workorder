@@ -15,6 +15,8 @@ export class TicketRealtime {
         this.connected = false;
         this.reconnectTimer = null;
         this.fallbackStarted = false;
+        this.probeTimer = null;
+        this.probing = false;
         this.connect();
     }
 
@@ -60,7 +62,12 @@ export class TicketRealtime {
         socket.onclose = () => {
             this.connected = false;
             this.emit('ticket:status', { connected: false });
-            this.scheduleReconnect();
+            // 降级中：30s 探活一次等 WS 恢复；正常断线：5s 重连
+            if (this.fallbackStarted) {
+                this.scheduleProbe();
+            } else {
+                this.scheduleReconnect();
+            }
         };
 
         // 4 秒内未鉴权成功 → 降级轮询
@@ -78,6 +85,70 @@ export class TicketRealtime {
         if (this.fallbackStarted) return;
         this.fallbackStarted = true;
         this.emit('ticket:fallback', {});
+        this.scheduleProbe();
+    }
+
+    /**
+     * 降级期间定期探活：WS 服务恢复后自动切回实时（无需刷新页面）
+     */
+    scheduleProbe() {
+        clearTimeout(this.probeTimer);
+        this.probeTimer = setTimeout(() => this.probeReconnect(), 30000);
+    }
+
+    probeReconnect() {
+        if (this.connected || this.probing || !this.fallbackStarted) return;
+        this.probing = true;
+
+        const { wsUrl, uid, token, rooms } = this.config;
+        let socket;
+        try {
+            socket = new WebSocket(wsUrl);
+        } catch (e) {
+            this.probing = false;
+            this.scheduleProbe();
+            return;
+        }
+
+        socket.onopen = () => {
+            socket.send(JSON.stringify({ type: 'auth', uid, token, rooms }));
+        };
+
+        socket.onmessage = (e) => {
+            let msg;
+            try {
+                msg = JSON.parse(e.data);
+            } catch (err) {
+                return;
+            }
+            if (msg.type !== 'auth_ok') return;
+            try { socket.close(); } catch (err) { /* noop */ }
+            this.probing = false;
+            // 探活成功：退出降级，建立正式连接（页面收到恢复事件后停止轮询）
+            this.fallbackStarted = false;
+            this.emit('ticket:ws-restored', {});
+            this.connect();
+        };
+
+        socket.onerror = () => {
+            this.probing = false;
+            this.scheduleProbe();
+        };
+
+        socket.onclose = () => {
+            if (this.probing) {
+                this.probing = false;
+                this.scheduleProbe();
+            }
+        };
+
+        // 4 秒未握手成功视为探活失败
+        setTimeout(() => {
+            if (!this.probing) return;
+            this.probing = false;
+            this.scheduleProbe();
+            try { socket.close(); } catch (err) { /* noop */ }
+        }, 4000);
     }
 
     emit(name, detail) {

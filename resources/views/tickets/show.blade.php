@@ -29,6 +29,7 @@
             <div x-data="{ connected: false, fallback: false }"
                  @ticket:status.window="connected = $event.detail.connected; if(!connected) fallback = true"
                  @ticket:fallback.window="fallback = true"
+                 @ticket:ws-restored.window="connected = true; fallback = false"
                  class="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
                 <template x-if="connected">
                     <span class="inline-flex items-center gap-1.5 text-green-600 dark:text-green-400">
@@ -511,6 +512,7 @@
                     }
                     window.addEventListener('ticket:event', (e) => this.onEvent(e.detail));
                     window.addEventListener('ticket:fallback', () => this.startPolling());
+                    window.addEventListener('ticket:ws-restored', () => this.stopPolling());
                 },
                 onEvent(msg) {
                     if (msg.type === 'reply') this.appendReply(msg.reply);
@@ -533,6 +535,12 @@
                 startPolling() {
                     if (this.pollTimer) return;
                     this.pollTimer = setInterval(() => this.poll(), 8000);
+                },
+                stopPolling() {
+                    if (this.pollTimer) {
+                        clearInterval(this.pollTimer);
+                        this.pollTimer = null;
+                    }
                 },
                 poll() {
                     fetch(config.pollUrl + '?after=' + this.lastReplyId)

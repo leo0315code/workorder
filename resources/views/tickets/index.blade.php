@@ -318,11 +318,22 @@
                         if (!this.wsConnected) this.startPolling();
                     });
                     window.addEventListener('ticket:fallback', () => this.startPolling());
+                    window.addEventListener('ticket:ws-restored', () => {
+                        this.wsConnected = true;
+                        this.stopPolling();
+                    });
                 },
 
                 startPolling() {
                     if (this.pollTimer) return;
                     this.pollTimer = setInterval(() => this.poll(), 20000);
+                },
+
+                stopPolling() {
+                    if (this.pollTimer) {
+                        clearInterval(this.pollTimer);
+                        this.pollTimer = null;
+                    }
                 },
 
                 poll() {
