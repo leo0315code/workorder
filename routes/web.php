@@ -16,6 +16,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketFieldDefController;
+use App\Http\Controllers\TicketLogController;
 use App\Http\Controllers\TicketTemplateController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -208,4 +209,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix(config('app.admin_
 
     // ---- 登录审计（仅管理员）----
     Route::get('login-audits', [LoginAuditController::class, 'index'])->name('login-audits.index');
+
+    // ---- 工单操作审计（仅管理员）----
+    Route::get('ticket-logs', [TicketLogController::class, 'index'])->name('ticket-logs.index');
 });

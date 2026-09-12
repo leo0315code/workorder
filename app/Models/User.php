@@ -160,6 +160,11 @@ class User extends Authenticatable
         return $this->hasMany(TicketReply::class);
     }
 
+    public function ticketLogs(): HasMany
+    {
+        return $this->hasMany(TicketLog::class);
+    }
+
     public function agentRole(): BelongsTo
     {
         return $this->belongsTo(AgentRole::class, 'agent_role_id');

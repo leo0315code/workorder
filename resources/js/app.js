@@ -19,6 +19,30 @@ window.Alpine = Alpine;
 // 工单列表/详情页 Alpine 组件内会 new TicketRealtime(config)，必须挂在全局
 window.TicketRealtime = TicketRealtime;
 
+/**
+ * 粘贴截图 → 自动并入附件输入框（工单创建/回复共用）
+ * 用 DataTransfer 把剪贴板图片追加进 input[name="attachments[]"]，
+ * 并触发 change 让页面现有的 files 列表显示；表单原生提交即携带，无额外请求。
+ */
+window.pasteIntoAttachments = function (e) {
+    const input = e.target.closest('form')?.querySelector('input[name="attachments[]"]');
+    if (!input) return;
+    const items = e.clipboardData?.items || [];
+    const images = [];
+    for (const it of items) {
+        if (it.kind === 'file' && it.type.startsWith('image/')) {
+            images.push(it.getAsFile());
+        }
+    }
+    if (!images.length) return;
+    e.preventDefault();
+    const dt = new DataTransfer();
+    [...(input.files || [])].forEach((f) => dt.items.add(f));
+    images.forEach((f) => dt.items.add(f));
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+};
+
 // 全局实时连接（仅登录用户；布局注入 window.__app.ws）
 initRealtime();
 

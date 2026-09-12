@@ -105,6 +105,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">问题描述 <span class="text-red-500">*</span></label>
                     <textarea name="description" required rows="6" maxlength="10000" placeholder="请详细描述遇到的问题、复现步骤、期望结果等"
+                             @paste="pasteIntoAttachments($event)"
                               class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">{{ old('description') }}</textarea>
                     @error('description')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                 </div>
@@ -146,7 +147,7 @@
                 @endif
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">附件（最多 5 个，每个 ≤10MB）</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">附件（最多 5 个，每个 ≤10MB，支持 Ctrl+V 粘贴截图）</label>
                     <input type="file" name="attachments[]" multiple
                            @change="files = Array.from($event.target.files).map(f => f.name)"
                            class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-indigo-700 dark:file:bg-indigo-500/10 dark:file:text-indigo-300 hover:file:bg-indigo-100">

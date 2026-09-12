@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Menu;
 use App\Models\User;
+use Database\Seeders\MenuSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -140,12 +141,12 @@ class MenuTest extends TestCase
 
     public function test_menu_seeder_is_idempotent(): void
     {
-        $this->seed(\Database\Seeders\MenuSeeder::class);
+        $this->seed(MenuSeeder::class);
         $first = Menu::count();
-        $this->seed(\Database\Seeders\MenuSeeder::class);
+        $this->seed(MenuSeeder::class);
 
         $this->assertSame($first, Menu::count());
-        $this->assertSame(17, $first); // 15 客服端（含知识库/工单字段/登录审计）+ 2 客户端
+        $this->assertSame(18, $first); // 16 客服端（含知识库/工单字段/登录审计/操作审计）+ 2 客户端
     }
 
     public function test_sidebar_groups_items_by_section(): void
