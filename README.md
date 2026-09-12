@@ -21,12 +21,20 @@
   - 微信扫码：已配置 `WECHAT_APPID/SECRET` 走开放平台真实回调；未配置时前端展示「模拟微信扫码」按钮，本地可直接跑通 扫码→绑定→登录 全链路；首次扫码需绑定已有账号或注册新账号
 - **认证与角色**：`customer`(客户) / `agent`(客服) / `admin`(管理员)
 - **客户门户**：提交工单（分类/产品/优先级/附件）、我的工单、对话式回复时间线
+- **工单对话增强**：
+  - 回复/备注的**附件直接展示在对话气泡内**（工单级附件仍归档在"工单附件"区）
+  - **图片附件缩略图 + 点击全屏灯箱放大**（Esc 或点击任意处关闭，走鉴权下载路由，未授权拿不到图）
+  - **URL 自动识别为可点击链接**（先 HTML 转义防 XSS，`http(s)://` 链接新窗口打开）
+  - 消息内容入库自动归一化（`\r\n` 统一、去首尾空白），不会出现被空行撑高的气泡
+  - **实时/轮询新增的回复与静态渲染完全对齐**（附件、缩略图、链接化一致）
 - **客服后台**：工单列表（搜索/状态/优先级/分类/负责人/只看我的/未指派 筛选）、处理操作（状态/优先级/指派）、**内部备注**（客户不可见）、**批量指派/批量关闭**、SLA 超时标识、**导出 CSV**（当前筛选条件，UTF-8 BOM 直开 Excel）
 - **快捷回复**：常用回复模板管理，回复框一键插入
 - **工单模板**：客服建单时可套用模板快速填充（主题/描述/分类/产品/优先级），模板可管理维护，重复场景一键建单
 - **操作日志**：创建/回复/备注/状态/优先级/指派变更全程留痕，详情页审计时间线（客户不可见）
 - **站内通知**：顶栏铃铛（未读红点+下拉预览）、通知中心页；新工单/指派/新回复/状态变更自动通知相关人，并经 WebSocket 实时送达
 - **客户档案增强**：客户详情页（档案+保修进度条+全部关联工单）、CSV 导出（当前筛选）、CSV 导入（按邮箱/公司+电话匹配，支持 Excel 日期序列号，命中更新/否则新建）
+- **全局搜索**：顶栏搜索框多维检索（工单主题/描述/编号、客户档案、产品），支持输入联想（suggest）；客户身份只搜到自己的工单，客服/管理员全库检索
+- **通知偏好**：个人资料页可按通知类型开关（SLA 提醒 / 工单动态），关闭后站内信与实时推送均不再打扰
 - **满意度评价（CSAT）**：工单解决/关闭后客户 1-5 星评分 + 留言，详情页展示，报表统计平均分与满意率
 - **每日巡检命令** `support:scan-daily`：SLA 超时工单 → 通知负责人（未指派则全体客服）；售后临期/过期客户 → 通知管理员
 - **工单自动分配**：仅分配给**当前在线**（已建立 WebSocket 连接）的客服，按「未完成工单数最少」优先（优先普通客服）；无人在线则进入待认领；可在系统设置开关
@@ -96,6 +104,7 @@ app/
   Http/Controllers/                          # Ticket/Customer/Product/Category/User/Dashboard
   Http/Middleware/EnsureRole.php             # role 中间件
   Models/                                    # User/Category/Product/Customer/Ticket/TicketReply/Attachment
+  Services/                                  # 12 个业务 Service（Ticket/AutoAssign/Report/Search/Setting/Notification/WebSocket/Sms/Wechat/Menu/Audit/Markdown）
   Services/WebSocketService.php              # 服务端推送封装（GatewayClient）
   Ws/Events.php                              # GatewayWorker 业务事件（鉴权/加房间）
 websocket/
@@ -117,11 +126,25 @@ resources/views/                             # Blade 视图（全宽布局 + dar
 4. 回复/状态变更时控制器调用 `WebSocketService::pushToRoom('ticket.{id}', ...)` 推送给房间内在线客户端；列表页另订阅 `ticket.all`。
 5. WS 不可用（未启动服务/连接失败）时，页面自动启用 8 秒轮询接口 `/tickets/{id}/replies?after={lastId}` 兜底。
 
+## 测试
+
+```bash
+php artisan test          # 全量：297 用例 / 815 断言，约 4 秒
+vendor/bin/pint --dirty   # 代码风格（提交前跑）
+```
+
+- 测试跑在 **SQLite in-memory**：禁用 `NOW()`/`DATE_ADD`（用绑定参数或 `julianday`，`ReportService` 有示例）；回填时间戳需 `forceFill()->save()`（`created_at` 不在 fillable）
+- 测试基类 `tests/TestCase.php` 已统一禁用工作时间限制（否则 18:00 后跑测试必挂）；需要验证时段逻辑的用例可显式覆盖
+- **`config:cache` 之后不要跑测试**——phpunit.xml 的环境变量会被缓存绕过（测试会连到真实 MySQL/Redis）；验证缓存模式请用页面冒烟
+
 ## 常见问题
 
 - **端口被占**：`php websocket/start.php stop` 后重试；Register 默认 1238，Gateway 6001，可在 `.env` 中改。
 - **WS_SECRET 变更**：改 `.env` 后需同时重启 GatewayWorker，否则前端鉴权会失败（前端 token 由 Laravel 按同一 secret 生成）。
 - **附件上传**：默认存 `storage/app/public/tickets`，需 `php artisan storage:link`。
+- **登录态无故丢失**：确认 `.env` 已设置 `SESSION_COOKIE=workorder_session`——中文 `APP_NAME` 会导致 Laravel 默认 cookie 名 slug 为空（`-session` 畸形），浏览器无法保持登录。
+- **`php artisan serve` 连续提交后 502**：单进程限制，非代码 bug；请用 ServBay 虚拟域名或 Nginx 调试，或改跑 Feature 测试。
+- **中文 grep 无结果**：macOS 自带 grep 对部分 UTF-8 文件失效，改用 `grep -a`、Python 或 `php -r`。
 
 ## Windows 服务器部署
 
