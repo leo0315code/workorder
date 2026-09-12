@@ -150,14 +150,10 @@
         </div>
     </div>
 
-    <div class="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-sm">
+    <div class="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800 flex items-center justify-center text-sm">
         <a href="{{ route('register') }}" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 hover:underline">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
             还没有账号？立即注册
-        </a>
-        <a href="{{ route('admin.login') }}" class="inline-flex items-center gap-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:underline">
-            客服/管理员入口
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
         </a>
     </div>
 
