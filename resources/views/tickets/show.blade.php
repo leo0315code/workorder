@@ -12,7 +12,20 @@
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
             <a href="{{ ticket_route('index') }}" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition">工单列表</a>
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-            <span class="font-mono text-indigo-600 dark:text-indigo-400 font-medium">{{ $ticket->no }}</span>
+            <span class="inline-flex items-center gap-1.5 font-mono text-indigo-600 dark:text-indigo-400 font-medium">
+                                {{ $ticket->no }}
+                                <button type="button" x-data="{ copied: false }"
+                                        @click="navigator.clipboard.writeText('{{ $ticket->no }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                                        :title="copied ? '已复制' : '复制工单编号'"
+                                        class="text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition" x-cloak>
+                                    <template x-if="!copied">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" /></svg>
+                                    </template>
+                                    <template x-if="copied">
+                                        <svg class="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                                    </template>
+                                </button>
+                            </span>
         </nav>
         <div class="flex items-center gap-2">
             @if (! $isAgent && ! in_array($ticket->status, ['resolved', 'closed']))
@@ -327,7 +340,15 @@
                 </h3>
                 <form method="POST" action="{{ ticket_route('reply', $ticket) }}"
                       enctype="multipart/form-data"
-                      x-data="{ content: '', quick: '', files: [] }"
+                      x-data="{
+                            content: '', quick: '', files: [],
+                            enterSend(e) {
+                                // Enter 发送；Shift+Enter 换行；中文输入法组词时不拦截
+                                if (e.shiftKey || e.isComposing) return;
+                                e.preventDefault();
+                                if (this.content.trim() !== '') this.$el.requestSubmit();
+                            },
+                        }"
                       @submit="if (content.trim() === '') { $event.preventDefault(); }">
                     @csrf
                     @if ($isAgent && $quickReplies->isNotEmpty())
@@ -342,7 +363,7 @@
                         </div>
                     @endif
                     <textarea name="content" x-model="content" required rows="4" maxlength="10000" placeholder="输入回复内容…（@客服姓名 可提及同事）"
-                              @paste="pasteIntoAttachments($event)"
+                              @paste="pasteIntoAttachments($event)" @keydown.enter="enterSend($event)"
                               class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                     @error('content')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                     <div class="mt-3">
@@ -360,6 +381,7 @@
                         @error('attachments')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                     </div>
                     <div class="mt-3 flex justify-end">
+                        <span class="mr-2 self-center text-xs text-gray-400 hidden sm:inline">Enter 发送 · Shift+Enter 换行</span>
                         <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-500">发送回复</button>
                     </div>
                 </form>

@@ -28,4 +28,9 @@ class UserNotification extends Model
     {
         return $query->where('is_read', false);
     }
+
+    public function scopeRead($query)
+    {
+        return $query->where('is_read', true);
+    }
 }

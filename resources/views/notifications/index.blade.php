@@ -7,12 +7,16 @@
         <div class="mb-4 flex items-center justify-between">
             <div class="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
                 <a href="{{ route('notifications.index') }}"
-                   class="rounded-md px-3 py-1.5 text-sm font-medium transition {{ ! request()->has('unread') ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300' }}">
+                   class="rounded-md px-3 py-1.5 text-sm font-medium transition {{ ! request()->has('unread') && ! request()->has('read') ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300' }}">
                     全部 <span class="text-xs opacity-70">({{ $notifications->total() }})</span>
                 </a>
                 <a href="{{ route('notifications.index', ['unread' => 1]) }}"
                    class="rounded-md px-3 py-1.5 text-sm font-medium transition {{ request()->boolean('unread') ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300' }}">
                     未读 <span class="text-xs opacity-70">({{ $unreadCount }})</span>
+                </a>
+                <a href="{{ route('notifications.index', ['read' => 1]) }}"
+                   class="rounded-md px-3 py-1.5 text-sm font-medium transition {{ request()->boolean('read') ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300' }}">
+                    已读 <span class="text-xs opacity-70">({{ max(0, $notifications->total() - $unreadCount) }})</span>
                 </a>
             </div>
             @if ($unreadCount > 0)

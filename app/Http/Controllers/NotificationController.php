@@ -7,7 +7,6 @@ namespace App\Http\Controllers;
 use App\Models\UserNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -25,6 +24,9 @@ class NotificationController extends Controller
 
         if (request()->boolean('unread')) {
             $query->unread();
+        }
+        if (request()->boolean('read')) {
+            $query->read();
         }
 
         $notifications = $query->orderByDesc('created_at')->paginate(20);

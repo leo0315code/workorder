@@ -94,6 +94,25 @@ class NotificationAndDashboardTest extends TestCase
         $this->assertSame(0, UserNotification::where('user_id', $me->id)->unread()->count());
     }
 
+    public function test_notifications_filter_by_read_and_unread(): void
+    {
+        $me = $this->user();
+        $unread = UserNotification::create(['user_id' => $me->id, 'title' => '未读通知', 'is_read' => false]);
+        $read = UserNotification::create(['user_id' => $me->id, 'title' => '已读通知', 'is_read' => true]);
+
+        // 已读筛选：只见已读
+        $this->actingAs($me)->get(route('notifications.index', ['read' => 1]))
+            ->assertOk()
+            ->assertSee('已读通知')
+            ->assertDontSee('未读通知');
+
+        // 未读筛选：只见未读
+        $this->actingAs($me)->get(route('notifications.index', ['unread' => 1]))
+            ->assertOk()
+            ->assertSee('未读通知')
+            ->assertDontSee('已读通知');
+    }
+
     // -------------------------------------------------------------------------
     // 仪表盘
     // -------------------------------------------------------------------------
