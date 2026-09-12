@@ -527,7 +527,8 @@ class P1EnhancementsTest extends TestCase
                 'prefs' => ['email'],
             ])->assertRedirect();
 
-        $this->assertSame(
+        // MySQL 会重排 JSON 对象的 key，断言必须与 key 顺序无关
+        $this->assertEquals(
             ['email' => true, 'sla' => false, 'ticket' => false],
             $agent->fresh()->notification_prefs
         );

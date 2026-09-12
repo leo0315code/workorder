@@ -17,9 +17,11 @@ class MentionTest extends TestCase
         return User::factory()->create(['role' => 'agent', 'name' => $name, 'password' => bcrypt('password')]);
     }
 
-    private function ticket(User $customer = null): Ticket
+    private function ticket(?User $customer = null): Ticket
     {
-        return Ticket::factory()->create(['user_id' => $customer?->id ?? 1]);
+        $customer ??= User::factory()->create(['role' => 'customer']);
+
+        return Ticket::factory()->create(['user_id' => $customer->id]);
     }
 
     public function test_reply_mentions_colleague_notifies_them(): void

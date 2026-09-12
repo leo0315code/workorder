@@ -129,13 +129,14 @@ resources/views/                             # Blade 视图（全宽布局 + dar
 ## 测试
 
 ```bash
-php artisan test          # 全量：297 用例 / 815 断言，约 4 秒
+php artisan test          # 全量：297 用例 / 815 断言，约 6 秒
 vendor/bin/pint --dirty   # 代码风格（提交前跑）
 ```
 
-- 测试跑在 **SQLite in-memory**：禁用 `NOW()`/`DATE_ADD`（用绑定参数或 `julianday`，`ReportService` 有示例）；回填时间戳需 `forceFill()->save()`（`created_at` 不在 fillable）
+- 测试跑在 **MySQL**（与生产同构）：数据库 `laravel_ticket_test`（`phpunit.xml` 指定，需先创建，与开发库隔离）
 - 测试基类 `tests/TestCase.php` 已统一禁用工作时间限制（否则 18:00 后跑测试必挂）；需要验证时段逻辑的用例可显式覆盖
-- **`config:cache` 之后不要跑测试**——phpunit.xml 的环境变量会被缓存绕过（测试会连到真实 MySQL/Redis）；验证缓存模式请用页面冒烟
+- **`config:cache` 之后不要跑测试**——phpunit.xml 的环境变量会被缓存绕过（测试会连到开发库）；验证缓存模式请用页面冒烟
+- 注意：MySQL 的 JSON 列会重排对象 key 顺序，断言 JSON 字段时用 `assertEquals`（顺序无关），不要 `assertSame`
 
 ## 常见问题
 

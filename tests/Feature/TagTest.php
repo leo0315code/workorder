@@ -22,9 +22,11 @@ class TagTest extends TestCase
         return User::factory()->create(['role' => 'customer', 'password' => bcrypt('password')]);
     }
 
-    private function ticket(User $user = null): Ticket
+    private function ticket(?User $user = null): Ticket
     {
-        return Ticket::factory()->create(['user_id' => $user?->id ?? 1]);
+        $user ??= User::factory()->create(['role' => 'customer']);
+
+        return Ticket::factory()->create(['user_id' => $user->id]);
     }
 
     public function test_agent_can_sync_existing_tags(): void
