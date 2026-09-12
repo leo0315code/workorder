@@ -66,7 +66,7 @@
 
     {{-- 桌面表格 --}}
     <div class="hidden md:block overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full min-w-[600px] text-sm">
             <thead>
                 <tr class="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-200 dark:border-gray-800">
                     <th class="py-2.5 pr-4">编号</th>

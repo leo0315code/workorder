@@ -14,7 +14,7 @@
 
 @section('content')
     {{-- 欢迎横幅 --}}
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 shadow-lg shadow-indigo-500/25 px-6 py-6 mb-6">
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 shadow-lg shadow-indigo-500/25 px-4 sm:px-6 py-5 sm:py-6 mb-5 sm:mb-6">
         {{-- 装饰圆 --}}
         <div class="pointer-events-none absolute -top-16 -right-10 w-56 h-56 rounded-full bg-white/10 blur-2xl"></div>
         <div class="pointer-events-none absolute -bottom-20 right-1/3 w-44 h-44 rounded-full bg-white/5 blur-xl"></div>
@@ -54,7 +54,7 @@
     </div>
 
     {{-- 统计卡片 --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <x-stat-card label="工单总数" :value="$total" icon="ticket" color="indigo" />
         @if ($isAgent)
             <a href="{{ ticket_route('index', ['status' => 'open']) }}" class="block">
@@ -72,7 +72,7 @@
     </div>
 
     @if ($isAgent)
-        <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <a href="{{ ticket_route('index', ['mine' => 1]) }}" class="block">
                 <x-stat-card label="指派给我(未完成)" :value="$myOpen" icon="user" color="sky" />
             </a>
@@ -88,7 +88,7 @@
         </div>
     @endif
 
-    <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 lg:gap-6">
         {{-- 状态分布 --}}
         <x-panel title="状态分布" icon="chart">
             @foreach (['open' => '待处理', 'pending' => '待客户', 'in_progress' => '处理中', 'resolved' => '已解决', 'closed' => '已关闭'] as $key => $label)
@@ -146,7 +146,7 @@
     </x-panel>
 
     @if ($isAgent)
-        <div class="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6">
             {{-- 我的待处理（按 SLA 优先级排序） --}}
             <x-panel title="我的待处理" icon="ticket">
                 @forelse ($myOpenTickets as $t)

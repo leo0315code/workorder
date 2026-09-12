@@ -148,7 +148,7 @@
                 <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200">关联工单（{{ $tickets->total() }}）</h3>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="w-full min-w-[720px] text-sm">
                     <thead>
                         <tr class="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/60">
                             <th class="py-3 px-4">编号</th>

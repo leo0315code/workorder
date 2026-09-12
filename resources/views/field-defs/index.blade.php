@@ -18,7 +18,7 @@
 
         {{-- 列表 --}}
         <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
-            <table class="w-full text-sm">
+            <div class="overflow-x-auto"><table class="w-full min-w-[600px] text-sm">
                 <thead>
                     <tr class="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/60">
                         <th class="py-3 px-4">排序</th>
@@ -63,7 +63,7 @@
                         <tr><td colspan="8" class="py-12 text-center text-gray-400 text-sm">暂无字段，点击右上角「新增字段」配置</td></tr>
                     @endforelse
                 </tbody>
-            </table>
+            </table></div>
         </div>
 
         {{-- 新增/编辑弹窗 --}}

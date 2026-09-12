@@ -45,7 +45,7 @@
             @if ($tickets && $tickets->total() > 0)
                 <x-panel title="工单（{{ $tickets->total() }}）" icon="ticket" class="mb-4">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
+                        <table class="w-full min-w-[720px] text-sm">
                             <thead>
                                 <tr class="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-200 dark:border-gray-800">
                                     <th class="py-2.5 pr-4">编号</th>

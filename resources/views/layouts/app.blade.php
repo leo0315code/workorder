@@ -31,8 +31,8 @@
                 $nav = \App\Services\MenuService::sidebarFor($user);
             @endphp
 
-            {{-- 侧边栏 --}}
-            <div class="fixed inset-y-0 left-0 z-40 w-64 transform transition-transform lg:translate-x-0" x-bind:class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+            {{-- 侧边栏（小屏 224px，宽屏恢复 256px，13" Air 这类屏幕让出更多内容宽度） --}}
+            <div class="fixed inset-y-0 left-0 z-40 w-56 xl:w-64 transform transition-transform lg:translate-x-0" x-bind:class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
                 <div class="flex flex-col h-full bg-white border-r border-gray-200 dark:bg-gray-900 dark:border-gray-800">
                     <div class="flex items-center justify-between h-16 px-5 border-b border-gray-200 dark:border-gray-800">
                         <a href="{{ route($user?->isAgent() ? 'admin.dashboard' : 'dashboard') }}" class="flex items-center gap-2.5">
@@ -93,7 +93,7 @@
             <div x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen = false" class="fixed inset-0 z-30 bg-gray-900/50 lg:hidden"></div>
 
             {{-- 主区域 --}}
-            <div class="lg:pl-64">
+            <div class="lg:pl-56 xl:pl-64">
                 <header class="sticky top-0 z-20 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
                     <div class="flex items-center gap-3 h-full px-4 sm:px-6">
                         <button @click="sidebarOpen = true" class="lg:hidden text-gray-500 hover:text-gray-700 dark:hover:text-gray-200">
@@ -105,8 +105,8 @@
                             <span class="truncate">@yield('page_title', \App\Services\SettingService::siteName())</span>
                         </h1>
 
-                        {{-- 全局搜索（带下拉建议） --}}
-                        <div class="ml-auto sm:ml-4 flex-1 sm:flex-initial sm:w-64 lg:w-80" x-data="globalSearch()">
+                        {{-- 全局搜索（带下拉建议）：小屏收窄，宽屏放宽 --}}
+                        <div class="ml-auto sm:ml-4 flex-1 sm:flex-initial sm:w-52 lg:w-64 xl:w-80" x-data="globalSearch()">
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-gray-400 pointer-events-none">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
@@ -242,8 +242,8 @@
                     </div>
                 @endif
 
-                {{-- 页面内容（全宽，不做 max-w 居中） --}}
-                <main class="p-4 sm:p-6">
+                {{-- 页面内容（全宽，不做 max-w 居中；小屏收紧留白） --}}
+                <main class="p-3 sm:p-5 lg:p-6">
                     @yield('content')
                 </main>
             </div>
