@@ -4,6 +4,23 @@
 
 ---
 
+## 2026-09-12 — v2.3.1：自动分配服务补测试（AutoAssignServiceTest）
+
+### 优化
+
+- 补齐自动分配核心逻辑测试（此前无任何测试，属 P1 风险面）：
+  - `pickFromCandidates` 纯函数：实时不可用回退全量 / 在线优先 / 无人在线 / 空候选
+  - `pick()` 集成：开关关闭、无候选、manual_offline 排除、agent 优先 admin、活跃工单数最少优先、已解决/关闭不计负载、无人在线、网关不可用回退
+- 可测试性改造：`AutoAssignService` 增加 `$onlineUidsProvider` 静态注入点（默认 null 走真实 Gateway，测试用闭包替换），生产行为不变
+- 测试中未使用 Mockery overload（`GatewayClient\Gateway` 在应用 bootstrap 时已被真实加载，overload 静默失效），改用注入方案
+
+### 验证
+
+- AutoAssignServiceTest 12 用例全通过 ✅
+- 全量 **232 用例 / 641 断言**（220+12）全通过 ✅
+
+---
+
 ## 2026-09-09 — v2.3.0：消息内容 URL 自动识别为可点击链接
 
 ### 新增

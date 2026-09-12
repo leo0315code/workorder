@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Ticket;
 use App\Models\User;
 use GatewayClient\Gateway;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -16,6 +17,14 @@ use Illuminate\Support\Facades\Log;
  */
 class AutoAssignService
 {
+    /**
+     * 在线 uid 集合提供器（测试注入用）。
+     * 为 null 时走真实 Gateway 查询；测试可替换为闭包返回固定集合，避免依赖 WS 服务。
+     *
+     * @var (callable(): ?array<int, true>)|null
+     */
+    public static $onlineUidsProvider = null;
+
     /**
      * 返回被指派的客服 id；无在线客服或未开启时返回 null
      */
@@ -39,9 +48,21 @@ class AutoAssignService
 
         $online = self::onlineUids();
 
-        // 在线集合为 null（实时服务不可用）时不过滤，退回全量候选
+        return self::pickFromCandidates($candidates, $online);
+    }
+
+    /**
+     * 纯选择逻辑（无外部依赖，可单测）：
+     * - 在线集合为 null（实时服务不可用）→ 退回全量候选，取第一个
+     * - 否则按候选顺序返回第一个在线的；无人在线返回 null
+     *
+     * @param  Collection<int, User>  $candidates  已按 agent>admin、负载升序、id 排序
+     * @param  array<int, true>|null  $online  uid => true 的在线集合
+     */
+    public static function pickFromCandidates($candidates, ?array $online): ?int
+    {
         if ($online === null) {
-            return $candidates->first()->id;
+            return $candidates->first()?->id;
         }
 
         foreach ($candidates as $candidate) {
@@ -59,6 +80,11 @@ class AutoAssignService
      */
     public static function onlineUids(): ?array
     {
+        // 测试注入：跳过真实 Gateway 查询
+        if (self::$onlineUidsProvider !== null) {
+            return (self::$onlineUidsProvider)();
+        }
+
         try {
             WebSocketService::boot();
 
@@ -78,4 +104,3 @@ class AutoAssignService
         return SettingService::autoAssignEnabled();
     }
 }
-
