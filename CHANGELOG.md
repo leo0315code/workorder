@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-09-12 — v2.3.4：剩余服务补测（WebSocket/Ticket/Search/Setting/Menu）
+
+### 优化
+
+按风险面优先级补齐零覆盖服务的测试：
+
+- **WebSocketServiceTest（8 例）**：HMAC 签名确定性/排序无关/非法 rooms 过滤/与服务端 Events 一致；frontendWsUrl 三分支（显式 VITE_WS_URL / 代理路径 / 端口直连 + wss 适配）
+- **TicketServiceTest（12 例）**：filterQuery 角色隔离与全维度筛选（mine/unassigned/overdue/warning/status/priority/category/product/q/tag）、duplicateOf、nextNo、logAction、authorizeView/Staff 越权 403、自定义字段必填校验与 upsert
+- **SearchServiceTest（8 例）**：客户数据隔离（仅搜自己工单，客户/产品返回空）、按 no/subject/description/company/contact/phone/sku 检索、search 三段结构、suggest 权限差异
+- **SettingServiceTest + MenuServiceTest（11 例）**：配置读写/默认值/批量跳过 null、菜单受众过滤/admin_only/死链跳过/高亮
+- `AuditService` 已被既有测试间接覆盖（单行 create），不重复补
+
+### 验证
+
+- 新增 39 用例全通过 ✅
+- 全量 **297 用例 / 815 断言**（258+39）全通过 ✅
+
+---
+
 ## 2026-09-12 — v2.3.3：微信扫码登录链路补测试（WechatLoginTest）
 
 ### 优化
