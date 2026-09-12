@@ -121,7 +121,7 @@
                                 $required = $def->is_required ? ' <span class="text-red-500">*</span>' : '';
                             @endphp
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{!! $def->label.$required !!}</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $def->label }}{!! $required !!}</label>
                                 @if ($def->type === 'text')
                                     <input type="text" name="{{ $fieldName }}" value="{{ $fieldValue }}" maxlength="500"
                                            class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">

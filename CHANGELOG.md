@@ -8,6 +8,15 @@
 
 ---
 
+---
+
+## 2026-09-12 — v2.4.4：安全加固（响应头 + 可信代理 + 字段标签转义）
+
+- **安全响应头**：全局中间件 SecurityHeaders——`X-Frame-Options: DENY`（防点击劫持）、`X-Content-Type-Options: nosniff`、`Referrer-Policy`、`Permissions-Policy`
+- **可信代理**：TrustProxies 默认信任 127.0.0.1（本机 nginx），登录/API 限流与审计取真实客户端 IP；`TRUSTED_PROXIES` 环境变量可配多代理/CIDR（生产模板已补）
+- **字段标签转义**：自定义字段 label 改 `{{ }}` 输出（仅管理员可改，属卫生项）
+- 测试：+2（响应头断言 / 伪造 X-Forwarded-For 后审计记录真实 IP 端到端验证），全量 316 用例 / 874 断言
+
 ## 2026-09-12 — v2.4.3：前台密码登录支持用户名
 
 - 登录框改「邮箱 / 用户名」：先按邮箱或用户名解析账号再校验密码（与后台登录行为一致）
