@@ -95,6 +95,8 @@
 - **Windows**：`websocket/start.php start -d`（或 NSSM 注册，`nssm install gateway-worker "C:\path\php\php.exe" "C:\path\app\websocket\start.php" start`）
 - 验证：`lsof -i :6001 | grep LISTEN`（Windows 用 `netstat -ano | findstr 6001`）
 
+> **⚠️ 端口安全（必读）**：6001/1238 必须绑定 `127.0.0.1`（`.env.production.example` 已默认），**只允许本机 Nginx 反向代理访问**，禁止监听 `0.0.0.0`。防火墙仅开放 80/443，公网访问 WSS 一律走 `wss://域名/ws`。若监听 `0.0.0.0`，6001 裸奔（无 TLS、无鉴权直连）可被任意客户端连入。
+
 ---
 
 ## 5. Web 服务器（nginx 完整示例，Linux）
