@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-09-12 — v2.3.2：报表服务补测试（ReportServiceTest）
+
+### 优化
+
+- 补齐报表统计服务测试（此前无任何测试，属 P1 风险面）：
+  - `summary` / `byStatus` / `byPriority` / `byCategory`：计数与分组（含未分类、窗口外排除）
+  - `dailySeries` / `ratingDailySeries`：趋势序列（无数据当天补 0 / null）
+  - `agents`：客服排行（handled/replies/avg_first_response_hours/avg_resolve_hours/overdue，SQLite julianday 分支）
+  - `ratingStats`：满意度（count/avg/positive/solved 及比率、无数据归零）
+  - `normalizeDays` / `startOf`：参数归一化
+- 测试基建要点：`created_at` 不在 `fillable`，用 `forceFill()->save()` 回填时间；`Category` 的 slug 由控制器生成，测试需手动补
+
+### 验证
+
+- ReportServiceTest 12 用例（45 断言）全通过 ✅
+- 全量 **244 用例 / 686 断言**（232+12）全通过 ✅
+
+---
+
 ## 2026-09-12 — v2.3.1：自动分配服务补测试（AutoAssignServiceTest）
 
 ### 优化
