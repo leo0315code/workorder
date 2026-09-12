@@ -36,13 +36,13 @@
         <form method="POST" action="{{ route('login') }}" x-show="tab === 'password'" class="space-y-4">
             @csrf
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">邮箱</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">邮箱 / 用户名</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-3.5 flex items-center text-gray-400 dark:text-gray-500">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
                     </span>
-                    <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username"
-                           placeholder="you@example.com"
+                    <input id="email" type="text" name="email" value="{{ old('email') }}" required autofocus autocomplete="username"
+                           placeholder="邮箱或用户名"
                            class="block w-full h-11 pl-11 pr-4 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                 </div>
                 <x-input-error :messages="$errors->get('email')" class="mt-2" />

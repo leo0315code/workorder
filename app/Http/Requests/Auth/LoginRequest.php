@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -28,13 +29,14 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'email' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ];
     }
 
     /**
      * Attempt to authenticate the request's credentials.
+     * 支持 邮箱 或 用户名 登录（与后台登录行为一致）。
      *
      * @throws ValidationException
      */
@@ -42,7 +44,16 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $account = trim($this->string('email'));
+        $user = User::where('email', $account)->orWhere('username', $account)->first();
+
+        // 用解析出的邮箱做 attempt；找不到用户时给一个必然失败的邮箱，保证报错统一
+        $credentials = [
+            'email' => $user?->email ?? 'no-such-user@invalid.local',
+            'password' => $this->string('password'),
+        ];
+
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([

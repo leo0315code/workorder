@@ -63,4 +63,29 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect('/');
     }
+
+    public function test_users_can_authenticate_with_username(): void
+    {
+        // 前台登录支持用户名（UserFactory 默认生成 username）
+        $user = User::factory()->create();
+
+        $this->post('/login', [
+            'email' => $user->username,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_users_can_not_authenticate_with_wrong_username(): void
+    {
+        $user = User::factory()->create();
+
+        $this->post('/login', [
+            'email' => '不存在的用户名',
+            'password' => 'password',
+        ]);
+
+        $this->assertGuest();
+    }
 }
